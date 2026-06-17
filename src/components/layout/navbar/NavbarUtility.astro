@@ -24,4 +24,7 @@ const { availableLocales, displayLocale } = Astro.props;
         displayLocale={displayLocale}
         client:visible
     />
+    <div class="order-first flex shrink-0 sm:order-none">
+        <slot />
+    </div>
 </div>

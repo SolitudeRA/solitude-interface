@@ -89,14 +89,14 @@ export const UI_TEXTS = {
     },
     postView: {
         galleryView: {
-            zh: '画廊',
-            ja: 'ギャラリー',
-            en: 'Gallery',
+            zh: '精选',
+            ja: '注目',
+            en: 'Featured',
         },
         listView: {
-            zh: '列表',
-            ja: 'リスト',
-            en: 'List',
+            zh: '全部',
+            ja: 'すべて',
+            en: 'All',
         },
         viewAll: {
             zh: '查看全部 {total} 篇',
