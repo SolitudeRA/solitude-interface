@@ -127,9 +127,11 @@ const fallbackMessage = isFallback ? getFallbackMessage(locale, displayedLocale)
 ---
 
 <BaseLayout
-    siteTitle={`${siteTitle} - ${post.title}`}
+    siteTitle={siteTitle}
+    pageTitle={post.title}
     coverImageUrl={coverImageUrl}
     lang={LOCALE_HTML_LANG[displayedLocale]}
+    locale={displayedLocale}
     canonicalUrl={canonicalUrl}
     alternateLinks={alternateLinks}
 >

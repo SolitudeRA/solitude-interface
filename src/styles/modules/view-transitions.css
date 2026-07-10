@@ -1,0 +1,79 @@
+/**
+ * Site navigation motion system.
+ * Keep the visual shell calm while the route content changes underneath it.
+ */
+
+@keyframes solitude-route-exit {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-0.4rem) scale(0.997);
+    }
+}
+
+@keyframes solitude-route-enter {
+    from {
+        opacity: 0;
+        transform: translateY(0.8rem) scale(0.997);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+::view-transition-old(root) {
+    animation: solitude-route-exit 160ms cubic-bezier(0.4, 0, 1, 1) both;
+    mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+    animation: solitude-route-enter 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    mix-blend-mode: normal;
+}
+
+::view-transition-group(site-background) {
+    animation-duration: 1ms;
+}
+
+::view-transition-old(site-background),
+::view-transition-new(site-background) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+::view-transition-group(site-navbar) {
+    animation-duration: 280ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Dock 保持原组件的即时反馈，不参与额外的形变或交叉淡化。 */
+::view-transition-group(site-dock) {
+    animation-duration: 1ms;
+}
+
+::view-transition-old(site-navbar),
+::view-transition-new(site-navbar),
+::view-transition-old(site-dock),
+::view-transition-new(site-dock) {
+    mix-blend-mode: normal;
+}
+
+::view-transition-old(site-dock),
+::view-transition-new(site-dock) {
+    animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root),
+    ::view-transition-group(site-background),
+    ::view-transition-group(site-navbar),
+    ::view-transition-group(site-dock) {
+        animation-duration: 1ms !important;
+        animation-delay: 0ms !important;
+    }
+}

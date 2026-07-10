@@ -4,12 +4,14 @@ interface SmartNavbarProps {
     children: ReactNode;
     isFixed?: boolean;
     readerMode?: boolean;
+    transitionName?: string;
 }
 
 export default function SmartNavbar({
     children,
     isFixed = false,
     readerMode = false,
+    transitionName,
 }: SmartNavbarProps) {
     const [isVisible, setIsVisible] = useState(true);
     const [isScrolled, setIsScrolled] = useState(false);
@@ -70,7 +72,7 @@ export default function SmartNavbar({
             : 'min-h-[60px] sm:min-h-[70px] md:min-h-[80px]',
         readerMode ? 'max-h-[96px]' : '',
         'w-full',
-        'transition-all',
+        'transition-transform',
         'duration-300',
         'ease-in-out',
         'z-50',
@@ -83,7 +85,11 @@ export default function SmartNavbar({
         .join(' ');
 
     return (
-        <nav className={navClasses}>
+        <nav
+            className={navClasses}
+            data-site-navbar
+            style={transitionName ? { viewTransitionName: transitionName } : undefined}
+        >
             <div className="flex h-full w-full items-center justify-between overflow-visible">
                 {children}
             </div>

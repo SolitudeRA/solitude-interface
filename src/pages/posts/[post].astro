@@ -61,7 +61,8 @@ const locale = extractLocaleFromPost(post) ?? DEFAULT_LOCALE;
         </html>
     ) : (
         <BaseLayout
-            siteTitle={`${siteTitle} - ${post.title}`}
+            siteTitle={siteTitle}
+            pageTitle={post.title}
             coverImageUrl={coverImageUrl}
             locale={locale}
         >

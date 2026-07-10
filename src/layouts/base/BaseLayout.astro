@@ -1,10 +1,12 @@
 ---
 import '@styles/index.css';
 import GoogleAnalytics from '@components/utils/GoogleAnalytics.astro';
+import { ClientRouter } from 'astro:transitions';
 import type { AlternateLink } from '@lib/i18n';
 
 interface Props {
     siteTitle: string;
+    pageTitle?: string;
     coverImageUrl: URL | string | null;
     lang?: string;
     canonicalUrl?: string;
@@ -15,12 +17,15 @@ interface Props {
 
 const {
     siteTitle,
+    pageTitle,
     coverImageUrl,
     lang = 'zh-CN',
     canonicalUrl,
     alternateLinks = [],
     locale = 'zh',
 } = Astro.props;
+
+const documentTitle = pageTitle ? `${pageTitle} · ${siteTitle}` : siteTitle;
 
 // RSS Feed URLs
 const rssCurrentLang = `/${locale}/rss.xml`;
@@ -68,10 +73,36 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
         />
 
         <GoogleAnalytics />
-        <title>{siteTitle}</title>
+        <title>{documentTitle}</title>
+        <script is:inline>
+            (() => {
+                const parseTheme = (stored) => {
+                    if (!stored) return 'dark';
+                    if (stored === 'dark' || stored === 'light') return stored;
+                    try {
+                        const parsed = JSON.parse(stored);
+                        return parsed === 'dark' || parsed === 'light' ? parsed : 'dark';
+                    } catch {
+                        return 'dark';
+                    }
+                };
+
+                let storedTheme = null;
+                try {
+                    storedTheme = localStorage.getItem('theme');
+                } catch {
+                    // Keep the default theme when storage is unavailable.
+                }
+
+                const theme = parseTheme(storedTheme);
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+                document.documentElement.classList.toggle('light', theme === 'light');
+            })();
+        </script>
+        <ClientRouter fallback="animate" />
     </head>
     <body>
-        <div class="solitude-body"></div>
+        <div class="solitude-body" transition:persist="site-background"></div>
         <slot />
     </body>
 </html>
@@ -111,30 +142,19 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
     }
 </style>
 
-<script is:inline>
-    // 安全地解析主题设置，验证值的有效性
-    function getValidTheme(stored) {
-        if (!stored) return 'dark';
-        if (stored === 'dark' || stored === 'light') return stored;
-        try {
-            const parsed = JSON.parse(stored);
-            // 只接受有效的主题值
-            return parsed === 'dark' || parsed === 'light' ? parsed : 'dark';
-        } catch {
-            return 'dark';
-        }
+<script>
+    const siteMotionWindow = window as Window & {
+        __solitudeSiteMotionReady?: boolean;
+    };
+
+    if (!siteMotionWindow.__solitudeSiteMotionReady) {
+        siteMotionWindow.__solitudeSiteMotionReady = true;
+
+        window.addEventListener('themeChanged', (event) => {
+            const newTheme = (event as CustomEvent<{ theme?: string }>).detail?.theme;
+            if (newTheme !== 'dark' && newTheme !== 'light') return;
+            document.documentElement.classList.toggle('dark', newTheme === 'dark');
+            document.documentElement.classList.toggle('light', newTheme === 'light');
+        });
     }
-
-    const storedTheme = localStorage.getItem('theme');
-    const themeMode = getValidTheme(storedTheme);
-    document.documentElement.classList.add(themeMode);
-
-    // 监听主题切换事件
-    window.addEventListener('themeChanged', function (e) {
-        const newTheme = e.detail.theme;
-        // 验证新主题值
-        if (newTheme !== 'dark' && newTheme !== 'light') return;
-        document.documentElement.classList.toggle('dark', newTheme === 'dark');
-        document.documentElement.classList.toggle('light', newTheme === 'light');
-    });
 </script>

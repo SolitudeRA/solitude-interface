@@ -81,8 +81,10 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
 
 <BaseLayout
     siteTitle={siteTitle}
+    pageTitle={getUIText('nav', 'posts', locale)}
     coverImageUrl={coverImageUrl}
     lang={htmlLang}
+    locale={locale}
     canonicalUrl={canonicalUrl}
     alternateLinks={alternateLinks}
 >
@@ -200,14 +202,17 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
                 applyView(currentView());
             };
 
-            window.addEventListener('popstate', () => applyView(currentView()));
+            if (!window.__solitudePostViewModeReady) {
+                window.__solitudePostViewModeReady = true;
+                window.addEventListener('popstate', () => applyView(currentView()));
+                document.addEventListener('astro:page-load', bind);
+            }
 
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', bind, { once: true });
             } else {
                 bind();
             }
-            document.addEventListener('astro:page-load', bind);
         })();
     </script>
 
@@ -216,7 +221,9 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         (() => {
             const selector = '[data-post-view-scroll]';
             const hydratedAttribute = 'postViewHydrated';
-            const boundContainers = new WeakSet();
+            const boundContainers =
+                window.__solitudePostViewBoundContainers ??
+                (window.__solitudePostViewBoundContainers = new WeakSet());
 
             const bindPostViewScroll = () => {
                 document.querySelectorAll(selector).forEach((container) => {
@@ -284,7 +291,10 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
                 bindPostViewScroll();
             }
 
-            document.addEventListener('astro:page-load', bindPostViewScroll);
+            if (!window.__solitudePostViewScrollReady) {
+                window.__solitudePostViewScrollReady = true;
+                document.addEventListener('astro:page-load', bindPostViewScroll);
+            }
         })();
     </script>
 </BaseLayout>

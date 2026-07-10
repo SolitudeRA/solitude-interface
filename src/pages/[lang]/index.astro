@@ -11,6 +11,7 @@ import {
     isLocale,
     LOCALE_HTML_LANG,
     generateAlternateLinks,
+    getUIText,
 } from '@lib/i18n';
 import { env } from '@api/config/env';
 
@@ -40,8 +41,10 @@ const canonicalUrl = `${env.site.url}/${locale}`;
 
 <BaseLayout
     siteTitle={siteTitle}
+    pageTitle={getUIText('nav', 'home', locale)}
     coverImageUrl={coverImageUrl}
     lang={htmlLang}
+    locale={locale}
     canonicalUrl={canonicalUrl}
     alternateLinks={alternateLinks}
 >

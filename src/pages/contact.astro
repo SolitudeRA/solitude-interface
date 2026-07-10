@@ -9,7 +9,7 @@ import ContactContent from '@components/pages/contact/ContactContent.astro';
 const { siteTitle, siteDescription, logoUrl, coverImageUrl } = await initializeSiteData();
 ---
 
-<BaseLayout siteTitle={siteTitle} coverImageUrl={coverImageUrl} lang="en">
+<BaseLayout siteTitle={siteTitle} pageTitle="Contact" coverImageUrl={coverImageUrl} lang="en">
     <SiteNavbar
         logoUrl={logoUrl}
         siteTitle={siteTitle}
