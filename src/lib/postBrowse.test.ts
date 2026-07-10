@@ -114,6 +114,14 @@ describe('filterPosts', () => {
         expect(filterPosts(posts, { query: 'world' }).map((p) => p.id)).toEqual(['1', '2']);
     });
 
+    it('matches query against the series label', () => {
+        const posts = [
+            makePost({ id: '1', title: 'Part one', post_series_label: 'Home Server Guide' }),
+            makePost({ id: '2', title: 'Other', post_series_label: 'Writing Notes' }),
+        ];
+        expect(filterPosts(posts, { query: 'server' }).map((post) => post.id)).toEqual(['1']);
+    });
+
     it('combines filters with AND', () => {
         const posts = [
             makePost({ id: '1', post_category: 'tech', title: 'Rust' }),

@@ -34,5 +34,8 @@ const {
         siteSubTitle={siteSubTitle}
         homeUrl={homeUrl}
     />
-    <NavbarUtility availableLocales={availableLocales} displayLocale={displayLocale} />
+    <NavbarUtility availableLocales={availableLocales} displayLocale={displayLocale}>
+        <div slot="start"><slot name="utility-start" /></div>
+        <div slot="end"><slot name="utility-end" /></div>
+    </NavbarUtility>
 </SmartNavbar>

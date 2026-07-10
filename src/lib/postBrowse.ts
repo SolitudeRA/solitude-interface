@@ -15,6 +15,8 @@ export interface BrowsePost {
     post_type_label?: string;
     post_category: string;
     post_category_label?: string;
+    post_series?: string;
+    post_series_label?: string;
 }
 
 export interface FacetOption {
@@ -135,7 +137,8 @@ export function filterPosts<T extends BrowsePost>(
         if (category && post.post_category !== category) return false;
         if (type && post.post_type !== type) return false;
         if (query) {
-            const haystack = `${post.title} ${post.excerpt}`.toLowerCase();
+            const haystack =
+                `${post.title} ${post.excerpt} ${post.post_series ?? ''} ${post.post_series_label ?? ''}`.toLowerCase();
             if (!haystack.includes(query)) return false;
         }
         return true;

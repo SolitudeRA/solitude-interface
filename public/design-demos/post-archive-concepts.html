@@ -1,0 +1,1699 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <script>
+      window.location.replace('./post-archive-concepts-v2.html');
+    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solitude · 全部文章设计方向 Demo</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080b12;
+        --panel: rgba(14, 19, 29, 0.72);
+        --panel-strong: rgba(17, 23, 35, 0.9);
+        --line: rgba(255, 255, 255, 0.13);
+        --line-strong: rgba(255, 255, 255, 0.24);
+        --text: #f5f7fb;
+        --muted: rgba(235, 240, 248, 0.62);
+        --quiet: rgba(235, 240, 248, 0.4);
+        --cyan: #a5e8ff;
+        --lime: #d8ff8d;
+        --rose: #ffb2c1;
+        --violet: #cdb7ff;
+        --ambient-image: url("https://ghost.solitudera.com/content/images/2026/01/91719981_p0.jpg");
+        font-family:
+          Inter, "Noto Sans SC", "Noto Sans JP", ui-sans-serif, system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      body::before,
+      body::after {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        content: "";
+      }
+
+      body::before {
+        z-index: -2;
+        background:
+          linear-gradient(110deg, rgba(5, 8, 14, 0.96), rgba(8, 11, 18, 0.78)),
+          var(--ambient-image) center / cover;
+        filter: saturate(0.76);
+        transform: scale(1.03);
+        transition: background-image 460ms ease;
+      }
+
+      body::after {
+        z-index: -1;
+        background:
+          radial-gradient(circle at 22% 18%, rgba(165, 232, 255, 0.1), transparent 31%),
+          radial-gradient(circle at 82% 72%, rgba(205, 183, 255, 0.09), transparent 34%),
+          linear-gradient(rgba(5, 8, 14, 0.42), rgba(5, 8, 14, 0.86));
+        backdrop-filter: blur(18px);
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: 3px;
+      }
+
+      .app {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        width: 100vw;
+        height: 100svh;
+      }
+
+      .masthead {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+        align-items: center;
+        gap: 18px;
+        padding: 16px clamp(16px, 2.5vw, 40px) 10px;
+      }
+
+      .brand {
+        min-width: 0;
+      }
+
+      .brand-kicker,
+      .stage-kicker,
+      .meta-line {
+        margin: 0;
+        color: var(--quiet);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .brand h1 {
+        margin: 4px 0 0;
+        font-size: clamp(1rem, 1.5vw, 1.35rem);
+        letter-spacing: -0.035em;
+      }
+
+      .concept-nav {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 58vw;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 5px;
+        background: rgba(8, 12, 19, 0.64);
+        scrollbar-width: none;
+        backdrop-filter: blur(18px);
+      }
+
+      .concept-nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .concept-button {
+        flex: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 13px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 720;
+        transition:
+          color 180ms ease,
+          background 180ms ease,
+          transform 180ms ease;
+      }
+
+      .concept-button:hover {
+        color: var(--text);
+      }
+
+      .concept-button[aria-selected="true"] {
+        background: rgba(245, 247, 251, 0.12);
+        color: var(--text);
+        box-shadow: inset 0 1px rgba(255, 255, 255, 0.1);
+      }
+
+      .view-count {
+        justify-self: end;
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .toolbar-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 330px) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        padding: 0 clamp(16px, 2.5vw, 40px) 12px;
+      }
+
+      .search-shell,
+      .filter-shell {
+        display: flex;
+        min-width: 0;
+        height: 40px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(8, 12, 19, 0.58);
+        backdrop-filter: blur(18px);
+      }
+
+      .search-shell {
+        gap: 9px;
+        padding: 0 12px;
+      }
+
+      .search-shell span {
+        color: var(--quiet);
+      }
+
+      .search-shell input {
+        width: 100%;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--text);
+      }
+
+      .search-shell input::placeholder {
+        color: var(--quiet);
+      }
+
+      .filter-shell {
+        width: max-content;
+        padding: 3px;
+      }
+
+      .filter-button {
+        height: 32px;
+        border: 0;
+        border-radius: 9px;
+        padding: 0 12px;
+        background: transparent;
+        color: var(--quiet);
+        cursor: pointer;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
+      .filter-button[aria-pressed="true"] {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+      }
+
+      .concept-summary {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 0.73rem;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .stage-shell {
+        position: relative;
+        min-height: 0;
+        margin: 0 clamp(8px, 1.4vw, 22px) clamp(8px, 1.4vw, 22px);
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: clamp(18px, 2.3vw, 32px);
+        background:
+          linear-gradient(145deg, rgba(16, 22, 33, 0.69), rgba(6, 9, 15, 0.74)),
+          rgba(8, 12, 19, 0.56);
+        box-shadow:
+          0 32px 90px rgba(0, 0, 0, 0.34),
+          inset 0 1px rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(22px);
+      }
+
+      .stage-shell::before {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+        background-size: 72px 72px;
+        content: "";
+        mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
+      }
+
+      .concept-panel {
+        position: absolute;
+        inset: 0;
+        display: none;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      .concept-panel.is-active {
+        display: block;
+      }
+
+      .panel-label {
+        position: absolute;
+        top: 18px;
+        left: 22px;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      .panel-label::before {
+        width: 28px;
+        height: 1px;
+        background: currentColor;
+        content: "";
+      }
+
+      .stage-actions {
+        position: absolute;
+        right: 20px;
+        bottom: 18px;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .stage-action {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: rgba(6, 9, 15, 0.72);
+        color: var(--text);
+        cursor: pointer;
+        backdrop-filter: blur(14px);
+      }
+
+      .stage-position {
+        min-width: 68px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+      }
+
+      .empty-state {
+        display: grid;
+        height: 100%;
+        place-items: center;
+        color: var(--muted);
+      }
+
+      /* 01 · Archive Shelf */
+      .shelf-wrap {
+        display: grid;
+        height: 100%;
+        align-items: center;
+        overflow: hidden;
+        padding: 58px 0 44px;
+      }
+
+      .shelf-rail {
+        display: flex;
+        min-width: 100%;
+        align-items: stretch;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 30px max(8vw, calc((100vw - 760px) / 2));
+        scroll-behavior: smooth;
+        scroll-padding-inline: 22vw;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+      }
+
+      .shelf-rail::-webkit-scrollbar {
+        display: none;
+      }
+
+      .shelf-item {
+        position: relative;
+        flex: 0 0 68px;
+        height: min(54vh, 560px);
+        min-height: 330px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 0;
+        background: rgba(14, 20, 31, 0.8);
+        color: var(--text);
+        cursor: pointer;
+        scroll-snap-align: center;
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+        transition:
+          flex-basis 520ms cubic-bezier(0.22, 1, 0.36, 1),
+          border-color 260ms ease,
+          opacity 260ms ease,
+          transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .shelf-item:hover {
+        border-color: var(--line-strong);
+      }
+
+      .shelf-item.is-near {
+        flex-basis: 126px;
+        transform: translateY(-8px);
+      }
+
+      .shelf-item.is-active {
+        flex-basis: clamp(520px, 44vw, 720px);
+        border-color: rgba(165, 232, 255, 0.32);
+        transform: translateY(-15px);
+        box-shadow: 0 34px 90px rgba(0, 0, 0, 0.42);
+      }
+
+      .shelf-cover {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: saturate(0.78) brightness(0.58);
+        transition:
+          filter 480ms ease,
+          transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .shelf-item.is-active .shelf-cover {
+        filter: saturate(0.96) brightness(0.74);
+        transform: scale(1.03);
+      }
+
+      .shelf-spine {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 8px;
+        background: linear-gradient(rgba(5, 8, 14, 0.18), rgba(5, 8, 14, 0.82));
+        transition: opacity 220ms ease;
+      }
+
+      .shelf-item.is-active .shelf-spine {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .spine-index {
+        font-size: 0.69rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+      }
+
+      .spine-title {
+        max-height: 11rem;
+        overflow: hidden;
+        font-size: 0.72rem;
+        font-weight: 750;
+        line-height: 1.28;
+        text-align: left;
+        writing-mode: vertical-rl;
+      }
+
+      .spine-date {
+        color: rgba(255, 255, 255, 0.66);
+        font-size: 0.6rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .shelf-spread {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(240px, 0.92fr);
+        opacity: 0;
+        transition: opacity 250ms ease 80ms;
+      }
+
+      .shelf-item.is-active .shelf-spread {
+        opacity: 1;
+      }
+
+      .spread-media {
+        min-width: 0;
+        background: transparent;
+      }
+
+      .spread-copy {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: clamp(24px, 3.2vw, 44px);
+        background: linear-gradient(120deg, rgba(7, 10, 16, 0.84), rgba(12, 17, 26, 0.96));
+        text-align: left;
+      }
+
+      .spread-copy h2,
+      .deck-copy h2,
+      .preview-copy h2 {
+        margin: 12px 0;
+        font-size: clamp(1.45rem, 2.5vw, 2.75rem);
+        line-height: 1.06;
+        letter-spacing: -0.055em;
+      }
+
+      .spread-copy p,
+      .deck-copy p,
+      .preview-copy p {
+        display: -webkit-box;
+        margin: 0;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: clamp(0.76rem, 1vw, 0.9rem);
+        line-height: 1.7;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+      }
+
+      .read-mark {
+        display: inline-flex;
+        margin-top: 22px;
+        align-items: center;
+        gap: 12px;
+        color: var(--cyan);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      /* 02 · Kinetic index */
+      .index-layout {
+        display: grid;
+        grid-template-columns: minmax(330px, 0.9fr) minmax(420px, 1.1fr);
+        height: 100%;
+        gap: clamp(20px, 3vw, 52px);
+        padding: 58px clamp(22px, 5vw, 84px) 44px;
+      }
+
+      .kinetic-list {
+        min-height: 0;
+        overflow-y: auto;
+        padding: 12px 4px 56px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+      }
+
+      .index-row {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+        width: 100%;
+        align-items: center;
+        gap: 12px;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        padding: clamp(12px, 1.8vh, 20px) 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        text-align: left;
+        transition:
+          color 220ms ease,
+          padding-left 420ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .index-row:hover,
+      .index-row.is-active {
+        padding-left: 18px;
+        color: var(--text);
+      }
+
+      .index-row-number,
+      .index-row-date {
+        color: var(--quiet);
+        font-size: 0.63rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .index-row-title {
+        overflow: hidden;
+        font-size: clamp(1rem, 1.6vw, 1.6rem);
+        font-weight: 650;
+        letter-spacing: -0.035em;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .index-preview {
+        position: relative;
+        display: grid;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(5, 8, 14, 0.7);
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.3);
+      }
+
+      .index-preview img,
+      .deck-card img,
+      .bento-item img,
+      .river-preview img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .index-preview::after,
+      .deck-card::after,
+      .bento-item::after,
+      .river-preview::after {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 14%, rgba(4, 7, 12, 0.18) 48%, rgba(4, 7, 12, 0.95));
+        content: "";
+      }
+
+      .preview-copy {
+        position: relative;
+        z-index: 2;
+        align-self: end;
+        padding: clamp(24px, 4vw, 54px);
+      }
+
+      /* 03 · Time river */
+      .river-wrap {
+        position: relative;
+        height: 100%;
+        overflow: hidden;
+        padding: 60px 0 34px;
+      }
+
+      .river-scroll {
+        position: absolute;
+        inset: 60px 0 34px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+      }
+
+      .river-scroll::-webkit-scrollbar {
+        display: none;
+      }
+
+      .river-track {
+        position: relative;
+        height: 100%;
+        min-width: 100%;
+      }
+
+      .river-track::before {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        left: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(165, 232, 255, 0.46), transparent);
+        content: "";
+        box-shadow: 0 0 22px rgba(165, 232, 255, 0.32);
+      }
+
+      .river-year {
+        position: absolute;
+        top: calc(50% - 15px);
+        color: rgba(255, 255, 255, 0.18);
+        font-size: clamp(4rem, 8vw, 8rem);
+        font-weight: 800;
+        letter-spacing: -0.08em;
+        pointer-events: none;
+        transform: translateY(-50%);
+      }
+
+      .river-node {
+        position: absolute;
+        display: grid;
+        width: 148px;
+        min-height: 72px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 10px;
+        background: rgba(8, 12, 19, 0.75);
+        color: var(--muted);
+        cursor: pointer;
+        text-align: left;
+        transform: translate(-50%, -50%);
+        backdrop-filter: blur(14px);
+        transition:
+          border-color 220ms ease,
+          color 220ms ease,
+          transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+          background 220ms ease;
+      }
+
+      .river-node::after {
+        position: absolute;
+        left: 50%;
+        width: 1px;
+        height: var(--stem, 54px);
+        background: linear-gradient(var(--stem-direction, to bottom), var(--cyan), transparent);
+        content: "";
+      }
+
+      .river-node.is-upper::after {
+        top: 100%;
+      }
+
+      .river-node.is-lower::after {
+        bottom: 100%;
+        --stem-direction: to top;
+      }
+
+      .river-node:hover,
+      .river-node.is-active {
+        z-index: 4;
+        border-color: rgba(165, 232, 255, 0.5);
+        background: rgba(18, 27, 41, 0.9);
+        color: var(--text);
+        transform: translate(-50%, -50%) scale(1.08);
+      }
+
+      .river-node-title {
+        display: -webkit-box;
+        overflow: hidden;
+        font-size: 0.75rem;
+        font-weight: 730;
+        line-height: 1.35;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+
+      .river-node-date {
+        width: 100%;
+        margin-top: 6px;
+        color: var(--quiet);
+        font-size: 0.58rem;
+      }
+
+      .river-preview {
+        position: absolute;
+        z-index: 12;
+        right: clamp(22px, 4vw, 64px);
+        bottom: clamp(54px, 7vh, 90px);
+        width: clamp(300px, 29vw, 470px);
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 22px;
+        background: var(--panel-strong);
+        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
+        pointer-events: none;
+      }
+
+      .river-preview .preview-copy {
+        padding: 24px;
+      }
+
+      .river-preview .preview-copy h2 {
+        margin: 7px 0;
+        font-size: clamp(1.1rem, 1.8vw, 1.65rem);
+      }
+
+      .river-preview .preview-copy p {
+        -webkit-line-clamp: 2;
+      }
+
+      /* 04 · 3D deck */
+      .deck-wrap {
+        position: relative;
+        display: grid;
+        height: 100%;
+        place-items: center;
+        overflow: hidden;
+        padding: 54px 0 38px;
+        perspective: 1500px;
+      }
+
+      .deck-scene {
+        position: relative;
+        width: min(86vw, 1180px);
+        height: min(58vh, 580px);
+        transform-style: preserve-3d;
+      }
+
+      .deck-card {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: clamp(250px, 30vw, 430px);
+        height: min(52vh, 520px);
+        min-height: 320px;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 28px;
+        padding: 0;
+        background: #0c111a;
+        color: var(--text);
+        cursor: pointer;
+        opacity: var(--opacity);
+        transform: translate(-50%, -50%) translateX(var(--x)) translateZ(var(--z)) rotateY(var(--rotate)) scale(var(--scale));
+        transform-style: preserve-3d;
+        box-shadow: 0 34px 90px rgba(0, 0, 0, 0.44);
+        transition:
+          transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 360ms ease,
+          filter 360ms ease;
+      }
+
+      .deck-card:not(.is-active) {
+        filter: saturate(0.65) brightness(0.7);
+      }
+
+      .deck-card.is-active {
+        z-index: 30;
+      }
+
+      .deck-copy {
+        position: absolute;
+        inset: auto 0 0;
+        z-index: 3;
+        padding: 30px;
+        text-align: left;
+      }
+
+      .deck-copy h2 {
+        font-size: clamp(1.3rem, 2.1vw, 2.15rem);
+      }
+
+      .deck-card:not(.is-active) .deck-copy p,
+      .deck-card:not(.is-active) .read-mark {
+        display: none;
+      }
+
+      /* 05 · Bento */
+      .bento-wrap {
+        height: 100%;
+        overflow: auto hidden;
+        padding: 58px clamp(22px, 4vw, 64px) 54px;
+        scrollbar-width: none;
+      }
+
+      .bento-wrap::-webkit-scrollbar {
+        display: none;
+      }
+
+      .bento-grid {
+        display: grid;
+        grid-auto-columns: clamp(150px, 12vw, 220px);
+        grid-auto-flow: column dense;
+        grid-template-rows: repeat(4, minmax(72px, 1fr));
+        width: max-content;
+        min-width: 100%;
+        height: 100%;
+        min-height: 430px;
+        gap: 12px;
+      }
+
+      .bento-item {
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 0;
+        background: #0c111a;
+        color: var(--text);
+        cursor: pointer;
+        text-align: left;
+        transition:
+          border-color 220ms ease,
+          transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+          box-shadow 260ms ease;
+      }
+
+      .bento-item:hover,
+      .bento-item.is-active {
+        z-index: 3;
+        border-color: rgba(165, 232, 255, 0.44);
+        transform: translateY(-5px);
+        box-shadow: 0 22px 50px rgba(0, 0, 0, 0.32);
+      }
+
+      .bento-item.is-hero {
+        grid-column: span 2;
+        grid-row: span 3;
+      }
+
+      .bento-item.is-wide {
+        grid-column: span 2;
+        grid-row: span 1;
+      }
+
+      .bento-item.is-tall {
+        grid-row: span 2;
+      }
+
+      .bento-item.is-medium {
+        grid-row: span 2;
+      }
+
+      .bento-copy {
+        position: absolute;
+        inset: auto 0 0;
+        z-index: 2;
+        padding: 14px;
+      }
+
+      .bento-copy h2 {
+        display: -webkit-box;
+        margin: 5px 0 0;
+        overflow: hidden;
+        font-size: 0.86rem;
+        line-height: 1.25;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+
+      .bento-item.is-hero .bento-copy {
+        padding: 24px;
+      }
+
+      .bento-item.is-hero .bento-copy h2 {
+        font-size: clamp(1.35rem, 2vw, 2rem);
+        letter-spacing: -0.04em;
+      }
+
+      @media (max-width: 900px) {
+        .masthead {
+          grid-template-columns: 1fr auto;
+        }
+
+        .brand {
+          display: none;
+        }
+
+        .concept-nav {
+          max-width: calc(100vw - 88px);
+        }
+
+        .toolbar-row {
+          grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .concept-summary {
+          display: none;
+        }
+
+        .index-layout {
+          grid-template-columns: minmax(240px, 0.8fr) minmax(300px, 1.2fr);
+          padding-inline: 24px;
+        }
+
+        .shelf-item.is-active {
+          flex-basis: min(72vw, 620px);
+        }
+
+        .shelf-spread {
+          grid-template-columns: 0.82fr 1.18fr;
+        }
+
+        .river-preview {
+          width: min(45vw, 390px);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .masthead {
+          padding: 9px 10px 7px;
+        }
+
+        .view-count {
+          display: none;
+        }
+
+        .concept-nav {
+          grid-column: 1 / -1;
+          width: 100%;
+          max-width: none;
+        }
+
+        .concept-button {
+          padding: 7px 10px;
+          font-size: 0.68rem;
+        }
+
+        .toolbar-row {
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 7px;
+          padding: 0 10px 8px;
+        }
+
+        .search-shell {
+          height: 36px;
+        }
+
+        .filter-shell {
+          height: 36px;
+        }
+
+        .filter-button {
+          height: 28px;
+          padding-inline: 8px;
+          font-size: 0.65rem;
+        }
+
+        .stage-shell {
+          margin: 0 4px 4px;
+          border-radius: 18px;
+        }
+
+        .panel-label {
+          top: 11px;
+          left: 14px;
+          font-size: 0.58rem;
+        }
+
+        .stage-actions {
+          right: 11px;
+          bottom: 10px;
+        }
+
+        .stage-action {
+          width: 34px;
+          height: 34px;
+        }
+
+        .stage-position {
+          display: none;
+        }
+
+        .shelf-wrap {
+          padding-top: 34px;
+        }
+
+        .shelf-rail {
+          gap: 6px;
+          padding: 18px 12vw 44px;
+          scroll-padding-inline: 12vw;
+        }
+
+        .shelf-item {
+          flex-basis: 44px;
+          height: min(56vh, 480px);
+          min-height: 300px;
+          border-radius: 14px;
+        }
+
+        .shelf-item.is-near {
+          flex-basis: 66px;
+        }
+
+        .shelf-item.is-active {
+          flex-basis: 76vw;
+        }
+
+        .shelf-spread {
+          grid-template-columns: 1fr;
+        }
+
+        .spread-media {
+          display: none;
+        }
+
+        .spread-copy {
+          justify-content: flex-end;
+          background: linear-gradient(180deg, rgba(7, 10, 16, 0.08), rgba(7, 10, 16, 0.96));
+          padding: 24px;
+        }
+
+        .index-layout {
+          grid-template-columns: 1fr;
+          padding: 42px 14px 44px;
+        }
+
+        .index-preview {
+          position: absolute;
+          inset: 45px 12px auto;
+          height: 31%;
+          pointer-events: none;
+        }
+
+        .kinetic-list {
+          padding-top: 34vh;
+        }
+
+        .preview-copy {
+          padding: 18px;
+        }
+
+        .preview-copy h2 {
+          font-size: 1.15rem;
+        }
+
+        .preview-copy p {
+          display: none;
+        }
+
+        .river-scroll {
+          inset-top: 40px;
+        }
+
+        .river-preview {
+          right: 12px;
+          bottom: 58px;
+          width: calc(100vw - 32px);
+          max-width: 360px;
+          aspect-ratio: 16 / 8;
+        }
+
+        .river-preview .preview-copy p {
+          display: none;
+        }
+
+        .river-node {
+          width: 116px;
+        }
+
+        .deck-scene {
+          width: 100vw;
+        }
+
+        .deck-card {
+          width: 72vw;
+          height: min(55vh, 500px);
+          border-radius: 22px;
+        }
+
+        .deck-copy {
+          padding: 22px;
+        }
+
+        .bento-wrap {
+          padding: 42px 14px 50px;
+        }
+
+        .bento-grid {
+          grid-auto-columns: 118px;
+          grid-template-rows: repeat(4, minmax(62px, 1fr));
+          min-height: 390px;
+          gap: 8px;
+        }
+
+        .bento-item {
+          border-radius: 14px;
+        }
+
+        .bento-copy {
+          padding: 10px;
+        }
+
+        .bento-item.is-hero .bento-copy {
+          padding: 14px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="masthead">
+        <div class="brand">
+          <p class="brand-kicker">Solitude Interface · Design Lab</p>
+          <h1>全部文章 · 五种交互方向</h1>
+        </div>
+        <nav class="concept-nav" aria-label="切换设计方向">
+          <button class="concept-button" data-concept="shelf" aria-selected="true">01 档案书架</button>
+          <button class="concept-button" data-concept="index" aria-selected="false">02 动态索引</button>
+          <button class="concept-button" data-concept="river" aria-selected="false">03 时间河流</button>
+          <button class="concept-button" data-concept="deck" aria-selected="false">04 3D 卡组</button>
+          <button class="concept-button" data-concept="bento" aria-selected="false">05 Bento</button>
+        </nav>
+        <div class="view-count" id="viewCount">12 ARTICLES</div>
+      </header>
+
+      <section class="toolbar-row" aria-label="统一筛选条件">
+        <label class="search-shell">
+          <span aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" placeholder="搜索真实文章标题…" />
+        </label>
+        <p class="concept-summary" id="conceptSummary">书脊压缩，当前文章展开；变化来自焦点，而不是随机尺寸。</p>
+        <div class="filter-shell" aria-label="分类筛选">
+          <button class="filter-button" data-filter="all" aria-pressed="true">全部</button>
+          <button class="filter-button" data-filter="tech" aria-pressed="false">技术</button>
+          <button class="filter-button" data-filter="life" aria-pressed="false">生活</button>
+        </div>
+      </section>
+
+      <section class="stage-shell">
+        <section class="concept-panel is-active" data-panel="shelf">
+          <div class="panel-label">Archive Shelf</div>
+          <div class="shelf-wrap"><div class="shelf-rail" id="shelfRail"></div></div>
+        </section>
+
+        <section class="concept-panel" data-panel="index">
+          <div class="panel-label">Kinetic Index</div>
+          <div class="index-layout">
+            <div class="kinetic-list" id="kineticList"></div>
+            <article class="index-preview" id="indexPreview"></article>
+          </div>
+        </section>
+
+        <section class="concept-panel" data-panel="river">
+          <div class="panel-label">Timeline River</div>
+          <div class="river-wrap">
+            <div class="river-scroll" id="riverScroll"><div class="river-track" id="riverTrack"></div></div>
+            <article class="river-preview" id="riverPreview"></article>
+          </div>
+        </section>
+
+        <section class="concept-panel" data-panel="deck">
+          <div class="panel-label">Spatial Deck</div>
+          <div class="deck-wrap"><div class="deck-scene" id="deckScene"></div></div>
+        </section>
+
+        <section class="concept-panel" data-panel="bento">
+          <div class="panel-label">Editorial Bento</div>
+          <div class="bento-wrap"><div class="bento-grid" id="bentoGrid"></div></div>
+        </section>
+
+        <div class="stage-actions" aria-label="文章导航">
+          <button class="stage-action" id="previousPost" aria-label="上一篇">←</button>
+          <span class="stage-position" id="stagePosition">01 / 12</span>
+          <button class="stage-action" id="nextPost" aria-label="下一篇">→</button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const posts = [
+        {
+          title: "构建智能家居平台",
+          date: "2025-02-12",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/91719981_p0.jpg",
+          excerpt: "在家庭服务器上部署 Home Assistant，连接家电、iOS 快捷指令与 Wake-on-LAN，继续扩展可实际使用的家庭基础设施。",
+        },
+        {
+          title: "构建 DevOps 平台",
+          date: "2025-01-04",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/82937235_p0.jpg",
+          excerpt: "使用 Gogs、Woodpecker CI 与 Jenkins，在家用服务器上搭建持续化的版本管理、构建、测试和部署环境。",
+        },
+        {
+          title: "构建云存储",
+          date: "2024-12-22",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/77734148_p0.jpg",
+          excerpt: "围绕隐私、同步和维护成本，构建可以长期运行的个人云存储服务。",
+        },
+        {
+          title: "构建信息收集系统",
+          date: "2024-12-13",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/78296349_p0.jpg",
+          excerpt: "把分散的信息源收拢成可持续维护的采集、整理和检索工作流。",
+        },
+        {
+          title: "构建了一个支持 Qiita 与 Zenn 同时投稿的仓库（并支持系列文章）",
+          date: "2024-12-07",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/69660140_p0.jpg",
+          excerpt: "用同一个内容仓库维护多平台发布，并处理系列文章、元数据和发布流程。",
+        },
+        {
+          title: "部署 WordPress",
+          date: "2024-12-05",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/57793944_p0.png",
+          excerpt: "记录 WordPress 服务的容器化部署、网络配置、持久化与运维要点。",
+        },
+        {
+          title: "服务选型",
+          date: "2024-11-30",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/65818649_p0.jpg",
+          excerpt: "根据维护成本、资源消耗和实际需求，为家庭服务器选择合适的服务组合。",
+        },
+        {
+          title: "构建基础设施",
+          date: "2024-11-27",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/Konachan_com___245335_anmi_black_hair_bow_glasses_headband_kneehighs_long_hair_purple_eyes_seifuku_skirt_stars_4208x2480.jpg",
+          excerpt: "从网络、容器、存储和安全边界出发，搭建后续服务共同依赖的基础设施。",
+        },
+        {
+          title: "OS 安装与基础设置",
+          date: "2024-11-25",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/110239446_p0.jpg",
+          excerpt: "完成服务器操作系统安装、账户、安全策略和最初的运行环境配置。",
+        },
+        {
+          title: "规划与硬件选型",
+          date: "2024-11-11",
+          category: "tech",
+          categoryLabel: "技术",
+          image: "https://ghost.solitudera.com/content/images/2026/01/92191625_p1.png",
+          excerpt: "从目标、预算、功耗和扩展性出发，规划家庭服务器并完成硬件选择。",
+        },
+        {
+          title: "【菜谱储备计划】韩式汤饭（鸡汤底）",
+          date: "2024-01-21",
+          category: "life",
+          categoryLabel: "生活",
+          image: "https://ghost.solitudera.com/content/images/2026/01/cook-gukbap.webp",
+          excerpt: "把适合重复制作的韩式汤饭整理成稳定、可复现的家庭菜谱。",
+        },
+        {
+          title: "Reboot",
+          date: "2023-12-21",
+          category: "life",
+          categoryLabel: "生活",
+          image: "https://ghost.solitudera.com/content/images/2026/01/post-reboot.webp",
+          excerpt: "重新整理个人站点、写作方式和长期维护节奏，从一次重启开始。",
+        },
+      ];
+
+      const conceptDescriptions = {
+        shelf: "书脊压缩，当前文章展开；变化来自焦点，而不是随机尺寸。",
+        index: "标题是主角，封面作为响应式舞台；更像杂志目录而不是卡片列表。",
+        river: "发布日期成为真实空间轴，文章沿时间上下呼吸并形成档案地形。",
+        deck: "文章在 Z 轴中排队，当前内容升到前景；最沉浸，也最强调动效。",
+        bento: "用固定模块语法制造不对称，保留一眼看到多篇文章的浏览效率。",
+      };
+
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let activeConcept = "shelf";
+      let activeFilter = "all";
+      let activeIndex = 0;
+      let visiblePosts = posts.slice();
+      let wheelLocked = false;
+
+      const shelfRail = document.querySelector("#shelfRail");
+      const kineticList = document.querySelector("#kineticList");
+      const indexPreview = document.querySelector("#indexPreview");
+      const riverTrack = document.querySelector("#riverTrack");
+      const riverScroll = document.querySelector("#riverScroll");
+      const riverPreview = document.querySelector("#riverPreview");
+      const deckScene = document.querySelector("#deckScene");
+      const bentoGrid = document.querySelector("#bentoGrid");
+      const stagePosition = document.querySelector("#stagePosition");
+      const viewCount = document.querySelector("#viewCount");
+
+      function twoDigits(value) {
+        return String(value + 1).padStart(2, "0");
+      }
+
+      function shortDate(date) {
+        return date.slice(5).replace("-", ".");
+      }
+
+      function metadata(post, index) {
+        return twoDigits(index) + " · " + post.date.slice(0, 4) + " · " + post.categoryLabel;
+      }
+
+      function previewMarkup(post, index) {
+        if (!post) return '<div class="empty-state">没有匹配的文章</div>';
+        return (
+          '<img src="' + post.image + '" alt="" />' +
+          '<div class="preview-copy">' +
+          '<p class="meta-line">' + metadata(post, index) + '</p>' +
+          '<h2>' + post.title + '</h2>' +
+          '<p>' + post.excerpt + '</p>' +
+          '</div>'
+        );
+      }
+
+      function renderShelf() {
+        if (!visiblePosts.length) {
+          shelfRail.innerHTML = '<div class="empty-state">没有匹配的文章</div>';
+          return;
+        }
+        shelfRail.innerHTML = visiblePosts
+          .map(function (post, index) {
+            return (
+              '<button type="button" class="shelf-item" data-post-index="' + index + '" aria-label="聚焦：' + post.title + '">' +
+              '<img class="shelf-cover" src="' + post.image + '" alt="" loading="lazy" />' +
+              '<span class="shelf-spine">' +
+              '<span class="spine-index">' + twoDigits(index) + '</span>' +
+              '<span class="spine-title">' + post.title + '</span>' +
+              '<span class="spine-date">' + shortDate(post.date) + '</span>' +
+              '</span>' +
+              '<span class="shelf-spread">' +
+              '<span class="spread-media"></span>' +
+              '<span class="spread-copy">' +
+              '<span class="meta-line">' + metadata(post, index) + '</span>' +
+              '<h2>' + post.title + '</h2>' +
+              '<p>' + post.excerpt + '</p>' +
+              '<span class="read-mark">Read article <span aria-hidden="true">→</span></span>' +
+              '</span></span></button>'
+            );
+          })
+          .join("");
+
+        shelfRail.querySelectorAll("[data-post-index]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            setActive(Number(button.dataset.postIndex), true);
+          });
+        });
+      }
+
+      function renderIndex() {
+        kineticList.innerHTML = visiblePosts.length
+          ? visiblePosts
+              .map(function (post, index) {
+                return (
+                  '<button type="button" class="index-row" data-post-index="' + index + '">' +
+                  '<span class="index-row-number">' + twoDigits(index) + '</span>' +
+                  '<span class="index-row-title">' + post.title + '</span>' +
+                  '<span class="index-row-date">' + post.date + '</span>' +
+                  '</button>'
+                );
+              })
+              .join("")
+          : '<div class="empty-state">没有匹配的文章</div>';
+
+        kineticList.querySelectorAll("[data-post-index]").forEach(function (button) {
+          const activate = function () {
+            setActive(Number(button.dataset.postIndex), false);
+          };
+          button.addEventListener("mouseenter", activate);
+          button.addEventListener("focus", activate);
+          button.addEventListener("click", activate);
+        });
+      }
+
+      function renderRiver() {
+        if (!visiblePosts.length) {
+          riverTrack.innerHTML = '<div class="empty-state">没有匹配的文章</div>';
+          riverPreview.innerHTML = '';
+          return;
+        }
+        const spacing = window.innerWidth < 640 ? 134 : 178;
+        const trackWidth = Math.max(window.innerWidth, visiblePosts.length * spacing + 320);
+        const levels = [20, 72, 31, 64, 17, 77, 35, 67, 24, 74, 38, 62];
+        const years = [];
+        let lastYear = "";
+        const nodes = visiblePosts
+          .map(function (post, index) {
+            const year = post.date.slice(0, 4);
+            if (year !== lastYear) {
+              years.push({ year: year, left: 110 + index * spacing });
+              lastYear = year;
+            }
+            const top = levels[index % levels.length];
+            const sideClass = top < 50 ? "is-upper" : "is-lower";
+            return (
+              '<button type="button" class="river-node ' + sideClass + '" data-post-index="' + index + '" style="left:' + (110 + index * spacing) + 'px;top:' + top + '%">' +
+              '<span class="river-node-title">' + post.title + '</span>' +
+              '<span class="river-node-date">' + post.date + '</span>' +
+              '</button>'
+            );
+          })
+          .join("");
+        riverTrack.style.width = trackWidth + "px";
+        riverTrack.innerHTML =
+          years
+            .map(function (item) {
+              return '<span class="river-year" style="left:' + item.left + 'px">' + item.year + '</span>';
+            })
+            .join("") + nodes;
+
+        riverTrack.querySelectorAll("[data-post-index]").forEach(function (button) {
+          const activate = function () {
+            setActive(Number(button.dataset.postIndex), false);
+          };
+          button.addEventListener("mouseenter", activate);
+          button.addEventListener("focus", activate);
+          button.addEventListener("click", function () {
+            setActive(Number(button.dataset.postIndex), true);
+          });
+        });
+      }
+
+      function renderDeck() {
+        deckScene.innerHTML = visiblePosts.length
+          ? visiblePosts
+              .map(function (post, index) {
+                return (
+                  '<button type="button" class="deck-card" data-post-index="' + index + '" aria-label="聚焦：' + post.title + '">' +
+                  '<img src="' + post.image + '" alt="" loading="lazy" />' +
+                  '<span class="deck-copy">' +
+                  '<span class="meta-line">' + metadata(post, index) + '</span>' +
+                  '<h2>' + post.title + '</h2>' +
+                  '<p>' + post.excerpt + '</p>' +
+                  '<span class="read-mark">Open <span aria-hidden="true">→</span></span>' +
+                  '</span></button>'
+                );
+              })
+              .join("")
+          : '<div class="empty-state">没有匹配的文章</div>';
+
+        deckScene.querySelectorAll("[data-post-index]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            setActive(Number(button.dataset.postIndex), false);
+          });
+        });
+      }
+
+      function renderBento() {
+        const pattern = ["is-hero", "is-medium", "is-wide", "is-tall", "is-medium", "is-wide", "is-tall", "is-medium"];
+        bentoGrid.innerHTML = visiblePosts.length
+          ? visiblePosts
+              .map(function (post, index) {
+                const sizeClass = pattern[index % pattern.length];
+                return (
+                  '<button type="button" class="bento-item ' + sizeClass + '" data-post-index="' + index + '">' +
+                  '<img src="' + post.image + '" alt="" loading="lazy" />' +
+                  '<span class="bento-copy">' +
+                  '<span class="meta-line">' + shortDate(post.date) + ' · ' + post.categoryLabel + '</span>' +
+                  '<h2>' + post.title + '</h2>' +
+                  '</span></button>'
+                );
+              })
+              .join("")
+          : '<div class="empty-state">没有匹配的文章</div>';
+
+        bentoGrid.querySelectorAll("[data-post-index]").forEach(function (button) {
+          const activate = function () {
+            setActive(Number(button.dataset.postIndex), false);
+          };
+          button.addEventListener("mouseenter", activate);
+          button.addEventListener("focus", activate);
+          button.addEventListener("click", activate);
+        });
+      }
+
+      function syncActiveClasses(shouldScroll) {
+        const currentPost = visiblePosts[activeIndex];
+        document.querySelectorAll("[data-post-index]").forEach(function (element) {
+          const index = Number(element.dataset.postIndex);
+          element.classList.toggle("is-active", index === activeIndex);
+          element.classList.toggle("is-near", Math.abs(index - activeIndex) === 1);
+          if (index === activeIndex) element.setAttribute("aria-current", "true");
+          else element.removeAttribute("aria-current");
+        });
+
+        indexPreview.innerHTML = previewMarkup(currentPost, activeIndex);
+        riverPreview.innerHTML = previewMarkup(currentPost, activeIndex);
+
+        deckScene.querySelectorAll(".deck-card").forEach(function (card) {
+          const index = Number(card.dataset.postIndex);
+          const delta = index - activeIndex;
+          const distance = Math.abs(delta);
+          const compact = window.innerWidth < 640;
+          const xStep = compact ? 50 : 92;
+          card.style.setProperty("--x", delta * xStep + "px");
+          card.style.setProperty("--z", -distance * 105 + "px");
+          card.style.setProperty("--rotate", delta * -10 + "deg");
+          card.style.setProperty("--scale", String(Math.max(0.68, 1 - distance * 0.065)));
+          card.style.setProperty("--opacity", String(distance > 5 ? 0 : Math.max(0.18, 1 - distance * 0.15)));
+          card.style.zIndex = String(30 - distance);
+          card.style.pointerEvents = distance > 5 ? "none" : "auto";
+        });
+
+        stagePosition.textContent = visiblePosts.length
+          ? twoDigits(activeIndex) + " / " + String(visiblePosts.length).padStart(2, "0")
+          : "00 / 00";
+        viewCount.textContent = visiblePosts.length + (visiblePosts.length === 1 ? " ARTICLE" : " ARTICLES");
+
+        if (currentPost) {
+          document.documentElement.style.setProperty("--ambient-image", 'url("' + currentPost.image + '")');
+        }
+
+        if (shouldScroll) {
+          const shelfTarget = shelfRail.querySelector('[data-post-index="' + activeIndex + '"]');
+          const indexTarget = kineticList.querySelector('[data-post-index="' + activeIndex + '"]');
+          const riverTarget = riverTrack.querySelector('[data-post-index="' + activeIndex + '"]');
+          const bentoTarget = bentoGrid.querySelector('[data-post-index="' + activeIndex + '"]');
+          const behavior = reducedMotion ? "auto" : "smooth";
+          if (shelfTarget) shelfTarget.scrollIntoView({ behavior: behavior, block: "nearest", inline: "center" });
+          if (activeConcept === "index" && indexTarget) indexTarget.scrollIntoView({ behavior: behavior, block: "center" });
+          if (activeConcept === "river" && riverTarget) riverTarget.scrollIntoView({ behavior: behavior, block: "nearest", inline: "center" });
+          if (activeConcept === "bento" && bentoTarget) bentoTarget.scrollIntoView({ behavior: behavior, block: "nearest", inline: "center" });
+        }
+      }
+
+      function setActive(index, shouldScroll) {
+        if (!visiblePosts.length) {
+          activeIndex = 0;
+          syncActiveClasses(false);
+          return;
+        }
+        activeIndex = Math.max(0, Math.min(index, visiblePosts.length - 1));
+        syncActiveClasses(Boolean(shouldScroll));
+      }
+
+      function renderAll() {
+        renderShelf();
+        renderIndex();
+        renderRiver();
+        renderDeck();
+        renderBento();
+        setActive(0, false);
+      }
+
+      function applyFilters() {
+        const query = document.querySelector("#searchInput").value.trim().toLowerCase();
+        visiblePosts = posts.filter(function (post) {
+          const categoryMatches = activeFilter === "all" || post.category === activeFilter;
+          const queryMatches = !query || (post.title + " " + post.excerpt).toLowerCase().includes(query);
+          return categoryMatches && queryMatches;
+        });
+        renderAll();
+      }
+
+      document.querySelectorAll(".concept-button").forEach(function (button) {
+        button.addEventListener("click", function () {
+          activeConcept = button.dataset.concept;
+          document.querySelectorAll(".concept-button").forEach(function (item) {
+            item.setAttribute("aria-selected", String(item === button));
+          });
+          document.querySelectorAll(".concept-panel").forEach(function (panel) {
+            panel.classList.toggle("is-active", panel.dataset.panel === activeConcept);
+          });
+          document.querySelector("#conceptSummary").textContent = conceptDescriptions[activeConcept];
+          syncActiveClasses(true);
+        });
+      });
+
+      document.querySelectorAll(".filter-button").forEach(function (button) {
+        button.addEventListener("click", function () {
+          activeFilter = button.dataset.filter;
+          document.querySelectorAll(".filter-button").forEach(function (item) {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+          applyFilters();
+        });
+      });
+
+      document.querySelector("#searchInput").addEventListener("input", applyFilters);
+      document.querySelector("#previousPost").addEventListener("click", function () {
+        setActive(activeIndex - 1, true);
+      });
+      document.querySelector("#nextPost").addEventListener("click", function () {
+        setActive(activeIndex + 1, true);
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.target.matches("input, select, textarea")) return;
+        if (event.key === "ArrowLeft") setActive(activeIndex - 1, true);
+        if (event.key === "ArrowRight") setActive(activeIndex + 1, true);
+      });
+
+      [shelfRail, deckScene].forEach(function (target) {
+        target.addEventListener(
+          "wheel",
+          function (event) {
+            if (wheelLocked || Math.abs(event.deltaY) < 4) return;
+            event.preventDefault();
+            wheelLocked = true;
+            setActive(activeIndex + (event.deltaY > 0 ? 1 : -1), true);
+            window.setTimeout(function () {
+              wheelLocked = false;
+            }, 260);
+          },
+          { passive: false }
+        );
+      });
+
+      window.addEventListener("resize", function () {
+        renderRiver();
+        syncActiveClasses(false);
+      });
+
+      renderAll();
+    </script>
+  </body>
+</html>

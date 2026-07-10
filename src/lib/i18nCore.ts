@@ -89,14 +89,14 @@ export const UI_TEXTS = {
     },
     postView: {
         galleryView: {
-            zh: '画廊',
-            ja: 'ギャラリー',
-            en: 'Gallery',
+            zh: '精选',
+            ja: '注目',
+            en: 'Featured',
         },
         listView: {
-            zh: '列表',
-            ja: 'リスト',
-            en: 'List',
+            zh: '全部',
+            ja: 'すべて',
+            en: 'All',
         },
         viewAll: {
             zh: '查看全部 {total} 篇',
@@ -147,6 +147,51 @@ export const UI_TEXTS = {
             zh: '下一页',
             ja: '次のページ',
             en: 'Next page',
+        },
+        archiveView: {
+            zh: '归档方式',
+            ja: 'アーカイブ表示',
+            en: 'Archive view',
+        },
+        archiveLedger: {
+            zh: '编辑目录',
+            ja: '編集目録',
+            en: 'Editorial ledger',
+        },
+        archiveSeries: {
+            zh: '系列书架',
+            ja: 'シリーズ棚',
+            en: 'Series shelf',
+        },
+        archiveYears: {
+            zh: '年代分栏',
+            ja: '年代別カラム',
+            en: 'Year columns',
+        },
+        archiveLedgerDescription: {
+            zh: '按时间快速扫描完整目录，封面只承担辅助预览。',
+            ja: '全記事を時系列で素早く確認し、カバーは補助プレビューに留めます。',
+            en: 'Scan the complete chronology; covers remain a supporting preview.',
+        },
+        archiveSeriesDescription: {
+            zh: '按系列组织文章，优先呈现内容之间的连续关系。',
+            ja: '記事をシリーズで整理し、内容のつながりを優先します。',
+            en: 'Organize posts by series and foreground their reading relationships.',
+        },
+        archiveYearsDescription: {
+            zh: '每个年份是一章，横向回溯不同阶段的写作。',
+            ja: '年ごとに章を分け、執筆の変化を横方向にたどります。',
+            en: 'Treat each year as a chapter and move across the writing timeline.',
+        },
+        standalonePosts: {
+            zh: '独立文章',
+            ja: '単独記事',
+            en: 'Standalone posts',
+        },
+        articleCount: {
+            zh: '{count} 篇',
+            ja: '{count} 件',
+            en: '{count} posts',
         },
     },
     nav: {

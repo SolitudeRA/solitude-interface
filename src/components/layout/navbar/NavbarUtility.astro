@@ -13,15 +13,21 @@ const { availableLocales, displayLocale } = Astro.props;
 
 <div
     class:list={[
-        'flex h-full grow flex-row-reverse items-center',
+        'flex h-full grow items-center justify-end',
         'gap-1 sm:gap-2',
         'pr-4 sm:pr-6 md:pr-8 lg:pr-10 xl:pr-12 2xl:pr-14',
     ]}
 >
-    <ThemeSwitch />
+    <div class="flex shrink-0">
+        <slot name="start" />
+    </div>
     <LanguageSwitcher
         availableLocales={availableLocales}
         displayLocale={displayLocale}
         client:visible
     />
+    <ThemeSwitch />
+    <div class="flex shrink-0">
+        <slot name="end" />
+    </div>
 </div>

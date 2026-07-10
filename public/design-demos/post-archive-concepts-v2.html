@@ -1,0 +1,1468 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solitude · 补充型全部文章 Demo</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080b11;
+        --panel: rgba(13, 18, 27, 0.78);
+        --panel-strong: rgba(18, 24, 35, 0.94);
+        --line: rgba(255, 255, 255, 0.12);
+        --line-strong: rgba(255, 255, 255, 0.25);
+        --text: #f5f7fb;
+        --muted: rgba(235, 240, 248, 0.64);
+        --quiet: rgba(235, 240, 248, 0.4);
+        --accent: #ade9ff;
+        --accent-2: #d7ff92;
+        --ambient: url("https://ghost.solitudera.com/content/images/2026/01/91719981_p0.jpg");
+        font-family:
+          Inter, "Noto Sans SC", "Noto Sans JP", ui-sans-serif, system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      body::before,
+      body::after {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        pointer-events: none;
+        content: "";
+      }
+
+      body::before {
+        background:
+          linear-gradient(118deg, rgba(5, 8, 13, 0.96), rgba(8, 11, 17, 0.8)),
+          var(--ambient) center / cover;
+        filter: saturate(0.72);
+        transform: scale(1.03);
+      }
+
+      body::after {
+        z-index: -1;
+        background:
+          radial-gradient(circle at 18% 18%, rgba(173, 233, 255, 0.1), transparent 32%),
+          linear-gradient(rgba(5, 8, 13, 0.38), rgba(5, 8, 13, 0.88));
+        backdrop-filter: blur(20px);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .app {
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        width: 100vw;
+        height: 100svh;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(210px, 1fr) auto minmax(150px, 1fr);
+        align-items: center;
+        gap: 16px;
+        padding: 14px clamp(14px, 2.4vw, 38px) 9px;
+      }
+
+      .brand p,
+      .eyebrow,
+      .meta,
+      .panel-label {
+        margin: 0;
+        color: var(--quiet);
+        font-size: 0.64rem;
+        font-weight: 750;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .brand h1 {
+        margin: 4px 0 0;
+        font-size: clamp(1rem, 1.45vw, 1.3rem);
+        letter-spacing: -0.035em;
+      }
+
+      .concept-tabs {
+        display: flex;
+        max-width: 62vw;
+        gap: 4px;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 4px;
+        background: rgba(7, 11, 17, 0.68);
+        scrollbar-width: none;
+      }
+
+      .concept-tabs::-webkit-scrollbar,
+      .scroll-clean::-webkit-scrollbar {
+        display: none;
+      }
+
+      .concept-tab {
+        flex: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 0.72rem;
+        font-weight: 760;
+      }
+
+      .concept-tab[aria-selected="true"] {
+        background: rgba(255, 255, 255, 0.11);
+        color: var(--text);
+      }
+
+      .result-count {
+        justify-self: end;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: minmax(190px, 330px) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        padding: 0 clamp(14px, 2.4vw, 38px) 10px;
+      }
+
+      .search {
+        display: flex;
+        height: 38px;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        padding: 0 12px;
+        background: rgba(7, 11, 17, 0.6);
+      }
+
+      .search span {
+        color: var(--quiet);
+      }
+
+      .search input {
+        width: 100%;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--text);
+      }
+
+      .description {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 0.72rem;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .filters {
+        display: flex;
+        height: 38px;
+        align-items: center;
+        gap: 3px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        padding: 3px;
+        background: rgba(7, 11, 17, 0.6);
+      }
+
+      .filter {
+        height: 30px;
+        border: 0;
+        border-radius: 8px;
+        padding: 0 10px;
+        background: transparent;
+        color: var(--quiet);
+        cursor: pointer;
+        font-size: 0.68rem;
+        font-weight: 720;
+      }
+
+      .filter[aria-pressed="true"] {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+      }
+
+      .stage {
+        position: relative;
+        min-height: 0;
+        margin: 0 clamp(5px, 1.2vw, 18px) clamp(5px, 1.2vw, 18px);
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: clamp(18px, 2.2vw, 30px);
+        background:
+          linear-gradient(145deg, rgba(15, 21, 31, 0.7), rgba(6, 9, 14, 0.76)),
+          rgba(7, 11, 17, 0.64);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
+        backdrop-filter: blur(22px);
+      }
+
+      .stage::before {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.023) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+        background-size: 72px 72px;
+        content: "";
+        mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+      }
+
+      .panel {
+        position: absolute;
+        inset: 0;
+        display: none;
+        min-height: 0;
+      }
+
+      .panel.is-active {
+        display: block;
+      }
+
+      .panel-label {
+        position: absolute;
+        top: 16px;
+        left: 20px;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .panel-label::before {
+        width: 24px;
+        height: 1px;
+        background: currentColor;
+        content: "";
+      }
+
+      .stage-controls {
+        position: absolute;
+        right: 18px;
+        bottom: 15px;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .stage-control {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: rgba(6, 9, 14, 0.76);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .position {
+        min-width: 62px;
+        color: var(--muted);
+        font-size: 0.69rem;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+      }
+
+      .empty {
+        display: grid;
+        width: 100%;
+        height: 100%;
+        place-items: center;
+        color: var(--muted);
+      }
+
+      .preview {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel-strong);
+        box-shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
+      }
+
+      .preview img,
+      .contact-image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .preview::after,
+      .contact-card::after {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 18%, rgba(4, 7, 11, 0.2) 50%, rgba(4, 7, 11, 0.96));
+        content: "";
+      }
+
+      .preview-copy {
+        position: absolute;
+        inset: auto 0 0;
+        z-index: 2;
+        padding: clamp(20px, 3vw, 38px);
+      }
+
+      .preview h2 {
+        margin: 9px 0;
+        font-size: clamp(1.25rem, 2.2vw, 2.35rem);
+        line-height: 1.08;
+        letter-spacing: -0.05em;
+      }
+
+      .preview-copy > p:last-child {
+        display: -webkit-box;
+        margin: 0;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.65;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+      }
+
+      .archive-button {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .archive-button:hover,
+      .archive-button.is-active {
+        color: var(--text);
+      }
+
+      /* 01 Editorial Ledger */
+      .ledger-layout {
+        display: grid;
+        grid-template-columns: minmax(480px, 1.15fr) minmax(360px, 0.85fr);
+        height: 100%;
+        gap: clamp(22px, 4vw, 64px);
+        padding: 54px clamp(20px, 4vw, 64px) 46px;
+      }
+
+      .ledger-scroll {
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 8px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+      }
+
+      .ledger-year {
+        position: relative;
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        margin-bottom: 28px;
+      }
+
+      .ledger-year h2 {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.18);
+        font-size: clamp(2.5rem, 4.8vw, 5rem);
+        line-height: 0.85;
+        letter-spacing: -0.08em;
+      }
+
+      .ledger-list {
+        border-top: 1px solid var(--line);
+      }
+
+      .ledger-row {
+        display: grid;
+        grid-template-columns: 62px minmax(0, 1fr) auto;
+        width: 100%;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        padding: 15px 0;
+        transition:
+          padding-left 300ms ease,
+          color 180ms ease;
+      }
+
+      .ledger-row:hover,
+      .ledger-row.is-active {
+        padding-left: 13px;
+      }
+
+      .row-date,
+      .row-category {
+        color: var(--quiet);
+        font-size: 0.62rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .row-title {
+        overflow: hidden;
+        font-size: clamp(0.92rem, 1.35vw, 1.28rem);
+        font-weight: 660;
+        letter-spacing: -0.025em;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* 02 Chronological Columns */
+      .columns-scroll {
+        height: 100%;
+        overflow: auto hidden;
+        padding: 54px clamp(18px, 3vw, 48px) 48px;
+        scrollbar-width: none;
+      }
+
+      .columns-track {
+        display: flex;
+        width: max-content;
+        min-width: 100%;
+        height: 100%;
+        align-items: stretch;
+        gap: 18px;
+        padding-right: min(34vw, 480px);
+      }
+
+      .year-column {
+        display: flex;
+        width: clamp(300px, 27vw, 430px);
+        min-height: 0;
+        flex-direction: column;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(9, 13, 20, 0.66);
+      }
+
+      .year-column-header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        padding: 20px;
+      }
+
+      .year-column-header h2 {
+        margin: 0;
+        font-size: clamp(2.6rem, 4vw, 4.4rem);
+        line-height: 0.8;
+        letter-spacing: -0.08em;
+      }
+
+      .year-column-header span {
+        color: var(--quiet);
+        font-size: 0.66rem;
+      }
+
+      .column-list {
+        min-height: 0;
+        overflow-y: auto;
+        border-top: 1px solid var(--line);
+        padding: 0 18px 18px;
+      }
+
+      .column-row {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr);
+        width: 100%;
+        gap: 10px;
+        border-bottom: 1px solid var(--line);
+        padding: 13px 0;
+      }
+
+      .column-row .row-title {
+        font-size: 0.88rem;
+        white-space: normal;
+      }
+
+      .floating-preview {
+        position: absolute;
+        right: clamp(18px, 3vw, 48px);
+        bottom: 52px;
+        z-index: 18;
+        width: clamp(300px, 30vw, 460px);
+        aspect-ratio: 16 / 10;
+        pointer-events: none;
+      }
+
+      /* 03 Contact Sheet */
+      .contact-scroll {
+        height: 100%;
+        overflow-y: auto;
+        padding: 54px clamp(18px, 3vw, 48px) 56px;
+      }
+
+      .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(130px, 1fr));
+        gap: 12px;
+      }
+
+      .contact-card {
+        position: relative;
+        min-height: 0;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        padding: 0;
+        background: #0c1119;
+        color: var(--text);
+        cursor: pointer;
+        text-align: left;
+        transition:
+          transform 260ms ease,
+          border-color 180ms ease;
+      }
+
+      .contact-card:hover,
+      .contact-card.is-active {
+        z-index: 2;
+        border-color: rgba(173, 233, 255, 0.46);
+        transform: translateY(-4px);
+      }
+
+      .contact-copy {
+        position: absolute;
+        inset: auto 0 0;
+        z-index: 2;
+        padding: 12px;
+      }
+
+      .contact-copy h2 {
+        display: -webkit-box;
+        margin: 5px 0 0;
+        overflow: hidden;
+        font-size: 0.78rem;
+        line-height: 1.28;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+
+      .contact-index {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 3;
+        display: grid;
+        width: 27px;
+        height: 27px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        background: rgba(5, 8, 13, 0.54);
+        font-size: 0.58rem;
+        backdrop-filter: blur(8px);
+      }
+
+      /* 04 Series Library */
+      .series-scroll {
+        height: 100%;
+        overflow: auto hidden;
+        padding: 54px clamp(18px, 3vw, 48px) 50px;
+        scrollbar-width: none;
+      }
+
+      .series-track {
+        display: flex;
+        width: max-content;
+        min-width: 100%;
+        height: 100%;
+        gap: 18px;
+        padding-right: min(32vw, 450px);
+      }
+
+      .series-card {
+        display: grid;
+        width: clamp(340px, 31vw, 500px);
+        min-height: 0;
+        grid-template-rows: auto minmax(0, 1fr);
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(9, 13, 20, 0.68);
+      }
+
+      .series-header {
+        position: relative;
+        min-height: 150px;
+        overflow: hidden;
+        padding: 22px;
+      }
+
+      .series-header::before {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(6, 9, 14, 0.95), rgba(6, 9, 14, 0.42)),
+          var(--series-image) center / cover;
+        content: "";
+        filter: saturate(0.72);
+      }
+
+      .series-header-copy {
+        position: relative;
+        z-index: 1;
+      }
+
+      .series-header h2 {
+        max-width: 14ch;
+        margin: 10px 0 0;
+        font-size: clamp(1.35rem, 2.2vw, 2.25rem);
+        line-height: 1.02;
+        letter-spacing: -0.05em;
+      }
+
+      .series-list {
+        min-height: 0;
+        overflow-y: auto;
+        border-top: 1px solid var(--line);
+        padding: 0 18px 18px;
+      }
+
+      .series-row {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        width: 100%;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid var(--line);
+        padding: 13px 0;
+      }
+
+      .series-row .row-title {
+        font-size: 0.84rem;
+        white-space: normal;
+      }
+
+      /* 05 Archive Matrix */
+      .matrix-scroll {
+        height: 100%;
+        overflow: auto;
+        padding: 54px 24px 52px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+      }
+
+      .matrix {
+        display: grid;
+        grid-template-columns: 84px repeat(12, minmax(142px, 1fr));
+        width: max-content;
+        min-width: 100%;
+        border-top: 1px solid var(--line);
+        border-left: 1px solid var(--line);
+      }
+
+      .matrix-head,
+      .matrix-year,
+      .matrix-cell {
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .matrix-head {
+        min-height: 36px;
+        padding: 10px;
+        color: var(--quiet);
+        font-size: 0.62rem;
+        text-align: center;
+      }
+
+      .matrix-year {
+        display: grid;
+        min-height: 168px;
+        place-items: center;
+        color: rgba(255, 255, 255, 0.22);
+        font-size: 1.25rem;
+        font-weight: 800;
+        writing-mode: vertical-rl;
+      }
+
+      .matrix-cell {
+        display: flex;
+        min-height: 168px;
+        flex-direction: column;
+        gap: 5px;
+        padding: 8px;
+        background: rgba(7, 11, 17, 0.34);
+      }
+
+      .matrix-cell.has-posts {
+        background: rgba(173, 233, 255, 0.035);
+      }
+
+      .matrix-item {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr);
+        width: 100%;
+        gap: 6px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 7px;
+      }
+
+      .matrix-item:hover,
+      .matrix-item.is-active {
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .matrix-day {
+        color: var(--quiet);
+        font-size: 0.57rem;
+      }
+
+      .matrix-title {
+        overflow: hidden;
+        font-size: 0.68rem;
+        font-weight: 650;
+        line-height: 1.25;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 1100px) {
+        .contact-grid {
+          grid-template-columns: repeat(4, minmax(130px, 1fr));
+        }
+
+        .ledger-layout {
+          grid-template-columns: minmax(400px, 1.15fr) minmax(300px, 0.85fr);
+        }
+      }
+
+      @media (max-width: 760px) {
+        .topbar {
+          grid-template-columns: 1fr;
+          padding: 8px 9px 6px;
+        }
+
+        .brand,
+        .result-count {
+          display: none;
+        }
+
+        .concept-tabs {
+          width: 100%;
+          max-width: none;
+        }
+
+        .concept-tab {
+          padding: 7px 9px;
+          font-size: 0.66rem;
+        }
+
+        .toolbar {
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 6px;
+          padding: 0 9px 7px;
+        }
+
+        .description {
+          display: none;
+        }
+
+        .search,
+        .filters {
+          height: 35px;
+        }
+
+        .filter {
+          height: 27px;
+          padding-inline: 7px;
+          font-size: 0.62rem;
+        }
+
+        .stage {
+          margin: 0 3px 3px;
+          border-radius: 16px;
+        }
+
+        .panel-label {
+          top: 10px;
+          left: 12px;
+          font-size: 0.56rem;
+        }
+
+        .stage-controls {
+          right: 10px;
+          bottom: 9px;
+        }
+
+        .position {
+          display: none;
+        }
+
+        .ledger-layout {
+          grid-template-columns: 1fr;
+          padding: 40px 12px 48px;
+        }
+
+        .ledger-preview {
+          position: absolute;
+          inset: 40px 12px auto;
+          z-index: 5;
+          height: 28%;
+          pointer-events: none;
+        }
+
+        .ledger-scroll {
+          padding-top: 30vh;
+        }
+
+        .ledger-year {
+          grid-template-columns: 64px minmax(0, 1fr);
+        }
+
+        .ledger-year h2 {
+          font-size: 2.2rem;
+        }
+
+        .ledger-row {
+          grid-template-columns: 48px minmax(0, 1fr);
+        }
+
+        .ledger-row .row-category {
+          display: none;
+        }
+
+        .columns-scroll,
+        .series-scroll {
+          padding: 40px 12px 48px;
+        }
+
+        .year-column,
+        .series-card {
+          width: 82vw;
+        }
+
+        .floating-preview {
+          display: none;
+        }
+
+        .contact-scroll {
+          padding: 40px 10px 48px;
+        }
+
+        .contact-grid {
+          grid-template-columns: repeat(2, minmax(120px, 1fr));
+          gap: 8px;
+        }
+
+        .matrix-scroll {
+          padding: 40px 10px 48px;
+        }
+
+        .matrix {
+          grid-template-columns: 62px repeat(12, minmax(124px, 1fr));
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">
+          <p>Solitude Interface · Archive Lab</p>
+          <h1>全部文章 · 作为精选的补充</h1>
+        </div>
+        <nav class="concept-tabs" aria-label="切换设计方向">
+          <button class="concept-tab" data-concept="ledger" aria-selected="true">01 编辑目录</button>
+          <button class="concept-tab" data-concept="columns" aria-selected="false">02 年代分栏</button>
+          <button class="concept-tab" data-concept="contact" aria-selected="false">03 Contact Sheet</button>
+          <button class="concept-tab" data-concept="series" aria-selected="false">04 系列书库</button>
+          <button class="concept-tab" data-concept="matrix" aria-selected="false">05 时间矩阵</button>
+        </nav>
+        <div class="result-count" id="resultCount">12 ARTICLES</div>
+      </header>
+
+      <section class="toolbar" aria-label="统一筛选条件">
+        <label class="search">
+          <span aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" placeholder="搜索完整文章档案…" />
+        </label>
+        <div class="description" id="description">高密度目录是主体，封面预览不改变文章位置。</div>
+        <div class="filters" aria-label="分类筛选">
+          <button class="filter" data-filter="all" aria-pressed="true">全部</button>
+          <button class="filter" data-filter="tech" aria-pressed="false">技术</button>
+          <button class="filter" data-filter="life" aria-pressed="false">生活</button>
+        </div>
+      </section>
+
+      <section class="stage">
+        <section class="panel is-active" data-panel="ledger">
+          <div class="panel-label">Editorial Ledger</div>
+          <div class="ledger-layout">
+            <div class="ledger-scroll scroll-clean" id="ledgerList"></div>
+            <article class="preview ledger-preview" id="ledgerPreview"></article>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="columns">
+          <div class="panel-label">Chronological Columns</div>
+          <div class="columns-scroll scroll-clean">
+            <div class="columns-track" id="columnsTrack"></div>
+          </div>
+          <article class="preview floating-preview" id="columnsPreview"></article>
+        </section>
+
+        <section class="panel" data-panel="contact">
+          <div class="panel-label">Contact Sheet</div>
+          <div class="contact-scroll scroll-clean">
+            <div class="contact-grid" id="contactGrid"></div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="series">
+          <div class="panel-label">Series Library</div>
+          <div class="series-scroll scroll-clean">
+            <div class="series-track" id="seriesTrack"></div>
+          </div>
+          <article class="preview floating-preview" id="seriesPreview"></article>
+        </section>
+
+        <section class="panel" data-panel="matrix">
+          <div class="panel-label">Archive Matrix</div>
+          <div class="matrix-scroll scroll-clean">
+            <div class="matrix" id="matrix"></div>
+          </div>
+          <article class="preview floating-preview" id="matrixPreview"></article>
+        </section>
+
+        <div class="stage-controls" aria-label="文章导航">
+          <button class="stage-control" id="previous" aria-label="上一篇">←</button>
+          <span class="position" id="position">01 / 12</span>
+          <button class="stage-control" id="next" aria-label="下一篇">→</button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const posts = [
+        {
+          title: "构建智能家居平台",
+          date: "2025-02-12",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/91719981_p0.jpg",
+          excerpt: "部署 Home Assistant，连接家电、iOS 快捷指令与 Wake-on-LAN，继续扩展家庭基础设施。",
+        },
+        {
+          title: "构建 DevOps 平台",
+          date: "2025-01-04",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/82937235_p0.jpg",
+          excerpt: "使用 Gogs、Woodpecker CI 与 Jenkins，搭建版本管理、构建、测试和部署环境。",
+        },
+        {
+          title: "构建云存储",
+          date: "2024-12-22",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/77734148_p0.jpg",
+          excerpt: "围绕隐私、同步和维护成本，构建可以长期运行的个人云存储服务。",
+        },
+        {
+          title: "构建信息收集系统",
+          date: "2024-12-13",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/78296349_p0.jpg",
+          excerpt: "把分散的信息源收拢成可持续维护的采集、整理和检索工作流。",
+        },
+        {
+          title: "构建了一个支持 Qiita 与 Zenn 同时投稿的仓库（并支持系列文章）",
+          date: "2024-12-07",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "多平台写作工作流",
+          image: "https://ghost.solitudera.com/content/images/2026/01/69660140_p0.jpg",
+          excerpt: "用同一个内容仓库维护多平台发布，并处理系列文章、元数据和发布流程。",
+        },
+        {
+          title: "部署 WordPress",
+          date: "2024-12-05",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/57793944_p0.png",
+          excerpt: "记录 WordPress 服务的容器化部署、网络配置、持久化与运维要点。",
+        },
+        {
+          title: "服务选型",
+          date: "2024-11-30",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/65818649_p0.jpg",
+          excerpt: "根据维护成本、资源消耗和实际需求，为家庭服务器选择合适的服务组合。",
+        },
+        {
+          title: "构建基础设施",
+          date: "2024-11-27",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/Konachan_com___245335_anmi_black_hair_bow_glasses_headband_kneehighs_long_hair_purple_eyes_seifuku_skirt_stars_4208x2480.jpg",
+          excerpt: "从网络、容器、存储和安全边界出发，搭建后续服务共同依赖的基础设施。",
+        },
+        {
+          title: "OS 安装与基础设置",
+          date: "2024-11-25",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/110239446_p0.jpg",
+          excerpt: "完成服务器操作系统安装、账户、安全策略和最初运行环境配置。",
+        },
+        {
+          title: "规划与硬件选型",
+          date: "2024-11-11",
+          category: "tech",
+          categoryLabel: "技术",
+          series: "家庭服务器构建指南",
+          image: "https://ghost.solitudera.com/content/images/2026/01/92191625_p1.png",
+          excerpt: "从目标、预算、功耗和扩展性出发，规划家庭服务器并完成硬件选择。",
+        },
+        {
+          title: "【菜谱储备计划】韩式汤饭（鸡汤底）",
+          date: "2024-01-21",
+          category: "life",
+          categoryLabel: "生活",
+          series: "菜谱储备计划",
+          image: "https://ghost.solitudera.com/content/images/2026/01/cook-gukbap.webp",
+          excerpt: "把适合重复制作的韩式汤饭整理成稳定、可复现的家庭菜谱。",
+        },
+        {
+          title: "Reboot",
+          date: "2023-12-21",
+          category: "life",
+          categoryLabel: "生活",
+          series: "站点笔记",
+          image: "https://ghost.solitudera.com/content/images/2026/01/post-reboot.webp",
+          excerpt: "重新整理个人站点、写作方式和长期维护节奏，从一次重启开始。",
+        },
+      ];
+
+      const descriptions = {
+        ledger: "高密度目录是主体，封面预览不改变文章位置。",
+        columns: "按年份分栏，让旧文回溯成为清晰的横向章节浏览。",
+        contact: "所有文章同时可见，封面负责识别，标题和日期负责定位。",
+        series: "按系列而不是卡片尺寸组织内容，突出文章之间的连续关系。",
+        matrix: "年份 × 月份形成档案坐标，适合查看写作密度和快速跳转。",
+      };
+
+      const monthLabels = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      let activeConcept = "ledger";
+      let activeFilter = "all";
+      let activeIndex = 0;
+      let visiblePosts = posts.slice();
+
+      const ledgerList = document.querySelector("#ledgerList");
+      const ledgerPreview = document.querySelector("#ledgerPreview");
+      const columnsTrack = document.querySelector("#columnsTrack");
+      const columnsPreview = document.querySelector("#columnsPreview");
+      const contactGrid = document.querySelector("#contactGrid");
+      const seriesTrack = document.querySelector("#seriesTrack");
+      const seriesPreview = document.querySelector("#seriesPreview");
+      const matrix = document.querySelector("#matrix");
+      const matrixPreview = document.querySelector("#matrixPreview");
+
+      function groupBy(items, getter) {
+        return items.reduce(function (groups, item) {
+          const key = getter(item);
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(item);
+          return groups;
+        }, {});
+      }
+
+      function postIndex(post) {
+        return visiblePosts.indexOf(post);
+      }
+
+      function number(index) {
+        return String(index + 1).padStart(2, "0");
+      }
+
+      function previewMarkup(post, index) {
+        if (!post) return '<div class="empty">没有匹配的文章</div>';
+        return (
+          '<img src="' +
+          post.image +
+          '" alt="" />' +
+          '<div class="preview-copy"><p class="meta">' +
+          number(index) +
+          " · " +
+          post.date +
+          " · " +
+          post.categoryLabel +
+          "</p><h2>" +
+          post.title +
+          "</h2><p>" +
+          post.excerpt +
+          "</p></div>"
+        );
+      }
+
+      function bindPostButtons(root) {
+        root.querySelectorAll("[data-post-index]").forEach(function (button) {
+          const activate = function () {
+            setActive(Number(button.dataset.postIndex), false);
+          };
+          button.addEventListener("mouseenter", activate);
+          button.addEventListener("focus", activate);
+          button.addEventListener("click", function () {
+            setActive(Number(button.dataset.postIndex), true);
+          });
+        });
+      }
+
+      function renderLedger() {
+        if (!visiblePosts.length) {
+          ledgerList.innerHTML = '<div class="empty">没有匹配的文章</div>';
+          return;
+        }
+        const groups = groupBy(visiblePosts, function (post) {
+          return post.date.slice(0, 4);
+        });
+        ledgerList.innerHTML = Object.keys(groups)
+          .sort()
+          .reverse()
+          .map(function (year) {
+            const rows = groups[year]
+              .map(function (post) {
+                const index = postIndex(post);
+                return (
+                  '<button class="archive-button ledger-row" data-post-index="' +
+                  index +
+                  '"><span class="row-date">' +
+                  post.date.slice(5).replace("-", ".") +
+                  '</span><span class="row-title">' +
+                  post.title +
+                  '</span><span class="row-category">' +
+                  post.categoryLabel +
+                  "</span></button>"
+                );
+              })
+              .join("");
+            return '<section class="ledger-year"><h2>' + year + '</h2><div class="ledger-list">' + rows + "</div></section>";
+          })
+          .join("");
+        bindPostButtons(ledgerList);
+      }
+
+      function renderColumns() {
+        if (!visiblePosts.length) {
+          columnsTrack.innerHTML = '<div class="empty">没有匹配的文章</div>';
+          return;
+        }
+        const groups = groupBy(visiblePosts, function (post) {
+          return post.date.slice(0, 4);
+        });
+        columnsTrack.innerHTML = Object.keys(groups)
+          .sort()
+          .reverse()
+          .map(function (year) {
+            const rows = groups[year]
+              .map(function (post) {
+                const index = postIndex(post);
+                return (
+                  '<button class="archive-button column-row" data-post-index="' +
+                  index +
+                  '"><span class="row-date">' +
+                  post.date.slice(5).replace("-", ".") +
+                  '</span><span class="row-title">' +
+                  post.title +
+                  "</span></button>"
+                );
+              })
+              .join("");
+            return (
+              '<section class="year-column"><header class="year-column-header"><h2>' +
+              year +
+              "</h2><span>" +
+              groups[year].length +
+              ' POSTS</span></header><div class="column-list scroll-clean">' +
+              rows +
+              "</div></section>"
+            );
+          })
+          .join("");
+        bindPostButtons(columnsTrack);
+      }
+
+      function renderContact() {
+        contactGrid.innerHTML = visiblePosts.length
+          ? visiblePosts
+              .map(function (post, index) {
+                return (
+                  '<button class="contact-card" data-post-index="' +
+                  index +
+                  '"><img class="contact-image" src="' +
+                  post.image +
+                  '" alt="" loading="lazy" /><span class="contact-index">' +
+                  number(index) +
+                  '</span><span class="contact-copy"><span class="meta">' +
+                  post.date +
+                  '</span><h2>' +
+                  post.title +
+                  "</h2></span></button>"
+                );
+              })
+              .join("")
+          : '<div class="empty">没有匹配的文章</div>';
+        bindPostButtons(contactGrid);
+      }
+
+      function renderSeries() {
+        if (!visiblePosts.length) {
+          seriesTrack.innerHTML = '<div class="empty">没有匹配的文章</div>';
+          return;
+        }
+        const groups = groupBy(visiblePosts, function (post) {
+          return post.series;
+        });
+        seriesTrack.innerHTML = Object.keys(groups)
+          .sort(function (a, b) {
+            return groups[b].length - groups[a].length;
+          })
+          .map(function (name) {
+            const first = groups[name][0];
+            const rows = groups[name]
+              .map(function (post, seriesIndex) {
+                const index = postIndex(post);
+                return (
+                  '<button class="archive-button series-row" data-post-index="' +
+                  index +
+                  '"><span class="row-date">' +
+                  String(seriesIndex + 1).padStart(2, "0") +
+                  '</span><span class="row-title">' +
+                  post.title +
+                  '</span><span class="row-date">' +
+                  post.date.slice(0, 4) +
+                  "</span></button>"
+                );
+              })
+              .join("");
+            return (
+              '<section class="series-card"><header class="series-header" style="--series-image:url(\'' +
+              first.image +
+              '\')"><div class="series-header-copy"><p class="meta">' +
+              groups[name].length +
+              " ARTICLES</p><h2>" +
+              name +
+              '</h2></div></header><div class="series-list scroll-clean">' +
+              rows +
+              "</div></section>"
+            );
+          })
+          .join("");
+        bindPostButtons(seriesTrack);
+      }
+
+      function renderMatrix() {
+        if (!visiblePosts.length) {
+          matrix.innerHTML = '<div class="empty">没有匹配的文章</div>';
+          return;
+        }
+        const years = Array.from(
+          new Set(
+            visiblePosts.map(function (post) {
+              return post.date.slice(0, 4);
+            })
+          )
+        )
+          .sort()
+          .reverse();
+        let markup = '<div class="matrix-head"></div>';
+        monthLabels.forEach(function (month) {
+          markup += '<div class="matrix-head">' + month + "</div>";
+        });
+        years.forEach(function (year) {
+          markup += '<div class="matrix-year">' + year + "</div>";
+          for (let month = 1; month <= 12; month += 1) {
+            const monthKey = year + "-" + String(month).padStart(2, "0");
+            const matches = visiblePosts.filter(function (post) {
+              return post.date.startsWith(monthKey);
+            });
+            markup += '<div class="matrix-cell ' + (matches.length ? "has-posts" : "") + '">';
+            matches.forEach(function (post) {
+              const index = postIndex(post);
+              markup +=
+                '<button class="archive-button matrix-item" data-post-index="' +
+                index +
+                '"><span class="matrix-day">' +
+                post.date.slice(8) +
+                '</span><span class="matrix-title">' +
+                post.title +
+                "</span></button>";
+            });
+            markup += "</div>";
+          }
+        });
+        matrix.innerHTML = markup;
+        bindPostButtons(matrix);
+      }
+
+      function syncActive(shouldScroll) {
+        const post = visiblePosts[activeIndex];
+        document.querySelectorAll("[data-post-index]").forEach(function (element) {
+          const isActive = Number(element.dataset.postIndex) === activeIndex;
+          element.classList.toggle("is-active", isActive);
+          if (isActive) element.setAttribute("aria-current", "true");
+          else element.removeAttribute("aria-current");
+        });
+        ledgerPreview.innerHTML = previewMarkup(post, activeIndex);
+        columnsPreview.innerHTML = previewMarkup(post, activeIndex);
+        seriesPreview.innerHTML = previewMarkup(post, activeIndex);
+        matrixPreview.innerHTML = previewMarkup(post, activeIndex);
+        document.querySelector("#position").textContent = visiblePosts.length
+          ? number(activeIndex) + " / " + String(visiblePosts.length).padStart(2, "0")
+          : "00 / 00";
+        document.querySelector("#resultCount").textContent =
+          visiblePosts.length + (visiblePosts.length === 1 ? " ARTICLE" : " ARTICLES");
+        if (post) document.documentElement.style.setProperty("--ambient", 'url("' + post.image + '")');
+        if (shouldScroll) {
+          const target = document.querySelector(
+            '.panel[data-panel="' + activeConcept + '"] [data-post-index="' + activeIndex + '"]'
+          );
+          if (target) {
+            target.scrollIntoView({
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+              block: "center",
+              inline: "center",
+            });
+          }
+        }
+      }
+
+      function setActive(index, shouldScroll) {
+        if (!visiblePosts.length) {
+          activeIndex = 0;
+          syncActive(false);
+          return;
+        }
+        activeIndex = Math.max(0, Math.min(index, visiblePosts.length - 1));
+        syncActive(Boolean(shouldScroll));
+      }
+
+      function renderAll() {
+        renderLedger();
+        renderColumns();
+        renderContact();
+        renderSeries();
+        renderMatrix();
+        setActive(0, false);
+      }
+
+      function applyFilters() {
+        const query = document.querySelector("#searchInput").value.trim().toLowerCase();
+        visiblePosts = posts.filter(function (post) {
+          const categoryMatch = activeFilter === "all" || post.category === activeFilter;
+          const queryMatch =
+            !query ||
+            (post.title + " " + post.excerpt + " " + post.series).toLowerCase().includes(query);
+          return categoryMatch && queryMatch;
+        });
+        renderAll();
+      }
+
+      document.querySelectorAll(".concept-tab").forEach(function (button) {
+        button.addEventListener("click", function () {
+          activeConcept = button.dataset.concept;
+          document.querySelectorAll(".concept-tab").forEach(function (item) {
+            item.setAttribute("aria-selected", String(item === button));
+          });
+          document.querySelectorAll(".panel").forEach(function (panel) {
+            panel.classList.toggle("is-active", panel.dataset.panel === activeConcept);
+          });
+          document.querySelector("#description").textContent = descriptions[activeConcept];
+          syncActive(true);
+        });
+      });
+
+      document.querySelectorAll(".filter").forEach(function (button) {
+        button.addEventListener("click", function () {
+          activeFilter = button.dataset.filter;
+          document.querySelectorAll(".filter").forEach(function (item) {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+          applyFilters();
+        });
+      });
+
+      document.querySelector("#searchInput").addEventListener("input", applyFilters);
+      document.querySelector("#previous").addEventListener("click", function () {
+        setActive(activeIndex - 1, true);
+      });
+      document.querySelector("#next").addEventListener("click", function () {
+        setActive(activeIndex + 1, true);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.target.matches("input, textarea")) return;
+        if (event.key === "ArrowLeft") setActive(activeIndex - 1, true);
+        if (event.key === "ArrowRight") setActive(activeIndex + 1, true);
+      });
+
+      renderAll();
+    </script>
+  </body>
+</html>
