@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+    type CSSProperties,
+    type ReactNode,
+} from 'react';
 import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@components/common/lib/utils';
 import { useHorizontalScroll } from '@components/common/lib/useHorizontalScroll';
@@ -42,7 +49,17 @@ interface PostListViewProps {
 }
 
 const RAIL_GAP = 16;
-const RAIL_CARD_FALLBACK_WIDTH = 320;
+const RAIL_CARD_FALLBACK_WIDTH = 560;
+const BALANCED_CARD_WIDTHS = [
+    { desktop: 29, mobile: 20 },
+    { desktop: 30.5, mobile: 20.75 },
+    { desktop: 32, mobile: 21.5 },
+] as const;
+const WIDTH_RHYTHMS = [
+    [1, 0, 2, 1],
+    [0, 2, 1, 1],
+    [2, 1, 1, 0],
+] as const;
 
 interface ListFilters {
     category: string | null;
@@ -52,6 +69,11 @@ interface ListFilters {
 }
 
 const INITIAL_FILTERS: ListFilters = { category: null, type: null, query: '', page: 1 };
+
+interface PostIndexItem {
+    post: PostListItem;
+    style: CSSProperties;
+}
 
 /** 从当前 URL 读取筛选态（view 由页面脚本管理，这里忽略） */
 function readFiltersFromUrl(): ListFilters {
@@ -83,8 +105,51 @@ function formatDate(value: string): string {
     return value?.split('T')[0] ?? '';
 }
 
+function getPostIndexItem(post: PostListItem, widthIndex: number): PostIndexItem {
+    const width = BALANCED_CARD_WIDTHS[widthIndex] ?? BALANCED_CARD_WIDTHS[1];
+    return {
+        post,
+        style: {
+            '--post-card-width': `${width.desktop}rem`,
+            '--post-card-width-mobile': `${width.mobile}rem`,
+        } as CSSProperties,
+    };
+}
+
+function buildIndexLanes(posts: PostListItem[], laneCount: number): PostIndexItem[][] {
+    const lanes = Array.from({ length: laneCount }, () => [] as PostIndexItem[]);
+
+    posts.forEach((post, postIndex) => {
+        const laneIndex = postIndex % laneCount;
+        const lane = lanes[laneIndex]!;
+        const rhythm = WIDTH_RHYTHMS[laneIndex % WIDTH_RHYTHMS.length] ?? WIDTH_RHYTHMS[0];
+        const widthIndex = rhythm[lane.length % rhythm.length] ?? 1;
+        const item = getPostIndexItem(post, widthIndex);
+
+        lane.push(item);
+    });
+
+    return lanes;
+}
+
+function useIndexLaneCount(): number {
+    const [laneCount, setLaneCount] = useState(3);
+
+    useEffect(() => {
+        const query = window.matchMedia('(min-width: 640px)');
+        const update = () => setLaneCount(query.matches ? 3 : 2);
+
+        update();
+        query.addEventListener('change', update);
+        return () => query.removeEventListener('change', update);
+    }, []);
+
+    return laneCount;
+}
+
 export default function PostListView({ posts, locale }: PostListViewProps) {
     const [filters, setFilters] = useState<ListFilters>(INITIAL_FILTERS);
+    const laneCount = useIndexLaneCount();
 
     // 挂载后从 URL 读取（深链）；SSR 用默认态，避免 hydration 不一致
     useEffect(() => {
@@ -106,6 +171,8 @@ export default function PostListView({ posts, locale }: PostListViewProps) {
         [posts, filters.category, filters.type, filters.query]
     );
 
+    const indexLanes = useMemo(() => buildIndexLanes(filtered, laneCount), [filtered, laneCount]);
+
     const commit = useCallback((next: ListFilters) => {
         setFilters(next);
         writeFiltersToUrl(next);
@@ -126,14 +193,14 @@ export default function PostListView({ posts, locale }: PostListViewProps) {
         handleWheel,
         scrollByPage,
         scrollToIndex,
-    } = useHorizontalScroll<HTMLUListElement>({
+    } = useHorizontalScroll<HTMLDivElement>({
         itemSelector: '.post-list-rail-card',
         itemGap: RAIL_GAP,
         fallbackItemWidth: RAIL_CARD_FALLBACK_WIDTH,
         requireHover: false,
         pageScrollRatio: 0.78,
         observeMutations: true,
-        dependencyKey: `${filtered.length}:${filters.category ?? ''}:${filters.type ?? ''}:${filters.query}`,
+        dependencyKey: `${filtered.length}:${laneCount}:${filters.category ?? ''}:${filters.type ?? ''}:${filters.query}`,
     });
 
     useEffect(() => {
@@ -201,19 +268,34 @@ export default function PostListView({ posts, locale }: PostListViewProps) {
                         </button>
                     )}
 
-                    <ul
+                    <div
                         data-post-list-rail
                         ref={containerRef}
-                        onWheel={handleWheel}
-                        className="post-list-rail grid h-full touch-pan-x snap-x snap-mandatory [scroll-padding-inline:clamp(1rem,5vw,60px)] auto-cols-[minmax(18rem,82vw)] grid-flow-col grid-rows-[repeat(var(--post-flow-rows),minmax(0,var(--post-flow-row-height)))] content-center gap-4 overflow-x-auto overflow-y-hidden scroll-smooth [padding-inline:clamp(1rem,5vw,60px)] [--post-flow-rows:1] [-ms-overflow-style:none] [scrollbar-width:none] sm:auto-cols-[22rem] sm:[--post-flow-rows:2] lg:auto-cols-[23rem] xl:auto-cols-[24rem] 2xl:auto-cols-[25rem] [&_.post-list-rail-card]:snap-center [&::-webkit-scrollbar]:hidden"
+                        onWheelCapture={handleWheel}
+                        style={{ '--post-flow-rows': laneCount } as CSSProperties}
+                        className="post-list-rail h-full touch-pan-x snap-x snap-mandatory [scroll-padding-inline:clamp(1rem,5vw,60px)] overflow-x-auto overflow-y-hidden scroll-smooth [padding-inline:clamp(1rem,5vw,60px)] [-ms-overflow-style:none] [scrollbar-width:none] [&_.post-list-rail-card]:snap-center [&::-webkit-scrollbar]:hidden"
                         aria-label="全部文章"
                     >
-                        {filtered.map((post) => (
-                            <li key={post.id} className="post-list-rail-card flex min-h-0 w-full">
-                                <PostListCard post={post} />
-                            </li>
-                        ))}
-                    </ul>
+                        <div className="grid h-full min-w-full grid-rows-[repeat(var(--post-flow-rows),minmax(0,var(--post-flow-row-height)))] content-center gap-4">
+                            {indexLanes.map((lane, laneIndex) => (
+                                <ul
+                                    key={laneIndex}
+                                    className="flex w-max min-w-max gap-4 sm:mx-auto"
+                                    aria-label={`全部文章第 ${laneIndex + 1} 行`}
+                                >
+                                    {lane.map((item) => (
+                                        <li
+                                            key={item.post.id}
+                                            style={item.style}
+                                            className="post-list-rail-card flex min-h-0 w-[min(calc(100vw-2rem),var(--post-card-width-mobile))] shrink-0 sm:w-[var(--post-card-width)]"
+                                        >
+                                            <PostListCard post={item.post} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             ) : (
                 <p className="text-muted-foreground border-border/70 bg-card/55 flex min-h-0 flex-1 items-center justify-center rounded-2xl border px-5 py-10 text-center text-sm shadow-2xl backdrop-blur-xl">
@@ -262,13 +344,13 @@ function FilterBar({
             <div className="pointer-events-auto w-full max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] md:max-w-[min(72vw,68rem)] 2xl:max-w-[56rem]">
                 <div
                     data-post-filter-shell
-                    className="border-border/70 bg-background/80 rounded-[1.65rem] border p-1.5 shadow-[0_16px_42px_rgba(0,0,0,0.2)] backdrop-blur-xl md:rounded-full"
+                    className="bg-background/46 border-border/50 rounded-[1.1rem] border p-2 shadow-[0_10px_28px_rgba(0,0,0,0.16)] backdrop-blur-xl md:rounded-[1.2rem]"
                 >
-                    <div className="flex min-w-0 flex-col gap-1.5 md:flex-row md:items-center">
-                        <div className="flex min-w-0 items-center gap-1.5 md:w-[17rem] md:flex-none lg:w-[19rem]">
-                            <label className="border-border/60 bg-card/35 focus-within:ring-ring/70 relative flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors focus-within:ring-2">
+                    <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center">
+                        <div className="flex min-w-0 items-center gap-2 md:w-[18rem] md:flex-none lg:w-[20rem]">
+                            <label className="border-border/40 bg-card/18 focus-within:ring-ring/70 relative flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-[0.85rem] border px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] transition-colors focus-within:ring-2">
                                 <Search
-                                    className="text-muted-foreground h-4 w-4 shrink-0"
+                                    className="text-muted-foreground h-[1.05rem] w-[1.05rem] shrink-0"
                                     aria-hidden="true"
                                 />
                                 <input
@@ -277,7 +359,7 @@ function FilterBar({
                                     onChange={(event) => onQuery(event.target.value)}
                                     placeholder={t('searchPlaceholder')}
                                     aria-label={t('searchPlaceholder')}
-                                    className="text-foreground placeholder:text-muted-foreground w-full bg-transparent text-sm outline-none"
+                                    className="text-foreground placeholder:text-muted-foreground w-full bg-transparent text-[0.95rem] outline-none"
                                 />
                             </label>
 
@@ -292,10 +374,10 @@ function FilterBar({
                             />
                         </div>
 
-                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
                             <div
                                 data-post-filter-strip
-                                className="border-border/55 bg-card/25 min-w-0 flex-1 rounded-full border px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                                className="border-border/35 bg-card/14 min-w-0 flex-1 rounded-[0.85rem] border px-2 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
                             >
                                 <div className="flex min-w-0 items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                                     {facets.categories.length > 0 && (
@@ -358,7 +440,7 @@ function FilterActions({
     return (
         <div className={cn('flex shrink-0 items-center gap-1.5', className)} aria-live="polite">
             <span
-                className="border-border/55 bg-card/30 text-muted-foreground inline-flex h-9 items-center rounded-full border px-2.5 text-[0.72rem] font-semibold tabular-nums"
+                className="border-border/35 bg-card/14 text-muted-foreground inline-flex h-11 items-center rounded-[0.85rem] border px-3 text-[0.78rem] font-semibold tabular-nums"
                 aria-label={resultText}
             >
                 {matchCount}/{totalCount}
@@ -368,9 +450,9 @@ function FilterActions({
                     type="button"
                     onClick={onClear}
                     aria-label={clearLabel}
-                    className="border-border/60 bg-card/30 text-muted-foreground hover:border-foreground/30 hover:bg-card/55 hover:text-foreground focus-visible:ring-ring inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors focus:outline-none focus-visible:ring-2"
+                    className="border-border/35 bg-card/14 text-muted-foreground hover:border-foreground/20 hover:bg-card/22 hover:text-foreground focus-visible:ring-ring inline-flex h-11 w-11 items-center justify-center rounded-[0.85rem] border transition-colors focus:outline-none focus-visible:ring-2"
                 >
-                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    <X className="h-4 w-4" aria-hidden="true" />
                 </button>
             )}
         </div>
@@ -389,7 +471,7 @@ interface ChipRowProps {
 function ChipRow({ label, options, selected, allLabel, allCount, onSelect }: ChipRowProps) {
     return (
         <div className="flex shrink-0 items-center gap-1.5">
-            <span className="text-muted-foreground/85 shrink-0 px-1.5 text-[0.68rem] font-semibold">
+            <span className="text-muted-foreground/85 shrink-0 px-1.5 text-[0.72rem] font-semibold">
                 {label}
             </span>
             <div className="flex shrink-0 items-center gap-1">
@@ -427,10 +509,10 @@ function Chip({
             aria-pressed={active}
             onClick={onClick}
             className={cn(
-                'focus-visible:ring-ring inline-flex h-8 shrink-0 items-center rounded-full border px-2.5 text-[0.72rem] font-semibold transition-[border-color,background-color,color,box-shadow] focus:outline-none focus-visible:ring-2',
+                'focus-visible:ring-ring inline-flex h-9 shrink-0 items-center rounded-[0.68rem] border px-3 text-[0.76rem] font-semibold transition-[border-color,background-color,color,box-shadow] focus:outline-none focus-visible:ring-2',
                 active
-                    ? 'border-primary bg-primary text-primary-foreground shadow-[0_8px_20px_rgba(0,0,0,0.18)]'
-                    : 'text-muted-foreground hover:border-border/70 hover:bg-card/55 hover:text-foreground border-transparent'
+                    ? 'border-foreground/10 bg-foreground/[0.08] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]'
+                    : 'text-muted-foreground hover:border-border/45 hover:bg-card/18 hover:text-foreground border-transparent'
             )}
         >
             {children}
@@ -456,12 +538,12 @@ function PostListCard({ post }: { post: PostListItem }) {
             href={post.url}
             aria-label={post.title}
             className={cn(
-                'group focus-visible:ring-ring relative flex h-full w-full flex-col overflow-hidden rounded-2xl border sm:flex-row',
-                'border-border/70 bg-card/50 shadow-[0_18px_50px_rgba(0,0,0,0.22)] backdrop-blur-md transition-[border-color,box-shadow,background-color] duration-300',
-                'hover:border-foreground/30 hover:bg-card/70 hover:shadow-[0_24px_70px_rgba(0,0,0,0.28)] focus:outline-none focus-visible:ring-2'
+                'group focus-visible:ring-ring relative flex h-full w-full flex-row overflow-hidden rounded-[1rem] border',
+                'backdrop-blur-md transition-[border-color,box-shadow,background-color] duration-300 focus:outline-none focus-visible:ring-2',
+                'border-border/60 bg-card/44 hover:border-foreground/24 hover:bg-card/62 shadow-[0_13px_36px_rgba(0,0,0,0.17)] hover:shadow-[0_19px_52px_rgba(0,0,0,0.23)]'
             )}
         >
-            <div className="bg-muted relative h-[44%] min-h-[8rem] shrink-0 overflow-hidden sm:h-full sm:min-h-0 sm:w-[42%]">
+            <div className="bg-muted relative h-full min-h-0 w-[35%] shrink-0 overflow-hidden sm:w-[32%]">
                 {hasImage ? (
                     <img
                         src={post.feature_image ?? ''}
@@ -475,32 +557,32 @@ function PostListCard({ post }: { post: PostListItem }) {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent opacity-80 transition-opacity group-hover:opacity-60" />
             </div>
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col p-3.5">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col p-3 sm:p-3.5">
                 {(typeLabel || categoryLabel) && (
-                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                    <div className="mb-1.5 flex max-h-6 shrink-0 flex-wrap items-center gap-1 overflow-hidden">
                         {typeLabel && (
-                            <span className="text-foreground/85 rounded-full border border-cyan-200/40 bg-cyan-300/12 px-2 py-0.5 text-[0.68rem] font-semibold">
+                            <span className="border-border/35 bg-foreground/[0.045] text-foreground/72 rounded-full border px-1.5 py-0.5 text-[0.64rem] font-semibold">
                                 {typeLabel}
                             </span>
                         )}
                         {categoryLabel && (
-                            <span className="text-foreground/85 rounded-full border border-lime-200/35 bg-lime-300/12 px-2 py-0.5 text-[0.68rem] font-semibold">
+                            <span className="border-border/35 bg-foreground/[0.045] text-foreground/72 rounded-full border px-1.5 py-0.5 text-[0.64rem] font-semibold">
                                 {categoryLabel}
                             </span>
                         )}
                     </div>
                 )}
-                <h3 className="text-foreground line-clamp-2 text-[0.95rem] leading-snug font-semibold">
+                <h3 className="text-foreground line-clamp-2 text-[0.9rem] leading-snug font-semibold sm:text-[0.95rem]">
                     {post.title}
                 </h3>
                 {excerpt && (
-                    <p className="text-muted-foreground mt-2 line-clamp-3 text-sm leading-relaxed">
+                    <p className="text-muted-foreground mt-1.5 line-clamp-2 text-[0.8rem] leading-snug sm:text-[0.84rem]">
                         {excerpt}
                     </p>
                 )}
                 {date && (
                     <time
-                        className="text-muted-foreground mt-auto pt-4 text-xs font-medium"
+                        className="text-muted-foreground mt-auto pt-2 text-[0.72rem] font-medium sm:text-xs"
                         dateTime={date}
                     >
                         {date}

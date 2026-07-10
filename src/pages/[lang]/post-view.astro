@@ -3,7 +3,7 @@ import DockNav from '@components/layout/dock/DockNav.astro';
 import DockSocial from '@components/layout/dock/DockSocial.astro';
 import Dock from '@components/layout/dock/Dock.astro';
 import PostViewContainer from '@components/posts/view/PostViewContainer.astro';
-import PostListView, { type PostListItem } from '@components/posts/view/PostListView';
+import PostArchiveView, { type PostArchiveItem } from '@components/posts/view/PostArchiveView';
 import { listAllPosts } from '@api/ghost/posts';
 import { initializeSiteData } from '@api/ghost/settings';
 import BaseLayout from '@layouts/base/BaseLayout.astro';
@@ -50,7 +50,7 @@ const posts = localizedPosts.map((item) => item.post);
 const featuredPosts = posts.slice(0, FEATURED_COUNT);
 
 // 列表：全量精简元数据（去 html、URL 转字符串），客户端筛选/分页
-const listItems: PostListItem[] = posts.map((post) => ({
+const listItems: PostArchiveItem[] = posts.map((post) => ({
     id: post.id,
     title: post.title,
     excerpt: post.excerpt,
@@ -59,6 +59,10 @@ const listItems: PostListItem[] = posts.map((post) => ({
     published_at: post.published_at,
     post_type: post.post_type,
     post_category: post.post_category,
+    post_series: post.post_series,
+    ...(post.post_series_slug ? { post_series_slug: post.post_series_slug } : {}),
+    ...(post.post_series_label ? { post_series_label: post.post_series_label } : {}),
+    ...(post.post_series_number ? { post_series_number: post.post_series_number } : {}),
     ...(post.post_type_label ? { post_type_label: post.post_type_label } : {}),
     ...(post.post_category_label ? { post_category_label: post.post_category_label } : {}),
 }));
@@ -88,33 +92,40 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         siteSubTitle={siteDescription}
         homeUrl={`/${locale}`}
     >
-        <div
-            slot="utility-start"
-            class="post-view-toggle flex shrink-0 rounded-full border border-[var(--border)] bg-[var(--background)]/85 p-0.5 text-[0.62rem] font-medium shadow-lg backdrop-blur-md sm:p-1 sm:text-xs"
-            role="tablist"
-            aria-label={`${galleryLabel} / ${listLabel}`}
-        >
-            <button
-                type="button"
-                role="tab"
-                data-view-toggle="gallery"
-                data-active="true"
-                aria-selected="true"
-                class="rounded-full px-1.5 py-1 text-[var(--muted-foreground)] transition-colors data-[active=true]:bg-[var(--primary)] data-[active=true]:text-[var(--primary-foreground)] sm:px-3.5 sm:py-1.5"
+        <div slot="utility-start" class="relative flex shrink-0 items-center">
+            <div
+                id="post-archive-header-host"
+                class="absolute top-[calc(100%+0.45rem)] right-0 z-[70] xl:static xl:mr-1"
             >
-                {galleryLabel}
-            </button>
-            <button
-                type="button"
-                role="tab"
-                data-view-toggle="list"
-                data-active="false"
-                aria-selected="false"
-                class="rounded-full px-1.5 py-1 text-[var(--muted-foreground)] transition-colors data-[active=true]:bg-[var(--primary)] data-[active=true]:text-[var(--primary-foreground)] sm:px-3.5 sm:py-1.5"
+            </div>
+            <div
+                class="post-view-toggle flex shrink-0 rounded-full border border-[var(--border)] bg-[var(--background)]/85 p-0.5 text-[0.62rem] font-medium shadow-lg backdrop-blur-md sm:p-1 sm:text-xs"
+                role="tablist"
+                aria-label={`${galleryLabel} / ${listLabel}`}
             >
-                {listLabel}
-            </button>
+                <button
+                    type="button"
+                    role="tab"
+                    data-view-toggle="list"
+                    data-active="false"
+                    aria-selected="false"
+                    class="rounded-full px-1.5 py-1 text-[var(--muted-foreground)] transition-colors data-[active=true]:bg-[var(--primary)] data-[active=true]:text-[var(--primary-foreground)] sm:px-3.5 sm:py-1.5"
+                >
+                    {listLabel}
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    data-view-toggle="gallery"
+                    data-active="true"
+                    aria-selected="true"
+                    class="rounded-full px-1.5 py-1 text-[var(--muted-foreground)] transition-colors data-[active=true]:bg-[var(--primary)] data-[active=true]:text-[var(--primary-foreground)] sm:px-3.5 sm:py-1.5"
+                >
+                    {galleryLabel}
+                </button>
+            </div>
         </div>
+        <div slot="utility-end" id="post-archive-search-host" class="relative shrink-0"></div>
     </SiteNavbar>
 
     {/* 精选视图（默认） */}
@@ -124,11 +135,15 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
 
     {/* 全部视图 —— 首屏 SSR、默认隐藏，由脚本按 ?view= 显隐 */}
     <div data-view-section="list" hidden>
-        <PostListView client:load posts={listItems} locale={locale} />
+        <PostArchiveView client:load posts={listItems} locale={locale} />
     </div>
 
     <Dock isFixed={true}>
-        <div class="hidden md:block" aria-hidden="true"></div>
+        <div
+            id="post-archive-pagination-host"
+            class="hidden items-center justify-self-start md:flex"
+        >
+        </div>
         <DockNav lang={locale} />
         <DockSocial lang={locale} />
     </Dock>
@@ -151,6 +166,7 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
                     btn.dataset.active = String(active);
                     btn.setAttribute('aria-selected', String(active));
                 });
+                window.dispatchEvent(new CustomEvent('post-view-change', { detail: { view } }));
             };
 
             const setView = (view) => {
@@ -281,7 +297,7 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         height: 100vh;
     }
 
-    /* 全部视图：同样锁住页面纵向滚动，让文章轨道承接横向滚动 */
+    /* 全部视图：同样锁住页面纵向滚动，由归档面板承接各自的滚动。 */
     :global(html[data-post-view-mode='list']),
     :global(html[data-post-view-mode='list'] body) {
         overflow: hidden;
@@ -291,38 +307,6 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
     /* 隐藏的视图段彻底移除（防止 flex/grid 类覆盖 [hidden]） */
     :global([data-view-section][hidden]) {
         display: none !important;
-    }
-
-    :global(.post-list-rail) {
-        --post-flow-row-height: min(52svh, 28rem);
-    }
-
-    @media (min-width: 640px) {
-        :global(.post-list-rail) {
-            --post-flow-row-height: calc(
-                (clamp(500px, min(72svh, calc(100svh - 220px)), 780px) - 1rem) / 2
-            );
-        }
-    }
-
-    @media (pointer: coarse) and (min-width: 640px) {
-        :global(.post-list-rail) {
-            --post-flow-row-height: calc((clamp(430px, min(68svh, 560px), 560px) - 1rem) / 2);
-        }
-    }
-
-    @media (pointer: fine) and (max-height: 780px) and (min-width: 640px) {
-        :global(.post-list-rail) {
-            --post-flow-row-height: calc((clamp(460px, calc(100svh - 220px), 560px) - 1rem) / 2);
-        }
-    }
-
-    @media (pointer: fine) and (min-width: 1920px) {
-        :global(.post-list-rail) {
-            --post-flow-row-height: calc(
-                (clamp(620px, min(72svh, calc(100svh - 220px)), 820px) - 1rem) / 2
-            );
-        }
     }
 
     @media (max-width: 639px) {

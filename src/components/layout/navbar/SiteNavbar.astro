@@ -35,6 +35,7 @@ const {
         homeUrl={homeUrl}
     />
     <NavbarUtility availableLocales={availableLocales} displayLocale={displayLocale}>
-        <slot name="utility-start" />
+        <div slot="start"><slot name="utility-start" /></div>
+        <div slot="end"><slot name="utility-end" /></div>
     </NavbarUtility>
 </SmartNavbar>
