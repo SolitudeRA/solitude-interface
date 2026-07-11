@@ -8,6 +8,7 @@ import { listAllPosts } from '@api/ghost/posts';
 import { initializeSiteData } from '@api/ghost/settings';
 import BaseLayout from '@layouts/base/BaseLayout.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
+import PageStage from '@components/layout/PageStage.astro';
 import {
     LOCALES,
     type Locale,
@@ -130,15 +131,17 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         <div slot="utility-end" id="post-archive-search-host" class="relative shrink-0"></div>
     </SiteNavbar>
 
-    {/* 精选视图（默认） */}
-    <div data-view-section="gallery">
-        <PostViewContainer posts={featuredPosts} locale={locale} viewAllLabel={viewAllLabel} />
-    </div>
+    <PageStage variant="posts">
+        {/* 精选视图（默认） */}
+        <div data-view-section="gallery">
+            <PostViewContainer posts={featuredPosts} locale={locale} viewAllLabel={viewAllLabel} />
+        </div>
 
-    {/* 全部视图 —— 首屏 SSR、默认隐藏，由脚本按 ?view= 显隐 */}
-    <div data-view-section="list" hidden>
-        <PostArchiveView client:load posts={listItems} locale={locale} />
-    </div>
+        {/* 全部视图 —— 首屏 SSR、默认隐藏，由脚本按 ?view= 显隐 */}
+        <div data-view-section="list" hidden>
+            <PostArchiveView client:load posts={listItems} locale={locale} />
+        </div>
+    </PageStage>
 
     <Dock isFixed={true}>
         <div

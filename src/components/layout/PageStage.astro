@@ -1,0 +1,25 @@
+---
+interface Props {
+    variant: 'home' | 'posts' | 'about';
+    class?: string;
+}
+
+const { variant, class: className } = Astro.props;
+const transitionName = `site-page-stage-${variant}`;
+---
+
+<div
+    data-page-stage={variant}
+    class:list={['site-page-stage', className]}
+    transition:name={transitionName}
+>
+    <slot />
+</div>
+
+<style>
+    .site-page-stage {
+        position: relative;
+        width: 100%;
+        min-width: 0;
+    }
+</style>

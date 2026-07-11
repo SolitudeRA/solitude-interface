@@ -5,6 +5,7 @@ import BaseLayout from '@layouts/base/BaseLayout.astro';
 import IndexLayout from '@layouts/IndexLayout.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
 import SiteDock from '@components/layout/dock/SiteDock.astro';
+import PageStage from '@components/layout/PageStage.astro';
 import {
     LOCALES,
     type Locale,
@@ -55,9 +56,11 @@ const canonicalUrl = `${env.site.url}/${locale}`;
         homeUrl={`/${locale}`}
     />
 
-    <main class="mx-auto">
-        <IndexLayout posts={posts} locale={locale} />
-    </main>
+    <PageStage variant="home">
+        <main class="mx-auto">
+            <IndexLayout posts={posts} locale={locale} />
+        </main>
+    </PageStage>
 
     <SiteDock isFixed={true} layout="home" lang={locale} />
 </BaseLayout>

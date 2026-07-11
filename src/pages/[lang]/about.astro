@@ -4,6 +4,7 @@ import BaseLayout from '@layouts/base/BaseLayout.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
 import SiteDock from '@components/layout/dock/SiteDock.astro';
 import PageHero from '@components/layout/PageHero.astro';
+import PageStage from '@components/layout/PageStage.astro';
 import AboutContent from '@components/pages/about/AboutContent.astro';
 import {
     LOCALES,
@@ -71,28 +72,30 @@ const canonicalUrl = `${env.site.url}/${locale}/about`;
         isFixed={true}
     />
 
-    <PageHero
-        variant="profile"
-        title={t.title}
-        backgroundImage={coverImageUrl?.toString()}
-        badgeText="SolitudeRA"
-        badgeIcon={true}
-        facts={t.heroFacts}
-    >
-        <svg
-            slot="badge-icon"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+    <PageStage variant="about">
+        <PageHero
+            variant="profile"
+            title={t.title}
+            backgroundImage={coverImageUrl?.toString()}
+            badgeText="SolitudeRA"
+            badgeIcon={true}
+            facts={t.heroFacts}
         >
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-        </svg>
-    </PageHero>
+            <svg
+                slot="badge-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </PageHero>
+    </PageStage>
 
     <main class="about-page min-h-screen">
         <div class="about-content-wrapper mx-auto max-w-5xl px-6 sm:px-8 lg:px-12">
