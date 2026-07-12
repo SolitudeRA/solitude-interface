@@ -108,7 +108,15 @@ function handlePostSourceClick(event: MouseEvent): void {
     rememberPostDestination(destination.pathname);
     if (!isPostSource) return;
 
-    rememberPostReturnUrl(`${window.location.pathname}${window.location.search}`);
+    const returnUrl = new URL(window.location.href);
+    const archiveRoot = link.closest<HTMLElement>('[data-post-list-root]');
+    const archivePage = Number.parseInt(archiveRoot?.dataset.archiveActivePage ?? '', 10);
+    if (Number.isFinite(archivePage) && archivePage > 1) {
+        returnUrl.searchParams.set('page', String(archivePage));
+    } else {
+        returnUrl.searchParams.delete('page');
+    }
+    rememberPostReturnUrl(toPathWithSearchAndHash(returnUrl));
     const scrollContainer = link.closest<HTMLElement>('[data-post-view-scroll]');
     rememberPostViewScroll(scrollContainer?.scrollLeft ?? null);
 }
@@ -119,7 +127,6 @@ function handleBeforePreparation(event: BeforePreparationEvent): void {
         event.to &&
         isPostViewPath(event.to.pathname)
     );
-
     if (!isPostReturn) {
         clearSiteTransition(SITE_TRANSITIONS.postReturn);
         if (getActiveTransition() === SITE_TRANSITIONS.postForward) {

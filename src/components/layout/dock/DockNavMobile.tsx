@@ -12,6 +12,10 @@ import {
     LOCALES,
     type Locale,
 } from '@lib/i18n';
+import {
+    isCurrentDockDestination,
+    normalizeDockPathname,
+} from '@lib/navigation/dockNavigationGuard';
 
 /**
  * 从当前 URL 中提取语言代码
@@ -57,10 +61,22 @@ export default function DockNavMobile() {
     const [isOpen, setIsOpen] = useState(false);
     const [isRssExpanded, setIsRssExpanded] = useState(false);
     const [currentLocale, setCurrentLocale] = useState<Locale>(DEFAULT_LOCALE);
+    const [currentPath, setCurrentPath] = useState('');
 
     // 客户端初始化当前语言
     useEffect(() => {
-        setCurrentLocale(getCurrentLocale());
+        const syncLocation = () => {
+            setCurrentLocale(getCurrentLocale());
+            setCurrentPath(normalizeDockPathname(window.location.pathname));
+        };
+
+        syncLocation();
+        document.addEventListener('astro:page-load', syncLocation);
+        window.addEventListener('popstate', syncLocation);
+        return () => {
+            document.removeEventListener('astro:page-load', syncLocation);
+            window.removeEventListener('popstate', syncLocation);
+        };
     }, []);
 
     // Dock 导航显示文本固定为英文，链接仍跟随当前页面语言。
@@ -88,18 +104,30 @@ export default function DockNavMobile() {
 
     // 根据当前语言构建导航链接
     const navItems = useMemo(() => {
-        return navItemsConfig.map((item) => ({
-            href: item.isRss
+        return navItemsConfig.map((item) => {
+            const href = item.isRss
                 ? ''
                 : item.noLocale
                   ? `/${item.path}`
                   : item.path === ''
                     ? `/${currentLocale}`
-                    : buildLocalePath(currentLocale, item.path),
-            label: item.label,
-            isRss: item.isRss,
-        }));
-    }, [currentLocale]);
+                    : buildLocalePath(currentLocale, item.path);
+            const isCurrent =
+                !item.isRss &&
+                currentPath !== '' &&
+                isCurrentDockDestination(
+                    new URL(currentPath, window.location.origin),
+                    new URL(href, window.location.origin)
+                );
+
+            return {
+                href,
+                label: item.label,
+                isRss: item.isRss,
+                isCurrent,
+            };
+        });
+    }, [currentLocale, currentPath]);
 
     const toggleMenu = useCallback(() => {
         setIsOpen((prev) => !prev);
@@ -262,8 +290,14 @@ export default function DockNavMobile() {
                             <a
                                 key={item.label}
                                 href={item.href}
+                                data-dock-route
+                                aria-current={item.isCurrent ? 'page' : undefined}
                                 onClick={closeMenu}
-                                className={cn('dock-menu-item', 'text-color-ui block')}
+                                className={cn(
+                                    'dock-menu-item',
+                                    'text-color-ui block',
+                                    item.isCurrent && 'dock-menu-item--current'
+                                )}
                             >
                                 {item.label}
                             </a>

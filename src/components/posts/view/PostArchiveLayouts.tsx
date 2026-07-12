@@ -151,6 +151,9 @@ export function SeriesLibrary({
                                     data-post-transition-source
                                     data-archive-post-id={post.id}
                                     onPointerEnter={() => onActivate(post.id)}
+                                    onPointerMove={() => {
+                                        if (post.id !== activePost?.id) onActivate(post.id);
+                                    }}
                                     onFocus={() => onActivate(post.id)}
                                     aria-current={post.id === activePost?.id ? 'true' : undefined}
                                     className={cn(
@@ -248,6 +251,9 @@ function ArchiveRow({
             data-post-transition-source
             data-archive-post-id={post.id}
             onPointerEnter={() => onActivate(post.id)}
+            onPointerMove={() => {
+                if (!active) onActivate(post.id);
+            }}
             onFocus={() => onActivate(post.id)}
             aria-current={active ? 'true' : undefined}
             className={cn(
@@ -299,15 +305,17 @@ function ArchivePreview({
         >
             {post.feature_image ? (
                 <img
+                    key={post.id}
                     src={post.feature_image}
                     data-post-transition-media
                     alt=""
-                    loading="lazy"
+                    loading="eager"
                     decoding="async"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/preview:scale-[1.025] motion-reduce:transform-none"
                 />
             ) : (
                 <div
+                    key={post.id}
                     data-post-transition-media
                     className="absolute inset-0 bg-[linear-gradient(135deg,var(--card-image-fallback-start),var(--card-image-fallback-end))]"
                 />

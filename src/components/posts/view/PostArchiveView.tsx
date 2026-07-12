@@ -73,15 +73,30 @@ function writeUrlState(
 export default function PostArchiveView({
     posts,
     locale,
+    initialFilters = INITIAL_ARCHIVE_FILTERS,
+    initialLayout = DEFAULT_ARCHIVE_LAYOUT,
 }: {
     posts: PostArchiveItem[];
     locale: Locale;
+    initialFilters?: ArchiveFilters;
+    initialLayout?: ArchiveLayout;
 }) {
-    const [filters, setFilters] = useState<ArchiveFilters>(INITIAL_ARCHIVE_FILTERS);
-    const [layout, setLayout] = useState<ArchiveLayout>(DEFAULT_ARCHIVE_LAYOUT);
+    const [filters, setFilters] = useState<ArchiveFilters>(initialFilters);
+    const [layout, setLayout] = useState<ArchiveLayout>(initialLayout);
     const [layoutDirection, setLayoutDirection] = useState(1);
-    const layoutRef = useRef<ArchiveLayout>(DEFAULT_ARCHIVE_LAYOUT);
-    const [activePostId, setActivePostId] = useState(posts[0]?.id ?? '');
+    const layoutRef = useRef<ArchiveLayout>(initialLayout);
+    const [activePostId, setActivePostId] = useState(() => {
+        const initialPosts = filterPosts(posts, {
+            category: initialFilters.category,
+            type: initialFilters.type,
+            query: initialFilters.query,
+        });
+        const initialIndex = Math.min(
+            Math.max(initialFilters.page - 1, 0),
+            Math.max(initialPosts.length - 1, 0)
+        );
+        return initialPosts[initialIndex]?.id ?? initialPosts[0]?.id ?? '';
+    });
     const [headerPortalHost, setHeaderPortalHost] = useState<HTMLElement | null>(null);
     const [searchPortalHost, setSearchPortalHost] = useState<HTMLElement | null>(null);
     const [paginationPortalHost, setPaginationPortalHost] = useState<HTMLElement | null>(null);
@@ -145,10 +160,12 @@ export default function PostArchiveView({
     );
 
     useEffect(() => {
-        if (!filtered.some((post) => post.id === activePostId)) {
-            setActivePostId(filtered[0]?.id ?? '');
-        }
-    }, [activePostId, filtered]);
+        const requestedIndex = Math.min(
+            Math.max(filters.page - 1, 0),
+            Math.max(filtered.length - 1, 0)
+        );
+        setActivePostId(filtered[requestedIndex]?.id ?? filtered[0]?.id ?? '');
+    }, [filtered, filters.page]);
 
     const activePost = filtered.find((post) => post.id === activePostId) ?? filtered[0] ?? null;
     const activePostIndex = activePost
@@ -184,6 +201,9 @@ export default function PostArchiveView({
         const nextPost = filtered[index];
         if (!nextPost) return;
         setActivePostId(nextPost.id);
+        const nextFilters = { ...filters, page: index + 1 };
+        setFilters(nextFilters);
+        writeUrlState(nextFilters, layout);
         window.requestAnimationFrame(() => {
             const target = document.querySelector<HTMLElement>(
                 `[data-archive-post-id="${nextPost.id}"]`
@@ -245,6 +265,7 @@ export default function PostArchiveView({
                 data-post-list-root
                 data-view-motion-content
                 data-archive-layout={layout}
+                data-archive-active-page={activePostIndex + 1}
                 className="post-view-main-viewport flex w-full max-w-full flex-col overflow-hidden"
             >
                 <div className="flex min-h-0 min-w-0 flex-1 items-center overflow-x-hidden px-2 sm:px-4 md:px-6">

@@ -4,7 +4,7 @@ import DockSocial from '@components/layout/dock/DockSocial.astro';
 import Dock from '@components/layout/dock/Dock.astro';
 import PostViewContainer from '@components/posts/view/PostViewContainer.astro';
 import PostArchiveView from '@components/posts/view/PostArchiveView';
-import type { PostArchiveItem } from '@lib/postArchive';
+import { parseArchiveParams, type PostArchiveItem } from '@lib/postArchive';
 import { listAllPosts } from '@api/ghost/posts';
 import { initializeSiteData } from '@api/ghost/settings';
 import BaseLayout from '@layouts/base/BaseLayout.astro';
@@ -68,6 +68,7 @@ const listItems: PostArchiveItem[] = posts.map((post) => ({
     ...(post.post_type_label ? { post_type_label: post.post_type_label } : {}),
     ...(post.post_category_label ? { post_category_label: post.post_category_label } : {}),
 }));
+const initialArchiveState = parseArchiveParams(Astro.url.searchParams);
 
 const galleryLabel = getUIText('postView', 'galleryView', locale);
 const listLabel = getUIText('postView', 'listView', locale);
@@ -141,7 +142,13 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
 
         {/* 全部视图 —— 首屏 SSR、默认隐藏，由脚本按 ?view= 显隐 */}
         <div data-view-section="list" hidden>
-            <PostArchiveView client:load posts={listItems} locale={locale} />
+            <PostArchiveView
+                client:load
+                posts={listItems}
+                locale={locale}
+                initialFilters={initialArchiveState.filters}
+                initialLayout={initialArchiveState.layout}
+            />
         </div>
     </PageStage>
 

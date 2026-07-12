@@ -101,6 +101,25 @@ describe('site navigation motion lifecycle', () => {
         ).toBe('post-focus-media');
     });
 
+    it('adds the active archive page to the remembered return URL', () => {
+        setPath('/zh/post-view?view=list&archive=years');
+        document.body.innerHTML = `
+            <main data-page-stage="posts">
+                <div data-post-list-root data-archive-active-page="3">
+                    <a href="/zh/p/homeserver-6" data-post-transition-source>
+                        <img data-post-transition-media alt="" />
+                    </a>
+                </div>
+            </main>
+        `;
+        const link = document.querySelector<HTMLAnchorElement>('a[data-post-transition-source]')!;
+        link.addEventListener('click', (event) => event.preventDefault());
+
+        link.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+
+        expect(readPostReturnUrl()).toBe('/zh/post-view?view=list&archive=years&page=3');
+    });
+
     it('redirects article return navigation to the remembered archive state', () => {
         setPath('/zh/p/homeserver-1');
         document.body.innerHTML = '<div class="solitude-article-meta-motion-media"></div>';

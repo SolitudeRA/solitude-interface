@@ -2,6 +2,7 @@
 import DockNavMobile from './DockNavMobile.tsx';
 import RssSelector from '@components/common/RssSelector.tsx';
 import { type Locale, DEFAULT_LOCALE, buildLocalePath } from '@lib/i18n';
+import { isCurrentDockDestination } from '@lib/navigation/dockNavigationGuard';
 
 interface Props {
     lang?: Locale;
@@ -21,6 +22,8 @@ const postsLabel = 'Posts';
 const aboutLabel = 'About';
 const contactLabel = 'Contact';
 const privacyLabel = 'Privacy';
+const isCurrentRoute = (href: string) =>
+    isCurrentDockDestination(Astro.url, new URL(href, Astro.url));
 ---
 
 <!-- 移动端汉堡菜单 - 小于768px -->
@@ -43,6 +46,8 @@ const privacyLabel = 'Privacy';
         <div class="dock-nav-item-left">
             <a
                 href={homeLink}
+                data-dock-route
+                aria-current={isCurrentRoute(homeLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{homeLabel}</a
             >
@@ -50,6 +55,8 @@ const privacyLabel = 'Privacy';
         <div class="dock-nav-item">
             <a
                 href={postsLink}
+                data-dock-route
+                aria-current={isCurrentRoute(postsLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{postsLabel}</a
             >
@@ -57,6 +64,8 @@ const privacyLabel = 'Privacy';
         <div class="dock-nav-item">
             <a
                 href={aboutLink}
+                data-dock-route
+                aria-current={isCurrentRoute(aboutLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{aboutLabel}</a
             >
@@ -65,6 +74,8 @@ const privacyLabel = 'Privacy';
         <div class="dock-nav-item dock-nav-item-right-md">
             <a
                 href={contactLink}
+                data-dock-route
+                aria-current={isCurrentRoute(contactLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{contactLabel}</a
             >
@@ -77,6 +88,8 @@ const privacyLabel = 'Privacy';
         <div class="dock-nav-item-right hidden xl:flex">
             <a
                 href={privacyLink}
+                data-dock-route
+                aria-current={isCurrentRoute(privacyLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{privacyLabel}</a
             >
@@ -85,6 +98,8 @@ const privacyLabel = 'Privacy';
 </div>
 
 <script>
+    import { initDockNavigationGuard } from '@lib/navigation/dockNavigationGuard';
+
     // 方向感知下划线效果
     function initDirectionalUnderline() {
         const items = document.querySelectorAll('.dock-nav-item');
@@ -107,6 +122,7 @@ const privacyLabel = 'Privacy';
 
     // 页面加载时初始化
     initDirectionalUnderline();
+    initDockNavigationGuard();
 
     // 支持 Astro 视图过渡
     document.addEventListener('astro:after-swap', initDirectionalUnderline);
