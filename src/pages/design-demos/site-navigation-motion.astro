@@ -17,10 +17,10 @@ import SiteDock from '@components/layout/dock/SiteDock.astro';
                 <div class="demo-mark">◉</div>
                 <div>
                     <strong>Protogalaxy</strong>
-                    <span>Stable shell, staged content.</span>
+                    <span>Stable shell, continuous reading.</span>
                 </div>
             </div>
-            <div class="demo-motion-state">Phase 02 · Content Stage</div>
+            <div class="demo-motion-state">Phase 05 · Spatial Memory</div>
         </header>
 
         <main>
@@ -41,8 +41,14 @@ import SiteDock from '@components/layout/dock/SiteDock.astro';
                     posts: {
                         eyebrow: '02 · Archive',
                         title: '进入内容世界',
-                        copy: '鼠标仍然触发原有的彩虹分段边框与侧向光晕；点击后由内容舞台接管动效，Dock 本身不叠加新的选中态。',
-                        cards: ['Editorial ledger', 'Series shelf', 'Year columns'],
+                        copy: '点击第一张卡片进入阅读页；返回时仍会回到原来的视图、筛选条件与浏览位置，让内容空间保持连续。',
+                        cards: ['Open article', 'Remember position', 'Stable dock'],
+                    },
+                    article: {
+                        eyebrow: '04 · Reading',
+                        title: '阅读从封面继续',
+                        copy: '共享视觉只承接被选择的文章，正文舞台随后轻柔进入。返回档案时，同一条路径也能自然收束。',
+                        cards: [],
                     },
                     about: {
                         eyebrow: '03 · Profile',
@@ -62,15 +68,29 @@ import SiteDock from '@components/layout/dock/SiteDock.astro';
 
                 const render = (route) => {
                     const data = routes[route];
+                    if (route === 'article') {
+                        stage.innerHTML = `
+                            <div class="demo-article-hero">
+                                <p class="demo-eyebrow">${data.eyebrow}</p>
+                                <h1>${data.title}</h1>
+                            </div>
+                            <p class="demo-copy">${data.copy}</p>`;
+                        return;
+                    }
+
                     stage.innerHTML = `
                         <p class="demo-eyebrow">${data.eyebrow}</p>
                         <h1>${data.title}</h1>
                         <p class="demo-copy">${data.copy}</p>
                         <div class="demo-cards">
                             ${data.cards
-                                .map(
-                                    (item, index) => `
-                                        <article class="demo-card">
+                                .map((item, index) =>
+                                    route === 'posts' && index === 0
+                                        ? `<button type="button" class="demo-card demo-article-card" data-demo-article>
+                                                <span>0${index + 1}</span>
+                                                <strong>${item} &rarr;</strong>
+                                            </button>`
+                                        : `<article class="demo-card">
                                             <span>0${index + 1}</span>
                                             <strong>${item}</strong>
                                         </article>`
@@ -107,6 +127,12 @@ import SiteDock from '@components/layout/dock/SiteDock.astro';
                 document.addEventListener(
                     'click',
                     (event) => {
+                        if (event.target.closest('[data-demo-article]')) {
+                            event.preventDefault();
+                            navigate('article');
+                            return;
+                        }
+
                         const link = event.target.closest('[data-dock-root] a[href]');
                         if (!link) return;
                         const route = routeByPath.get(new URL(link.href).pathname);
@@ -276,7 +302,38 @@ import SiteDock from '@components/layout/dock/SiteDock.astro';
         padding: 18px;
         border: 1px solid #ffffff14;
         border-radius: 18px;
+        color: inherit;
         background: #ffffff08;
+        text-align: left;
+        font: inherit;
+    }
+
+    .demo-article-card {
+        cursor: pointer;
+        view-transition-name: demo-post-focus;
+    }
+
+    .demo-article-card:hover {
+        border-color: #b8c1ff66;
+        background: #ffffff10;
+    }
+
+    .demo-article-hero {
+        display: flex;
+        min-height: 300px;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: clamp(26px, 5vw, 56px);
+        border: 1px solid #ffffff1f;
+        border-radius: 28px;
+        background:
+            linear-gradient(to top, #090b14f2, #10172a55),
+            radial-gradient(circle at 75% 20%, #8791d777, transparent 42%), #171b2a;
+        view-transition-name: demo-post-focus;
+    }
+
+    .demo-article-hero h1 {
+        font-size: clamp(38px, 6vw, 76px);
     }
 
     .demo-card span {
@@ -297,6 +354,18 @@ import SiteDock from '@components/layout/dock/SiteDock.astro';
 
     ::view-transition-new(demo-stage) {
         animation: demo-stage-in 280ms 20ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        mix-blend-mode: normal;
+    }
+
+    ::view-transition-group(demo-post-focus) {
+        z-index: 4;
+        animation-duration: 300ms;
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    ::view-transition-old(demo-post-focus),
+    ::view-transition-new(demo-post-focus) {
+        border-radius: 24px;
         mix-blend-mode: normal;
     }
 

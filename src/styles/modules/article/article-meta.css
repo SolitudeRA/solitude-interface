@@ -28,21 +28,6 @@
         }
     }
 
-    .solitude-article-meta::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-            180deg,
-            var(--post-view-card-overlay-start) 0%,
-            var(--post-view-card-overlay-mid) 50%,
-            var(--post-view-card-overlay-end) 100%
-        );
-        backdrop-filter: blur(2px);
-        -webkit-backdrop-filter: blur(2px);
-        z-index: 0;
-    }
-
     .solitude-article-meta > * {
         position: relative;
         z-index: 1;

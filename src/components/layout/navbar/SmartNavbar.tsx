@@ -3,14 +3,12 @@ import { useEffect, useState, useRef, type ReactNode } from 'react';
 interface SmartNavbarProps {
     children: ReactNode;
     isFixed?: boolean;
-    readerMode?: boolean;
     transitionName?: string;
 }
 
 export default function SmartNavbar({
     children,
     isFixed = false,
-    readerMode = false,
     transitionName,
 }: SmartNavbarProps) {
     const [isVisible, setIsVisible] = useState(true);
@@ -64,13 +62,8 @@ export default function SmartNavbar({
 
     const navClasses = [
         'smart-navbar',
-        readerMode ? 'smart-navbar-reader' : '',
         // 响应式高度：移动端较小，桌面端较大（使用 svh 避免移动端地址栏导致的高度变化）
-        readerMode ? 'h-[10svh] sm:h-[11svh] md:h-[12svh]' : 'h-[12svh] sm:h-[13svh] md:h-[14svh]',
-        readerMode
-            ? 'min-h-[56px] sm:min-h-[64px] md:min-h-[72px]'
-            : 'min-h-[60px] sm:min-h-[70px] md:min-h-[80px]',
-        readerMode ? 'max-h-[96px]' : '',
+        'h-[12svh] min-h-[60px] sm:h-[13svh] sm:min-h-[70px] md:h-[14svh] md:min-h-[80px]',
         'w-full',
         'transition-transform',
         'duration-300',

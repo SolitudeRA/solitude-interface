@@ -16,6 +16,7 @@ interface Props {
     tags?: PostTag[] | undefined;
     published_at: string;
     html: string;
+    backHref: string;
     locale?: Locale;
 }
 
@@ -105,10 +106,16 @@ const {
     tags,
     published_at,
     html,
+    backHref,
     locale = DEFAULT_LOCALE,
 } = Astro.props;
 const featureImageUrl = feature_image?.toString() || '';
 const copy = POST_DETAIL_COPY[locale];
+const backLabel: Record<Locale, string> = {
+    zh: '返回文章列表',
+    ja: '記事一覧へ戻る',
+    en: 'Back to articles',
+};
 
 // 安全：在服务端渲染时净化 HTML 内容
 // 检测可疑内容用于日志监控（开发环境）
@@ -132,6 +139,32 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
     <!-- 中间文章主体 - 移动端全宽，桌面端占7列 -->
     <div class="solitude-article-body col-span-1 pb-16 md:pb-24 lg:pb-32 xl:col-span-7">
         <div class="solitude-article-meta">
+            <div
+                class="solitude-article-meta-motion-media"
+                transition:name="post-focus-media"
+                aria-hidden="true"
+            >
+            </div>
+            <div
+                class="solitude-article-meta-motion-overlay"
+                transition:name="post-focus-overlay"
+                aria-hidden="true"
+            >
+            </div>
+            <a class="article-back-link" href={backHref}>
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="m15 18-6-6 6-6"></path>
+                </svg>
+                <span>{backLabel[locale]}</span>
+            </a>
             <PostHeader
                 title={title}
                 primary_tag={primary_tag}
@@ -161,18 +194,27 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
 >
     .solitude-article-meta {
         position: relative;
-        background-size: cover;
-        background-position: center;
-        background-image: var(--featureImageUrl);
         border-radius: 0 0 24px 24px;
         margin-bottom: 2rem;
+        isolation: isolate;
+        overflow: hidden;
     }
 
-    /* 遮罩层 - 使用 theme.css 的变量实现动态主题切换 */
-    .solitude-article-meta::before {
-        content: '';
+    .solitude-article-meta-motion-media {
         position: absolute;
         inset: 0;
+        z-index: -2;
+        border-radius: inherit;
+        background-color: var(--card-image-fallback-start);
+        background-image: var(--featureImageUrl);
+        background-position: center;
+        background-size: cover;
+    }
+
+    .solitude-article-meta-motion-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
         border-radius: inherit;
         background: linear-gradient(
             to bottom,
@@ -180,7 +222,52 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
             var(--post-view-card-overlay-mid) 50%,
             var(--post-view-card-overlay-end) 100%
         );
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
         pointer-events: none;
+    }
+
+    .article-back-link {
+        position: absolute !important;
+        top: clamp(0.75rem, 2vw, 1.25rem);
+        left: clamp(0.75rem, 2vw, 1.25rem);
+        z-index: 3 !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: 2.5rem;
+        padding: 0.55rem 0.85rem;
+        border: 1px solid color-mix(in srgb, var(--article-header-title) 24%, transparent);
+        border-radius: 999px;
+        color: var(--article-header-title);
+        background: color-mix(in srgb, var(--background) 76%, transparent);
+        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition:
+            transform 180ms ease,
+            background-color 180ms ease,
+            border-color 180ms ease;
+    }
+
+    .article-back-link:hover {
+        transform: translateX(-2px);
+        border-color: color-mix(in srgb, var(--article-header-title) 42%, transparent);
+        background: color-mix(in srgb, var(--background) 88%, transparent);
+    }
+
+    .article-back-link:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 3px;
+    }
+
+    .article-back-link svg {
+        width: 1rem;
+        height: 1rem;
+        flex: none;
     }
 
     @media (max-width: 767px) {

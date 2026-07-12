@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { cn } from '@components/common/lib/utils';
 import { postViewAtom } from '@stores/postViewAtom';
@@ -10,10 +11,15 @@ interface PostViewPaginationProps {
 }
 
 export default function PostViewPagination({ onScrollToPost, className }: PostViewPaginationProps) {
+    const [isHydrated, setIsHydrated] = useState(false);
     const { totalPosts, visibleIndices, activeIndex } = useAtomValue(postViewAtom);
 
-    // 没有文章则不渲染
-    if (totalPosts === 0) {
+    useEffect(() => {
+        setIsHydrated(true);
+    }, []);
+
+    // 保持 SSR 与客户端首帧一致，避免跨路由保留的 atom 状态造成 hydration mismatch。
+    if (!isHydrated || totalPosts === 0) {
         return null;
     }
 

@@ -46,7 +46,8 @@ const noPostsText = getUIText('home', 'noPosts', locale);
 
                 return (
                     <a
-                        href={post.url.toString()}
+                        href={post.url.pathname}
+                        data-post-transition-source
                         class="post-card-wrapper flex shrink-0 items-center justify-center rounded-[35px] transition-all duration-300 ease-out hover:z-10 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none"
                         role="listitem"
                         aria-label={post.title}

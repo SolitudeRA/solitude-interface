@@ -76,27 +76,127 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
         <title>{documentTitle}</title>
         <script is:inline>
             (() => {
+                const STORAGE_KEY = 'theme';
+                const THEME_ATTRIBUTE = 'data-theme';
+                const TOGGLE_SELECTOR = '[data-theme-switch]';
+                const THEMES = new Set(['dark', 'light']);
+
+                const isTheme = (value) => THEMES.has(value);
+
                 const parseTheme = (stored) => {
                     if (!stored) return 'dark';
-                    if (stored === 'dark' || stored === 'light') return stored;
+                    if (isTheme(stored)) return stored;
                     try {
                         const parsed = JSON.parse(stored);
-                        return parsed === 'dark' || parsed === 'light' ? parsed : 'dark';
+                        return isTheme(parsed) ? parsed : 'dark';
                     } catch {
                         return 'dark';
                     }
                 };
 
-                let storedTheme = null;
-                try {
-                    storedTheme = localStorage.getItem('theme');
-                } catch {
-                    // Keep the default theme when storage is unavailable.
+                const getStoredTheme = () => {
+                    try {
+                        return parseTheme(localStorage.getItem(STORAGE_KEY));
+                    } catch {
+                        return 'dark';
+                    }
+                };
+
+                const getDocumentTheme = () => {
+                    const root = document.documentElement;
+                    const attributeTheme = root.getAttribute(THEME_ATTRIBUTE);
+                    if (isTheme(attributeTheme)) return attributeTheme;
+                    if (root.classList.contains('light')) return 'light';
+                    if (root.classList.contains('dark')) return 'dark';
+                    return getStoredTheme();
+                };
+
+                const syncControls = (target, theme) => {
+                    const isLight = theme === 'light';
+                    const state = isLight ? 'checked' : 'unchecked';
+
+                    target.querySelectorAll(TOGGLE_SELECTOR).forEach((button) => {
+                        button.setAttribute('aria-checked', String(isLight));
+                        button.setAttribute(
+                            'aria-label',
+                            isLight ? 'Switch to dark theme' : 'Switch to light theme'
+                        );
+                        button.setAttribute('data-state', state);
+                        button
+                            .querySelector('[data-theme-switch-thumb]')
+                            ?.setAttribute('data-state', state);
+                    });
+                };
+
+                const syncDocument = (target, theme = getDocumentTheme()) => {
+                    const root = target.documentElement;
+                    root.setAttribute(THEME_ATTRIBUTE, theme);
+                    root.classList.toggle('dark', theme === 'dark');
+                    root.classList.toggle('light', theme === 'light');
+                    root.style.colorScheme = theme;
+                    syncControls(target, theme);
+                    return theme;
+                };
+
+                const applyTheme = (theme, options = {}) => {
+                    if (!isTheme(theme)) return getDocumentTheme();
+
+                    const { persist = true, notify = true } = options;
+                    syncDocument(document, theme);
+
+                    if (persist) {
+                        try {
+                            localStorage.setItem(STORAGE_KEY, theme);
+                        } catch {
+                            // The active document still keeps the selected theme.
+                        }
+                    }
+
+                    if (notify) {
+                        window.dispatchEvent(
+                            new CustomEvent('themeChanged', {
+                                detail: { theme },
+                            })
+                        );
+                    }
+
+                    return theme;
+                };
+
+                if (!window.__solitudeTheme) {
+                    window.__solitudeTheme = {
+                        getTheme: getDocumentTheme,
+                        applyTheme,
+                        syncDocument,
+                        syncControls(target = document, theme = getDocumentTheme()) {
+                            syncControls(target, theme);
+                        },
+                        toggleTheme() {
+                            return applyTheme(getDocumentTheme() === 'light' ? 'dark' : 'light');
+                        },
+                    };
+
+                    document.addEventListener('astro:before-swap', (event) => {
+                        const nextDocument = event.newDocument;
+                        if (!nextDocument) return;
+                        window.__solitudeTheme?.syncDocument(
+                            nextDocument,
+                            window.__solitudeTheme.getTheme()
+                        );
+                    });
+
+                    window.addEventListener('themeChanged', (event) => {
+                        const theme = event.detail?.theme;
+                        if (!isTheme(theme)) return;
+                        if (getDocumentTheme() === theme) return;
+                        syncDocument(document, theme);
+                    });
                 }
 
-                const theme = parseTheme(storedTheme);
-                document.documentElement.classList.toggle('dark', theme === 'dark');
-                document.documentElement.classList.toggle('light', theme === 'light');
+                window.__solitudeTheme.applyTheme(getStoredTheme(), {
+                    persist: false,
+                    notify: false,
+                });
             })();
         </script>
         <ClientRouter fallback="animate" />
@@ -149,12 +249,224 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
 
     if (!siteMotionWindow.__solitudeSiteMotionReady) {
         siteMotionWindow.__solitudeSiteMotionReady = true;
+        const postTransitionPathKey = 'solitude:post-transition-path';
+        const postReturnUrlKey = 'solitude:post-return-url';
+        const postViewScrollKey = 'solitude:post-view-scroll-left';
+        const siteTransitionAttribute = 'data-site-transition';
+        const postReturnTransition = 'post-return';
 
-        window.addEventListener('themeChanged', (event) => {
-            const newTheme = (event as CustomEvent<{ theme?: string }>).detail?.theme;
-            if (newTheme !== 'dark' && newTheme !== 'light') return;
-            document.documentElement.classList.toggle('dark', newTheme === 'dark');
-            document.documentElement.classList.toggle('light', newTheme === 'light');
+        const clearPostReturnTransition = () => {
+            if (
+                document.documentElement.getAttribute(siteTransitionAttribute) ===
+                postReturnTransition
+            ) {
+                document.documentElement.removeAttribute(siteTransitionAttribute);
+            }
+        };
+
+        const clearPostTransitionSource = (root: Document | Element = document) => {
+            root.querySelectorAll<HTMLElement>(
+                '[data-post-transition-media], [data-post-transition-title]'
+            ).forEach((element) => element.style.removeProperty('view-transition-name'));
+        };
+
+        const armPostTransitionSource = (link: HTMLAnchorElement) => {
+            link.querySelector<HTMLElement>('[data-post-transition-media]')?.style.setProperty(
+                'view-transition-name',
+                'post-focus-media'
+            );
+        };
+
+        document.addEventListener(
+            'click',
+            (event) => {
+                if (!(event instanceof MouseEvent) || event.button !== 0) return;
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                if (!(event.target instanceof Element)) return;
+
+                const link = event.target.closest<HTMLAnchorElement>(
+                    'a[data-post-transition-source]'
+                );
+                if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+                const destination = new URL(link.href, window.location.href);
+                if (destination.origin !== window.location.origin) return;
+
+                clearPostTransitionSource();
+                armPostTransitionSource(link);
+                try {
+                    sessionStorage.setItem(postTransitionPathKey, destination.pathname);
+                    if (document.querySelector('[data-page-stage="posts"]')) {
+                        sessionStorage.setItem(
+                            postReturnUrlKey,
+                            `${window.location.pathname}${window.location.search}`
+                        );
+
+                        const scrollContainer =
+                            link.closest<HTMLElement>('[data-post-view-scroll]');
+                        if (scrollContainer) {
+                            sessionStorage.setItem(
+                                postViewScrollKey,
+                                String(scrollContainer.scrollLeft)
+                            );
+                        } else {
+                            sessionStorage.removeItem(postViewScrollKey);
+                        }
+                    }
+                } catch {
+                    // The forward transition still works when storage is unavailable.
+                }
+            },
+            { capture: true }
+        );
+
+        document.addEventListener('astro:before-preparation', (event) => {
+            const transitionEvent = event as Event & {
+                to?: URL;
+                signal?: AbortSignal;
+            };
+            const isPostReturn = Boolean(
+                document.querySelector('.solitude-article-meta-motion-media') &&
+                transitionEvent.to?.pathname.match(/\/(?:[^/]+\/)?post-view\/?$/)
+            );
+
+            if (!isPostReturn) {
+                clearPostReturnTransition();
+                return;
+            }
+
+            try {
+                const storedUrl = sessionStorage.getItem(postReturnUrlKey);
+                if (storedUrl) {
+                    const storedDestination = new URL(storedUrl, window.location.origin);
+                    if (
+                        storedDestination.origin === window.location.origin &&
+                        storedDestination.pathname.match(/\/(?:[^/]+\/)?post-view\/?$/)
+                    ) {
+                        transitionEvent.to = storedDestination;
+                    }
+                }
+            } catch {
+                // Continue to the requested list URL when session storage is unavailable.
+            }
+
+            document.documentElement.setAttribute(siteTransitionAttribute, postReturnTransition);
+            transitionEvent.signal?.addEventListener('abort', clearPostReturnTransition, {
+                once: true,
+            });
         });
+
+        document.addEventListener('astro:before-swap', (event) => {
+            if (!document.querySelector('.solitude-article-meta-motion-media')) return;
+
+            const transitionEvent = event as Event & {
+                newDocument?: Document;
+                viewTransition?: ViewTransition;
+            };
+            const newDocument = transitionEvent.newDocument;
+            if (!newDocument) return;
+
+            if (
+                document.documentElement.getAttribute(siteTransitionAttribute) ===
+                postReturnTransition
+            ) {
+                newDocument.documentElement.setAttribute(
+                    siteTransitionAttribute,
+                    postReturnTransition
+                );
+                void transitionEvent.viewTransition?.finished.then(
+                    clearPostReturnTransition,
+                    clearPostReturnTransition
+                );
+            }
+
+            let selectedPath: string | null = null;
+            try {
+                selectedPath = sessionStorage.getItem(postTransitionPathKey);
+            } catch {
+                return;
+            }
+            if (!selectedPath) return;
+
+            const matchingLink = Array.from(
+                newDocument.querySelectorAll<HTMLAnchorElement>('a[data-post-transition-source]')
+            ).find((link) => new URL(link.href, window.location.origin).pathname === selectedPath);
+            if (!matchingLink) return;
+
+            clearPostTransitionSource(newDocument);
+            armPostTransitionSource(matchingLink);
+        });
+
+        const applyPostReturnHref = () => {
+            const backLink = document.querySelector<HTMLAnchorElement>('.article-back-link');
+            if (!backLink) return;
+
+            try {
+                const storedUrl = sessionStorage.getItem(postReturnUrlKey);
+                if (!storedUrl) return;
+
+                const destination = new URL(storedUrl, window.location.origin);
+                if (destination.origin !== window.location.origin) return;
+                if (!destination.pathname.match(/\/(?:[^/]+\/)?post-view\/?$/)) return;
+
+                backLink.href = `${destination.pathname}${destination.search}${destination.hash}`;
+            } catch {
+                // Keep the server-rendered fallback URL when session storage is unavailable.
+            }
+        };
+
+        document.addEventListener('astro:after-swap', () => {
+            if (
+                document.documentElement.getAttribute(siteTransitionAttribute) !==
+                postReturnTransition
+            ) {
+                return;
+            }
+
+            try {
+                const storedScrollValue = sessionStorage.getItem(postViewScrollKey);
+                const scrollContainer =
+                    document.querySelector<HTMLElement>('[data-post-view-scroll]');
+                const storedScrollLeft = Number(storedScrollValue);
+                if (
+                    scrollContainer &&
+                    storedScrollValue !== null &&
+                    Number.isFinite(storedScrollLeft)
+                ) {
+                    const previousScrollBehavior = scrollContainer.style.scrollBehavior;
+                    const previousScrollSnapType = scrollContainer.style.scrollSnapType;
+
+                    scrollContainer.dataset.postViewRestoring = 'true';
+                    scrollContainer.style.scrollBehavior = 'auto';
+                    scrollContainer.style.scrollSnapType = 'none';
+                    scrollContainer.scrollLeft = Math.max(storedScrollLeft, 0);
+                    void scrollContainer.offsetWidth;
+
+                    window.requestAnimationFrame(() => {
+                        if (previousScrollSnapType) {
+                            scrollContainer.style.scrollSnapType = previousScrollSnapType;
+                        } else {
+                            scrollContainer.style.removeProperty('scroll-snap-type');
+                        }
+
+                        window.requestAnimationFrame(() => {
+                            if (previousScrollBehavior) {
+                                scrollContainer.style.scrollBehavior = previousScrollBehavior;
+                            } else {
+                                scrollContainer.style.removeProperty('scroll-behavior');
+                            }
+                            delete scrollContainer.dataset.postViewRestoring;
+                        });
+                    });
+                }
+
+                sessionStorage.removeItem(postReturnUrlKey);
+            } catch {
+                // The list remains usable even when position restoration is unavailable.
+            }
+        });
+
+        document.addEventListener('astro:page-load', applyPostReturnHref);
+        applyPostReturnHref();
     }
 </script>

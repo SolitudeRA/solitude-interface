@@ -43,6 +43,15 @@
     }
 }
 
+@keyframes solitude-post-overlay-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 ::view-transition-old(root) {
     animation: solitude-route-exit 120ms cubic-bezier(0.4, 0, 1, 1) both;
     mix-blend-mode: normal;
@@ -55,21 +64,24 @@
 
 ::view-transition-group(site-page-stage-home),
 ::view-transition-group(site-page-stage-posts),
-::view-transition-group(site-page-stage-about) {
+::view-transition-group(site-page-stage-about),
+::view-transition-group(site-page-stage-article) {
     animation-duration: 280ms;
     animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 ::view-transition-old(site-page-stage-home),
 ::view-transition-old(site-page-stage-posts),
-::view-transition-old(site-page-stage-about) {
+::view-transition-old(site-page-stage-about),
+::view-transition-old(site-page-stage-article) {
     animation: solitude-stage-exit 140ms cubic-bezier(0.4, 0, 1, 1) both;
     mix-blend-mode: normal;
 }
 
 ::view-transition-new(site-page-stage-home),
 ::view-transition-new(site-page-stage-posts),
-::view-transition-new(site-page-stage-about) {
+::view-transition-new(site-page-stage-about),
+::view-transition-new(site-page-stage-article) {
     animation: solitude-stage-enter 280ms 20ms cubic-bezier(0.22, 1, 0.36, 1) both;
     mix-blend-mode: normal;
 }
@@ -106,6 +118,67 @@
     animation: none;
 }
 
+/* 仅承接被点击文章的封面；标题留在各自内容舞台，避免大字号缩放产生模糊。 */
+::view-transition-group(post-focus-media) {
+    z-index: 4;
+    animation-duration: 300ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-image-pair(post-focus-media),
+::view-transition-old(post-focus-media),
+::view-transition-new(post-focus-media) {
+    border-radius: 1.5rem;
+    mix-blend-mode: normal;
+    overflow: clip;
+}
+
+::view-transition-group(post-focus-overlay) {
+    z-index: 5;
+    animation-duration: 300ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-new(post-focus-overlay) {
+    animation: solitude-post-overlay-in 200ms 70ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    mix-blend-mode: normal;
+}
+
+::view-transition-old(post-focus-overlay) {
+    animation: solitude-route-exit 80ms cubic-bezier(0.4, 0, 1, 1) both;
+    mix-blend-mode: normal;
+}
+
+/*
+ * 详情返回列表时不再展示栅格快照动画：列表已经在交换前恢复到原位置，
+ * 直接交接可避免整页文字、Navbar 与大封面缩放时产生模糊和重影。
+ */
+html[data-site-transition='post-return']::view-transition-group(root),
+html[data-site-transition='post-return']::view-transition-group(site-navbar),
+html[data-site-transition='post-return']::view-transition-group(site-page-stage-article),
+html[data-site-transition='post-return']::view-transition-group(site-page-stage-posts),
+html[data-site-transition='post-return']::view-transition-group(post-focus-media),
+html[data-site-transition='post-return']::view-transition-group(post-focus-overlay) {
+    animation-duration: 1ms;
+}
+
+html[data-site-transition='post-return']::view-transition-old(root),
+html[data-site-transition='post-return']::view-transition-old(site-navbar),
+html[data-site-transition='post-return']::view-transition-old(site-page-stage-article),
+html[data-site-transition='post-return']::view-transition-old(post-focus-media),
+html[data-site-transition='post-return']::view-transition-old(post-focus-overlay) {
+    animation: none;
+    opacity: 0;
+}
+
+html[data-site-transition='post-return']::view-transition-new(root),
+html[data-site-transition='post-return']::view-transition-new(site-navbar),
+html[data-site-transition='post-return']::view-transition-new(site-page-stage-posts),
+html[data-site-transition='post-return']::view-transition-new(post-focus-media) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
     ::view-transition-old(root),
     ::view-transition-new(root),
@@ -115,12 +188,21 @@
     ::view-transition-new(site-page-stage-posts),
     ::view-transition-old(site-page-stage-about),
     ::view-transition-new(site-page-stage-about),
+    ::view-transition-old(site-page-stage-article),
+    ::view-transition-new(site-page-stage-article),
+    ::view-transition-old(post-focus-media),
+    ::view-transition-new(post-focus-media),
+    ::view-transition-old(post-focus-overlay),
+    ::view-transition-new(post-focus-overlay),
     ::view-transition-group(site-background),
     ::view-transition-group(site-navbar),
     ::view-transition-group(site-dock),
+    ::view-transition-group(post-focus-media),
+    ::view-transition-group(post-focus-overlay),
     ::view-transition-group(site-page-stage-home),
     ::view-transition-group(site-page-stage-posts),
-    ::view-transition-group(site-page-stage-about) {
+    ::view-transition-group(site-page-stage-about),
+    ::view-transition-group(site-page-stage-article) {
         animation-duration: 1ms !important;
         animation-delay: 0ms !important;
     }

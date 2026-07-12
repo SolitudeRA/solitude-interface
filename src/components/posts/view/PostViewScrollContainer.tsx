@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSetAtom, useAtomValue } from 'jotai';
@@ -20,6 +20,8 @@ const LAYOUT_CONFIG = {
     gap: 60,
     fallbackCardWidth: 300,
 };
+
+const POST_VIEW_SCROLL_KEY = 'solitude:post-view-scroll-left';
 
 interface ScrollMetrics {
     totalPosts: number;
@@ -229,6 +231,54 @@ export default function PostViewScrollContainer({
         }
     }, [postDates, setPostViewState]);
 
+    useLayoutEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        let snapRestoreFrame: number | null = null;
+        let behaviorRestoreFrame: number | null = null;
+
+        try {
+            const storedScrollValue = sessionStorage.getItem(POST_VIEW_SCROLL_KEY);
+            const storedScrollLeft = Number(storedScrollValue);
+            if (storedScrollValue === null || !Number.isFinite(storedScrollLeft)) return;
+
+            const previousScrollBehavior = container.style.scrollBehavior;
+            const previousScrollSnapType = container.style.scrollSnapType;
+
+            container.dataset.postViewRestoring = 'true';
+            container.style.scrollBehavior = 'auto';
+            container.style.scrollSnapType = 'none';
+            container.scrollLeft = Math.max(storedScrollLeft, 0);
+            void container.offsetWidth;
+            sessionStorage.removeItem(POST_VIEW_SCROLL_KEY);
+
+            snapRestoreFrame = window.requestAnimationFrame(() => {
+                if (previousScrollSnapType) {
+                    container.style.scrollSnapType = previousScrollSnapType;
+                } else {
+                    container.style.removeProperty('scroll-snap-type');
+                }
+
+                behaviorRestoreFrame = window.requestAnimationFrame(() => {
+                    if (previousScrollBehavior) {
+                        container.style.scrollBehavior = previousScrollBehavior;
+                    } else {
+                        container.style.removeProperty('scroll-behavior');
+                    }
+                    delete container.dataset.postViewRestoring;
+                });
+            });
+        } catch {
+            // Keep the initial list position when session storage is unavailable.
+        }
+
+        return () => {
+            if (snapRestoreFrame !== null) window.cancelAnimationFrame(snapRestoreFrame);
+            if (behaviorRestoreFrame !== null) window.cancelAnimationFrame(behaviorRestoreFrame);
+        };
+    }, [containerRef]);
+
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
@@ -266,7 +316,7 @@ export default function PostViewScrollContainer({
             onPointerEnter={() => setIsHovering(true)}
             onPointerLeave={() => setIsHovering(false)}
         >
-            <div className="relative h-[75svh] min-h-[520px]">
+            <div data-view-motion-content className="relative h-[75svh] min-h-[520px]">
                 <AnimatePresence>
                     {canScrollLeft && (
                         <motion.div

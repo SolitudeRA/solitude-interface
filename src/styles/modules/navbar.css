@@ -21,8 +21,4 @@
         border-bottom: 1px solid var(--navbar-scrolled-border);
         box-shadow: 0 4px 20px var(--navbar-scrolled-shadow);
     }
-
-    .smart-navbar-reader.smart-navbar-scrolled {
-        box-shadow: 0 3px 16px var(--navbar-scrolled-shadow);
-    }
 }

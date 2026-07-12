@@ -10,7 +10,7 @@ interface Props {
     siteSubTitle: string;
     homeUrl?: string;
     isFixed?: boolean;
-    readerMode?: boolean;
+    hideTitleOnMobile?: boolean;
     availableLocales?: readonly Locale[] | undefined;
     displayLocale?: Locale | undefined;
 }
@@ -21,18 +21,19 @@ const {
     siteSubTitle,
     homeUrl = '/',
     isFixed = false,
-    readerMode = false,
+    hideTitleOnMobile = false,
     availableLocales,
     displayLocale,
 } = Astro.props;
 ---
 
-<SmartNavbar isFixed={isFixed} readerMode={readerMode} transitionName="site-navbar" client:idle>
+<SmartNavbar isFixed={isFixed} transitionName="site-navbar" client:idle>
     <NavbarBrand
         logoImageUrl={logoUrl}
         siteTitle={siteTitle}
         siteSubTitle={siteSubTitle}
         homeUrl={homeUrl}
+        hideTitleOnMobile={hideTitleOnMobile}
     />
     <NavbarUtility availableLocales={availableLocales} displayLocale={displayLocale}>
         <div slot="start"><slot name="utility-start" /></div>
