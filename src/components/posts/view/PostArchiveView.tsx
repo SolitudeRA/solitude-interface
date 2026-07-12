@@ -13,23 +13,24 @@ import {
 import { cn } from '@components/common/lib/utils';
 import { getUIText, type Locale } from '@lib/i18n';
 import {
-    extractFacets,
-    filterPosts,
-    parseBrowseParams,
-    type BrowsePost,
-    type FacetOption,
-} from '@lib/postBrowse';
-
-export interface PostArchiveItem extends BrowsePost {
-    id: string;
-    url: string;
-    feature_image: string | null;
-    published_at: string;
-    post_series: string;
-    post_series_slug?: string;
-    post_series_label?: string;
-    post_series_number?: string;
-}
+    ARCHIVE_LAYOUTS,
+    DEFAULT_ARCHIVE_LAYOUT,
+    formatArchiveDate,
+    formatArchiveMonthDay,
+    formatArchiveYear,
+    getArchiveCategoryLabel,
+    getArchiveSeriesLabel,
+    groupArchivePostsBySeries,
+    groupArchivePostsByYear,
+    INITIAL_ARCHIVE_FILTERS,
+    parseArchiveParams,
+    serializeArchiveParams,
+    type ArchiveFilters,
+    type ArchiveGroup,
+    type ArchiveLayout,
+    type PostArchiveItem,
+} from '@lib/postArchive';
+import { extractFacets, filterPosts, type FacetOption } from '@lib/postBrowse';
 
 type PostViewKey =
     | 'category'
@@ -51,25 +52,6 @@ type PostViewKey =
     | 'standalonePosts'
     | 'articleCount';
 
-type ArchiveLayout = 'ledger' | 'series' | 'years';
-
-interface ListFilters {
-    category: string | null;
-    type: string | null;
-    query: string;
-    page: number;
-}
-
-interface ArchiveGroup {
-    key: string;
-    label: string;
-    posts: PostArchiveItem[];
-    isStandalone?: boolean;
-}
-
-const INITIAL_FILTERS: ListFilters = { category: null, type: null, query: '', page: 1 };
-const DEFAULT_LAYOUT: ArchiveLayout = 'ledger';
-const LAYOUTS: ArchiveLayout[] = ['ledger', 'series', 'years'];
 const ARCHIVE_PANEL_VARIANTS: Variants = {
     enter: (direction: number) => ({
         opacity: 0,
@@ -93,120 +75,22 @@ const ARCHIVE_PANEL_VARIANTS: Variants = {
     }),
 };
 
-function isVisible(value: string | null | undefined): value is string {
-    const normalized = value?.trim().toLowerCase();
-    return Boolean(normalized && normalized !== 'default');
-}
-
-function formatDate(value: string): string {
-    return value?.split('T')[0] ?? '';
-}
-
-function formatMonthDay(value: string): string {
-    return formatDate(value).slice(5).replace('-', '.');
-}
-
-function formatYear(value: string): string {
-    return formatDate(value).slice(0, 4);
-}
-
-function categoryLabel(post: PostArchiveItem): string {
-    if (isVisible(post.post_category_label)) return post.post_category_label.trim();
-    return isVisible(post.post_category) ? post.post_category.trim() : '';
-}
-
-function seriesLabel(post: PostArchiveItem): string | null {
-    if (isVisible(post.post_series_label)) return post.post_series_label.trim();
-    return isVisible(post.post_series) ? post.post_series.trim() : null;
-}
-
-function readUrlState(): { filters: ListFilters; layout: ArchiveLayout } {
-    const params = new URLSearchParams(window.location.search);
-    const parsed = parseBrowseParams(params);
-    const rawLayout = params.get('archive') as ArchiveLayout | null;
-    return {
-        filters: {
-            category: parsed.category,
-            type: parsed.type,
-            query: parsed.query,
-            page: parsed.page,
-        },
-        layout: rawLayout && LAYOUTS.includes(rawLayout) ? rawLayout : DEFAULT_LAYOUT,
-    };
+function readUrlState(): { filters: ArchiveFilters; layout: ArchiveLayout } {
+    return parseArchiveParams(new URLSearchParams(window.location.search));
 }
 
 function writeUrlState(
-    filters: ListFilters,
+    filters: ArchiveFilters,
     layout: ArchiveLayout,
     mode: 'push' | 'replace' = 'replace'
 ): void {
-    const params = new URLSearchParams(window.location.search);
-    const set = (key: string, value: string | null) => {
-        if (value?.trim()) params.set(key, value);
-        else params.delete(key);
-    };
-    set('category', filters.category);
-    set('type', filters.type);
-    set('q', filters.query);
-    set('page', filters.page > 1 ? String(filters.page) : null);
-    set('archive', layout === DEFAULT_LAYOUT ? null : layout);
-    const query = params.toString();
+    const query = serializeArchiveParams(
+        new URLSearchParams(window.location.search),
+        filters,
+        layout
+    );
     const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
     window.history[mode === 'push' ? 'pushState' : 'replaceState'](null, '', url);
-}
-
-function groupByYear(posts: PostArchiveItem[]): ArchiveGroup[] {
-    const groups = new Map<string, PostArchiveItem[]>();
-    posts.forEach((post) => {
-        const year = formatYear(post.published_at) || '—';
-        groups.set(year, [...(groups.get(year) ?? []), post]);
-    });
-    return [...groups.entries()]
-        .sort(([left], [right]) => right.localeCompare(left))
-        .map(([year, items]) => ({ key: year, label: year, posts: items }));
-}
-
-function groupBySeries(posts: PostArchiveItem[], standalone: string): ArchiveGroup[] {
-    const groups = new Map<string, ArchiveGroup>();
-    posts.forEach((post) => {
-        const label = seriesLabel(post);
-        const isStandalone = label === null;
-        const key = isStandalone
-            ? '__standalone__'
-            : isVisible(post.post_series_slug)
-              ? post.post_series_slug.trim()
-              : label;
-        const group = groups.get(key) ?? {
-            key,
-            label: label ?? standalone,
-            posts: [],
-            isStandalone,
-        };
-        group.posts.push(post);
-        groups.set(key, group);
-    });
-    groups.forEach((group) => {
-        group.posts.sort((left, right) => {
-            const leftNumber = Number.parseInt(
-                left.post_series_number?.match(/\d+/)?.[0] ?? '',
-                10
-            );
-            const rightNumber = Number.parseInt(
-                right.post_series_number?.match(/\d+/)?.[0] ?? '',
-                10
-            );
-            if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
-                return leftNumber - rightNumber;
-            }
-            if (Number.isFinite(leftNumber)) return -1;
-            if (Number.isFinite(rightNumber)) return 1;
-            return right.published_at.localeCompare(left.published_at);
-        });
-    });
-    return [...groups.values()].sort((left, right) => {
-        if (left.isStandalone !== right.isStandalone) return left.isStandalone ? 1 : -1;
-        return right.posts.length - left.posts.length || left.label.localeCompare(right.label);
-    });
 }
 
 export default function PostArchiveView({
@@ -216,10 +100,10 @@ export default function PostArchiveView({
     posts: PostArchiveItem[];
     locale: Locale;
 }) {
-    const [filters, setFilters] = useState<ListFilters>(INITIAL_FILTERS);
-    const [layout, setLayout] = useState<ArchiveLayout>(DEFAULT_LAYOUT);
+    const [filters, setFilters] = useState<ArchiveFilters>(INITIAL_ARCHIVE_FILTERS);
+    const [layout, setLayout] = useState<ArchiveLayout>(DEFAULT_ARCHIVE_LAYOUT);
     const [layoutDirection, setLayoutDirection] = useState(1);
-    const layoutRef = useRef<ArchiveLayout>(DEFAULT_LAYOUT);
+    const layoutRef = useRef<ArchiveLayout>(DEFAULT_ARCHIVE_LAYOUT);
     const [activePostId, setActivePostId] = useState(posts[0]?.id ?? '');
     const [headerPortalHost, setHeaderPortalHost] = useState<HTMLElement | null>(null);
     const [searchPortalHost, setSearchPortalHost] = useState<HTMLElement | null>(null);
@@ -230,7 +114,8 @@ export default function PostArchiveView({
         const previous = layoutRef.current;
         if (next === previous) return false;
 
-        const direction = Math.sign(LAYOUTS.indexOf(next) - LAYOUTS.indexOf(previous)) || 1;
+        const direction =
+            Math.sign(ARCHIVE_LAYOUTS.indexOf(next) - ARCHIVE_LAYOUTS.indexOf(previous)) || 1;
         layoutRef.current = next;
         setLayoutDirection(direction);
         setLayout(next);
@@ -275,9 +160,12 @@ export default function PostArchiveView({
             }),
         [posts, filters.category, filters.type, filters.query]
     );
-    const yearGroups = useMemo(() => groupByYear(filtered), [filtered]);
+    const yearGroups = useMemo(() => groupArchivePostsByYear(filtered), [filtered]);
     const standalone = getUIText('postView', 'standalonePosts', locale);
-    const seriesGroups = useMemo(() => groupBySeries(filtered, standalone), [filtered, standalone]);
+    const seriesGroups = useMemo(
+        () => groupArchivePostsBySeries(filtered, standalone),
+        [filtered, standalone]
+    );
 
     useEffect(() => {
         if (!filtered.some((post) => post.id === activePostId)) {
@@ -290,7 +178,7 @@ export default function PostArchiveView({
         ? filtered.findIndex((post) => post.id === activePost.id)
         : -1;
     const commitFilters = useCallback(
-        (next: ListFilters) => {
+        (next: ArchiveFilters) => {
             setFilters(next);
             writeUrlState(next, layout);
         },
@@ -765,7 +653,7 @@ function CategorySwitcher({
 
 interface ToolbarProps {
     facets: { categories: FacetOption[]; types: FacetOption[] };
-    filters: ListFilters;
+    filters: ArchiveFilters;
     locale: Locale;
     layout: ArchiveLayout;
     totalCount: number;
@@ -1057,7 +945,7 @@ function SeriesLibrary({
                                         {post.title}
                                     </span>
                                     <time className="text-muted-foreground text-[0.64rem] tabular-nums">
-                                        {formatYear(post.published_at)}
+                                        {formatArchiveYear(post.published_at)}
                                     </time>
                                 </a>
                             ))}
@@ -1127,7 +1015,7 @@ function ArchiveRow({
     onActivate: (id: string) => void;
     showCategory?: boolean;
 }) {
-    const category = categoryLabel(post);
+    const category = getArchiveCategoryLabel(post);
     return (
         <a
             href={post.url}
@@ -1144,7 +1032,7 @@ function ArchiveRow({
             )}
         >
             <time className="text-muted-foreground text-[0.66rem] font-medium tabular-nums">
-                {formatMonthDay(post.published_at)}
+                {formatArchiveMonthDay(post.published_at)}
             </time>
             <span
                 data-post-transition-title
@@ -1172,7 +1060,7 @@ function ArchivePreview({
     compact?: boolean;
     className?: string;
 }) {
-    const series = seriesLabel(post);
+    const series = getArchiveSeriesLabel(post);
     return (
         <a
             href={post.url}
@@ -1201,7 +1089,7 @@ function ArchivePreview({
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/48 to-black/5" />
             <div className={cn('relative text-white', compact ? 'p-4' : 'p-5 sm:p-6')}>
                 <p className="text-[0.62rem] font-semibold tracking-[0.12em] text-white/62 uppercase">
-                    {[formatDate(post.published_at), categoryLabel(post)]
+                    {[formatArchiveDate(post.published_at), getArchiveCategoryLabel(post)]
                         .filter(Boolean)
                         .join(' · ')}
                 </p>
