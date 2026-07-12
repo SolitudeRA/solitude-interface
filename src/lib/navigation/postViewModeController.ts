@@ -25,10 +25,10 @@ function getMotionTarget(section: HTMLElement): HTMLElement {
 }
 
 function cancelViewAnimations(section: HTMLElement): void {
-    section.getAnimations().forEach((animation) => animation.cancel());
+    section.getAnimations?.().forEach((animation) => animation.cancel());
     const target = getMotionTarget(section);
     if (target !== section) {
-        target.getAnimations().forEach((animation) => animation.cancel());
+        target.getAnimations?.().forEach((animation) => animation.cancel());
     }
 }
 
