@@ -9,6 +9,7 @@ import { initializeSiteData } from '@api/ghost/settings';
 import BaseLayout from '@layouts/base/BaseLayout.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
 import SiteDock from '@components/layout/dock/SiteDock.astro';
+import PageStage from '@components/layout/PageStage.astro';
 import PostContent from '@components/posts/detail/PostContent.astro';
 import PostSeriesNavigation from '@components/posts/detail/PostSeriesNavigation.astro';
 import FallbackNotice from '@components/i18n/FallbackNotice.astro';
@@ -127,9 +128,11 @@ const fallbackMessage = isFallback ? getFallbackMessage(locale, displayedLocale)
 ---
 
 <BaseLayout
-    siteTitle={`${siteTitle} - ${post.title}`}
+    siteTitle={siteTitle}
+    pageTitle={post.title}
     coverImageUrl={coverImageUrl}
     lang={LOCALE_HTML_LANG[displayedLocale]}
+    locale={displayedLocale}
     canonicalUrl={canonicalUrl}
     alternateLinks={alternateLinks}
 >
@@ -139,7 +142,7 @@ const fallbackMessage = isFallback ? getFallbackMessage(locale, displayedLocale)
         siteSubTitle={siteDescription}
         homeUrl={`/${locale}`}
         isFixed={true}
-        readerMode={true}
+        hideTitleOnMobile={true}
         availableLocales={availableLocales}
         displayLocale={displayedLocale}
     />
@@ -152,24 +155,27 @@ const fallbackMessage = isFallback ? getFallbackMessage(locale, displayedLocale)
         )
     }
 
-    <PostContent
-        title={post.title}
-        feature_image={post.feature_image}
-        primary_tag={post.primary_tag}
-        tags={post.tags}
-        published_at={post.published_at}
-        html={post.html}
-        locale={displayedLocale}
-    />
+    <PageStage variant="article">
+        <PostContent
+            title={post.title}
+            feature_image={post.feature_image}
+            primary_tag={post.primary_tag}
+            tags={post.tags}
+            published_at={post.published_at}
+            html={post.html}
+            backHref={`/${locale}/post-view`}
+            locale={displayedLocale}
+        />
 
-    <PostSeriesNavigation
-        seriesName={currentSeriesName ?? post.post_series}
-        currentIndex={Math.max(currentSeriesIndex, 0)}
-        total={seriesPosts.length}
-        locale={displayedLocale}
-        previousPost={previousSeriesNavItem}
-        nextPost={nextSeriesNavItem}
-    />
+        <PostSeriesNavigation
+            seriesName={currentSeriesName ?? post.post_series}
+            currentIndex={Math.max(currentSeriesIndex, 0)}
+            total={seriesPosts.length}
+            locale={displayedLocale}
+            previousPost={previousSeriesNavItem}
+            nextPost={nextSeriesNavItem}
+        />
+    </PageStage>
 
     <SiteDock isFixed={true} layout="home" lang={locale} readerMode={true} />
 </BaseLayout>

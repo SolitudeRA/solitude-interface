@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -299,7 +300,7 @@ export default function PostArchiveView({
     const countLabel = (count: number) => t('articleCount').replace('{count}', String(count));
 
     return (
-        <>
+        <MotionConfig reducedMotion="user">
             {headerPortalHost &&
                 isListVisible &&
                 createPortal(
@@ -340,48 +341,55 @@ export default function PostArchiveView({
 
             <div
                 data-post-list-root
+                data-view-motion-content
                 data-archive-layout={layout}
                 className="flex h-[75svh] min-h-[580px] w-full max-w-full flex-col overflow-hidden pt-4 pb-6 md:pb-12 xl:pt-2"
             >
                 <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden px-2 pb-2 sm:px-4 md:px-6">
                     <div className="mx-auto flex h-full min-h-0 w-full max-w-[96rem] min-w-0 flex-col overflow-x-hidden">
                         <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden">
-                            {filtered.length === 0 ? (
-                                <p className="text-muted-foreground border-border/55 bg-card/45 flex h-full items-center justify-center rounded-2xl border px-5 text-center text-sm backdrop-blur-xl">
-                                    {t('empty')}
-                                </p>
-                            ) : layout === 'ledger' ? (
-                                <LedgerView
-                                    groups={yearGroups}
-                                    activePost={activePost}
-                                    onActivate={setActivePostId}
-                                    countLabel={countLabel}
-                                    locale={locale}
-                                />
-                            ) : (
-                                <ArchiveRail activePost={activePost} locale={locale}>
-                                    {layout === 'series' ? (
-                                        <SeriesLibrary
-                                            groups={seriesGroups}
-                                            activePost={activePost}
-                                            onActivate={setActivePostId}
-                                            countLabel={countLabel}
-                                        />
-                                    ) : (
-                                        <YearColumns
-                                            groups={yearGroups}
-                                            activePost={activePost}
-                                            onActivate={setActivePostId}
-                                            countLabel={countLabel}
-                                        />
-                                    )}
-                                </ArchiveRail>
-                            )}
+                            <div
+                                key={layout}
+                                data-archive-motion-panel={layout}
+                                className="animate-in fade-in-0 slide-in-from-bottom-2 h-full min-h-0 w-full duration-200 motion-reduce:animate-none"
+                            >
+                                {filtered.length === 0 ? (
+                                    <p className="text-muted-foreground border-border/55 bg-card/45 flex h-full items-center justify-center rounded-2xl border px-5 text-center text-sm backdrop-blur-xl">
+                                        {t('empty')}
+                                    </p>
+                                ) : layout === 'ledger' ? (
+                                    <LedgerView
+                                        groups={yearGroups}
+                                        activePost={activePost}
+                                        onActivate={setActivePostId}
+                                        countLabel={countLabel}
+                                        locale={locale}
+                                    />
+                                ) : (
+                                    <ArchiveRail activePost={activePost} locale={locale}>
+                                        {layout === 'series' ? (
+                                            <SeriesLibrary
+                                                groups={seriesGroups}
+                                                activePost={activePost}
+                                                onActivate={setActivePostId}
+                                                countLabel={countLabel}
+                                            />
+                                        ) : (
+                                            <YearColumns
+                                                groups={yearGroups}
+                                                activePost={activePost}
+                                                onActivate={setActivePostId}
+                                                countLabel={countLabel}
+                                            />
+                                        )}
+                                    </ArchiveRail>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </>
+        </MotionConfig>
     );
 }
 
@@ -486,27 +494,36 @@ function ArchiveSearchControl({
                 )}
             </button>
 
-            {isOpen && (
-                <label
-                    id="post-archive-search-panel"
-                    data-archive-search-panel
-                    className="border-border/50 bg-background/88 focus-within:ring-ring/70 absolute top-[calc(100%+0.5rem)] right-0 z-[80] flex h-11 w-[min(20rem,calc(100vw-2rem))] items-center gap-2 rounded-full border px-3 shadow-2xl backdrop-blur-2xl focus-within:ring-2"
-                >
-                    <Search className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden="true" />
-                    <input
-                        ref={inputRef}
-                        type="search"
-                        value={query}
-                        onChange={(event) => onQuery(event.target.value)}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Escape') setIsOpen(false);
-                        }}
-                        placeholder={label}
-                        aria-label={label}
-                        className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none"
-                    />
-                </label>
-            )}
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.label
+                        id="post-archive-search-panel"
+                        data-archive-search-panel
+                        initial={{ opacity: 0, y: -6, scale: 0.985 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.99 }}
+                        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                        className="border-border/50 bg-background/88 focus-within:ring-ring/70 absolute top-[calc(100%+0.5rem)] right-0 z-[80] flex h-11 w-[min(20rem,calc(100vw-2rem))] origin-top-right items-center gap-2 rounded-full border px-3 shadow-2xl backdrop-blur-2xl focus-within:ring-2"
+                    >
+                        <Search
+                            className="text-muted-foreground h-4 w-4 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <input
+                            ref={inputRef}
+                            type="search"
+                            value={query}
+                            onChange={(event) => onQuery(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Escape') setIsOpen(false);
+                            }}
+                            placeholder={label}
+                            aria-label={label}
+                            className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none"
+                        />
+                    </motion.label>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -973,6 +990,7 @@ function SeriesLibrary({
                                 <a
                                     key={post.id}
                                     href={post.url}
+                                    data-post-transition-source
                                     data-archive-post-id={post.id}
                                     onPointerEnter={() => onActivate(post.id)}
                                     onFocus={() => onActivate(post.id)}
@@ -988,7 +1006,10 @@ function SeriesLibrary({
                                         {post.post_series_number ||
                                             String(index + 1).padStart(2, '0')}
                                     </span>
-                                    <span className="line-clamp-2 text-[0.84rem] leading-snug font-semibold">
+                                    <span
+                                        data-post-transition-title
+                                        className="line-clamp-2 text-[0.84rem] leading-snug font-semibold"
+                                    >
                                         {post.title}
                                     </span>
                                     <time className="text-muted-foreground text-[0.64rem] tabular-nums">
@@ -1066,6 +1087,7 @@ function ArchiveRow({
     return (
         <a
             href={post.url}
+            data-post-transition-source
             data-archive-post-id={post.id}
             onPointerEnter={() => onActivate(post.id)}
             onFocus={() => onActivate(post.id)}
@@ -1080,7 +1102,10 @@ function ArchiveRow({
             <time className="text-muted-foreground text-[0.66rem] font-medium tabular-nums">
                 {formatMonthDay(post.published_at)}
             </time>
-            <span className="line-clamp-2 text-[0.84rem] leading-snug font-semibold sm:text-sm">
+            <span
+                data-post-transition-title
+                className="line-clamp-2 text-[0.84rem] leading-snug font-semibold sm:text-sm"
+            >
                 {post.title}
             </span>
             {showCategory && category && (
@@ -1107,6 +1132,7 @@ function ArchivePreview({
     return (
         <a
             href={post.url}
+            data-post-transition-source
             aria-label={post.title}
             className={cn(
                 'group/preview border-border/55 bg-card/58 focus-visible:ring-ring relative min-h-0 flex-col justify-end overflow-hidden rounded-[1.35rem] border shadow-[0_24px_70px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 motion-reduce:transform-none',
@@ -1116,13 +1142,17 @@ function ArchivePreview({
             {post.feature_image ? (
                 <img
                     src={post.feature_image}
+                    data-post-transition-media
                     alt=""
                     loading="lazy"
                     decoding="async"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/preview:scale-[1.025] motion-reduce:transform-none"
                 />
             ) : (
-                <div className="absolute inset-0 bg-[linear-gradient(135deg,var(--card-image-fallback-start),var(--card-image-fallback-end))]" />
+                <div
+                    data-post-transition-media
+                    className="absolute inset-0 bg-[linear-gradient(135deg,var(--card-image-fallback-start),var(--card-image-fallback-end))]"
+                />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/48 to-black/5" />
             <div className={cn('relative text-white', compact ? 'p-4' : 'p-5 sm:p-6')}>
@@ -1132,6 +1162,7 @@ function ArchivePreview({
                         .join(' · ')}
                 </p>
                 <h2
+                    data-post-transition-title
                     className={cn(
                         'mt-2 line-clamp-2 leading-tight font-bold tracking-[-0.035em]',
                         compact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'

@@ -96,6 +96,7 @@ const generalTags = (post.post_general_tags ?? []).filter(isVisibleTag);
         hasFeatureImage ? (
             <img
                 class="base-card-media base-card-image"
+                data-post-transition-media
                 src={featureImageUrl}
                 alt=""
                 loading={priority ? 'eager' : 'lazy'}
@@ -104,7 +105,11 @@ const generalTags = (post.post_general_tags ?? []).filter(isVisibleTag);
                 sizes="(max-width: 640px) 82vw, (min-width: 1920px) 428px, 394px"
             />
         ) : (
-            <div class="base-card-media base-card-image-fallback" aria-hidden="true" />
+            <div
+                class="base-card-media base-card-image-fallback"
+                data-post-transition-media
+                aria-hidden="true"
+            />
         )
     }
 
@@ -144,7 +149,7 @@ const generalTags = (post.post_general_tags ?? []).filter(isVisibleTag);
 
     <div class="card-inner">
         <header class="title-section">
-            <h3 class="card-title">{post.title}</h3>
+            <h3 class="card-title" data-post-transition-title>{post.title}</h3>
         </header>
 
         {

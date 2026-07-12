@@ -1,0 +1,424 @@
+---
+import '@styles/index.css';
+import SiteDock from '@components/layout/dock/SiteDock.astro';
+---
+
+<!doctype html>
+<html lang="zh-CN" class="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Protogalaxy · Navigation Motion Demo</title>
+    </head>
+    <body>
+        <div class="demo-background" aria-hidden="true"></div>
+        <header class="demo-topbar">
+            <div class="demo-brand">
+                <div class="demo-mark">◉</div>
+                <div>
+                    <strong>Protogalaxy</strong>
+                    <span>Stable shell, continuous reading.</span>
+                </div>
+            </div>
+            <div class="demo-motion-state">Phase 05 · Spatial Memory</div>
+        </header>
+
+        <main>
+            <section class="demo-stage" id="demo-stage" aria-live="polite"></section>
+        </main>
+
+        <SiteDock isFixed={true} layout="home" lang="zh" />
+
+        <script is:inline>
+            (() => {
+                const routes = {
+                    home: {
+                        eyebrow: '01 · Welcome',
+                        title: '安静的入口',
+                        copy: '稳定外壳保持不动，首屏内容作为一个整体完成 10px 以内的轻微换景。底部 Dock 仍然完全使用项目现有组件。',
+                        cards: ['Latest story', 'Reading notes', 'Quiet archive'],
+                    },
+                    posts: {
+                        eyebrow: '02 · Archive',
+                        title: '进入内容世界',
+                        copy: '点击第一张卡片进入阅读页；返回时仍会回到原来的视图、筛选条件与浏览位置，让内容空间保持连续。',
+                        cards: ['Open article', 'Remember position', 'Stable dock'],
+                    },
+                    article: {
+                        eyebrow: '04 · Reading',
+                        title: '阅读从封面继续',
+                        copy: '共享视觉只承接被选择的文章，正文舞台随后轻柔进入。返回档案时，同一条路径也能自然收束。',
+                        cards: [],
+                    },
+                    about: {
+                        eyebrow: '03 · Profile',
+                        title: '节奏保持一致',
+                        copy: '背景、导航和 Dock 构成稳定外壳。页面只使用淡入与微位移，保持空间连续，同时尊重现有组件的全部细节。',
+                        cards: ['Developer', 'Player', 'Creator'],
+                    },
+                };
+
+                const routeByPath = new Map([
+                    ['/zh', 'home'],
+                    ['/zh/post-view', 'posts'],
+                    ['/zh/about', 'about'],
+                ]);
+                const stage = document.querySelector('#demo-stage');
+                let currentRoute = 'home';
+
+                const render = (route) => {
+                    const data = routes[route];
+                    if (route === 'article') {
+                        stage.innerHTML = `
+                            <div class="demo-article-hero">
+                                <p class="demo-eyebrow">${data.eyebrow}</p>
+                                <h1>${data.title}</h1>
+                            </div>
+                            <p class="demo-copy">${data.copy}</p>`;
+                        return;
+                    }
+
+                    stage.innerHTML = `
+                        <p class="demo-eyebrow">${data.eyebrow}</p>
+                        <h1>${data.title}</h1>
+                        <p class="demo-copy">${data.copy}</p>
+                        <div class="demo-cards">
+                            ${data.cards
+                                .map((item, index) =>
+                                    route === 'posts' && index === 0
+                                        ? `<button type="button" class="demo-card demo-article-card" data-demo-article>
+                                                <span>0${index + 1}</span>
+                                                <strong>${item} &rarr;</strong>
+                                            </button>`
+                                        : `<article class="demo-card">
+                                            <span>0${index + 1}</span>
+                                            <strong>${item}</strong>
+                                        </article>`
+                                )
+                                .join('')}
+                        </div>`;
+                };
+
+                const navigate = (route) => {
+                    if (route === currentRoute) return;
+                    const swap = () => {
+                        currentRoute = route;
+                        render(route);
+                    };
+
+                    if (document.startViewTransition) {
+                        document.startViewTransition(swap);
+                        return;
+                    }
+
+                    document.body.classList.add('demo-fallback-out');
+                    window.setTimeout(() => {
+                        swap();
+                        document.body.classList.remove('demo-fallback-out');
+                        document.body.classList.add('demo-fallback-in');
+                        window.requestAnimationFrame(() => {
+                            window.requestAnimationFrame(() => {
+                                document.body.classList.remove('demo-fallback-in');
+                            });
+                        });
+                    }, 140);
+                };
+
+                document.addEventListener(
+                    'click',
+                    (event) => {
+                        if (event.target.closest('[data-demo-article]')) {
+                            event.preventDefault();
+                            navigate('article');
+                            return;
+                        }
+
+                        const link = event.target.closest('[data-dock-root] a[href]');
+                        if (!link) return;
+                        const route = routeByPath.get(new URL(link.href).pathname);
+                        if (!route) return;
+                        event.preventDefault();
+                        navigate(route);
+                    },
+                    true
+                );
+
+                render(currentRoute);
+            })();
+        </script>
+    </body>
+</html>
+
+<style is:global>
+    :root {
+        color-scheme: dark;
+        font-family: Inter, 'Noto Sans SC', system-ui, sans-serif;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100svh;
+        overflow: hidden;
+        color: #f7f8ff;
+        background: #080a11;
+    }
+
+    .demo-background {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+            radial-gradient(circle at 18% 14%, #727aa744, transparent 30%),
+            radial-gradient(circle at 82% 70%, #644f9240, transparent 32%),
+            linear-gradient(145deg, #171a28, #090b12 58%, #05070b);
+    }
+
+    .demo-background::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(#ffffff05 1px, transparent 1px),
+            linear-gradient(90deg, #ffffff05 1px, transparent 1px);
+        background-size: 42px 42px;
+        mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+
+    .demo-topbar {
+        position: fixed;
+        inset: 0 0 auto;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 106px;
+        padding: 18px clamp(22px, 4vw, 64px);
+    }
+
+    .demo-brand {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .demo-mark {
+        display: grid;
+        width: 62px;
+        aspect-ratio: 1;
+        place-items: center;
+        border: 1px solid #ffffff24;
+        border-radius: 18px;
+        background: #0d1020cc;
+        box-shadow: 0 18px 50px #0008;
+        font-size: 28px;
+    }
+
+    .demo-brand strong {
+        display: block;
+        font-size: clamp(22px, 2.3vw, 34px);
+        letter-spacing: -0.045em;
+    }
+
+    .demo-brand span {
+        color: #c5c8d9aa;
+        font-size: 13px;
+    }
+
+    .demo-motion-state {
+        color: #dce0f3b5;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    main {
+        display: grid;
+        min-height: 100svh;
+        place-items: center;
+        padding: 128px clamp(20px, 6vw, 100px);
+    }
+
+    .demo-stage {
+        width: min(1020px, 100%);
+        min-height: min(560px, 65svh);
+        padding: clamp(28px, 5vw, 72px);
+        border: 1px solid #ffffff1f;
+        border-radius: clamp(26px, 4vw, 48px);
+        background: linear-gradient(135deg, #ffffff12, transparent 42%), #0c0f18b8;
+        box-shadow: 0 36px 100px #0009;
+        backdrop-filter: blur(24px);
+        transition:
+            opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+            transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+        view-transition-name: demo-stage;
+    }
+
+    .demo-fallback-out .demo-stage {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.999);
+        transition-duration: 140ms;
+    }
+
+    .demo-fallback-in .demo-stage {
+        opacity: 0;
+        transform: translateY(10px) scale(0.999);
+        transition: none;
+    }
+
+    .demo-eyebrow {
+        margin: 0 0 18px;
+        color: #abb7ef;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+    }
+
+    .demo-stage h1 {
+        max-width: 13ch;
+        margin: 0;
+        font-size: clamp(46px, 7.5vw, 92px);
+        line-height: 0.96;
+        letter-spacing: -0.075em;
+    }
+
+    .demo-copy {
+        max-width: 58ch;
+        margin: 28px 0 0;
+        color: #d4d7e6b3;
+        font-size: clamp(15px, 1.6vw, 19px);
+        line-height: 1.75;
+    }
+
+    .demo-cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 42px;
+    }
+
+    .demo-card {
+        min-height: 104px;
+        padding: 18px;
+        border: 1px solid #ffffff14;
+        border-radius: 18px;
+        color: inherit;
+        background: #ffffff08;
+        text-align: left;
+        font: inherit;
+    }
+
+    .demo-article-card {
+        cursor: pointer;
+        view-transition-name: demo-post-focus;
+    }
+
+    .demo-article-card:hover {
+        border-color: #b8c1ff66;
+        background: #ffffff10;
+    }
+
+    .demo-article-hero {
+        display: flex;
+        min-height: 300px;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: clamp(26px, 5vw, 56px);
+        border: 1px solid #ffffff1f;
+        border-radius: 28px;
+        background:
+            linear-gradient(to top, #090b14f2, #10172a55),
+            radial-gradient(circle at 75% 20%, #8791d777, transparent 42%), #171b2a;
+        view-transition-name: demo-post-focus;
+    }
+
+    .demo-article-hero h1 {
+        font-size: clamp(38px, 6vw, 76px);
+    }
+
+    .demo-card span {
+        color: #aeb5d3;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+    }
+
+    .demo-card strong {
+        display: block;
+        margin-top: 18px;
+    }
+
+    ::view-transition-old(demo-stage) {
+        animation: demo-stage-out 140ms cubic-bezier(0.4, 0, 1, 1) both;
+        mix-blend-mode: normal;
+    }
+
+    ::view-transition-new(demo-stage) {
+        animation: demo-stage-in 280ms 20ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        mix-blend-mode: normal;
+    }
+
+    ::view-transition-group(demo-post-focus) {
+        z-index: 4;
+        animation-duration: 300ms;
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    ::view-transition-old(demo-post-focus),
+    ::view-transition-new(demo-post-focus) {
+        border-radius: 24px;
+        mix-blend-mode: normal;
+    }
+
+    @keyframes demo-stage-out {
+        to {
+            opacity: 0;
+            transform: translateY(-4px) scale(0.999);
+        }
+    }
+
+    @keyframes demo-stage-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px) scale(0.999);
+        }
+    }
+
+    @media (max-width: 680px) {
+        .demo-topbar {
+            height: 82px;
+        }
+
+        .demo-mark {
+            width: 46px;
+            border-radius: 14px;
+            font-size: 21px;
+        }
+
+        .demo-brand span,
+        .demo-motion-state {
+            display: none;
+        }
+
+        main {
+            padding-top: 96px;
+        }
+
+        .demo-cards {
+            grid-template-columns: 1fr;
+            margin-top: 28px;
+        }
+
+        .demo-card {
+            min-height: 78px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 1ms !important;
+            transition-duration: 1ms !important;
+        }
+    }
+</style>

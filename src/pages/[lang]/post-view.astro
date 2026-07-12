@@ -8,6 +8,7 @@ import { listAllPosts } from '@api/ghost/posts';
 import { initializeSiteData } from '@api/ghost/settings';
 import BaseLayout from '@layouts/base/BaseLayout.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
+import PageStage from '@components/layout/PageStage.astro';
 import {
     LOCALES,
     type Locale,
@@ -54,7 +55,7 @@ const listItems: PostArchiveItem[] = posts.map((post) => ({
     id: post.id,
     title: post.title,
     excerpt: post.excerpt,
-    url: post.url.toString(),
+    url: post.url.pathname,
     feature_image: post.feature_image ? post.feature_image.toString() : null,
     published_at: post.published_at,
     post_type: post.post_type,
@@ -81,8 +82,10 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
 
 <BaseLayout
     siteTitle={siteTitle}
+    pageTitle={getUIText('nav', 'posts', locale)}
     coverImageUrl={coverImageUrl}
     lang={htmlLang}
+    locale={locale}
     canonicalUrl={canonicalUrl}
     alternateLinks={alternateLinks}
 >
@@ -91,6 +94,7 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         siteTitle={siteTitle}
         siteSubTitle={siteDescription}
         homeUrl={`/${locale}`}
+        hideTitleOnMobile={true}
     >
         <div slot="utility-start" class="relative flex shrink-0 items-center">
             <div
@@ -128,15 +132,17 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         <div slot="utility-end" id="post-archive-search-host" class="relative shrink-0"></div>
     </SiteNavbar>
 
-    {/* 精选视图（默认） */}
-    <div data-view-section="gallery">
-        <PostViewContainer posts={featuredPosts} locale={locale} viewAllLabel={viewAllLabel} />
-    </div>
+    <PageStage variant="posts">
+        {/* 精选视图（默认） */}
+        <div data-view-section="gallery">
+            <PostViewContainer posts={featuredPosts} locale={locale} viewAllLabel={viewAllLabel} />
+        </div>
 
-    {/* 全部视图 —— 首屏 SSR、默认隐藏，由脚本按 ?view= 显隐 */}
-    <div data-view-section="list" hidden>
-        <PostArchiveView client:load posts={listItems} locale={locale} />
-    </div>
+        {/* 全部视图 —— 首屏 SSR、默认隐藏，由脚本按 ?view= 显隐 */}
+        <div data-view-section="list" hidden>
+            <PostArchiveView client:load posts={listItems} locale={locale} />
+        </div>
+    </PageStage>
 
     <Dock isFixed={true}>
         <div
@@ -151,22 +157,97 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
     {/* 视图控制：以 URL ?view= 为单一真源，切换 section 显隐 + body 滚动锁 */}
     <script is:inline>
         (() => {
+            let viewTransitionToken = 0;
+            const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
             const currentView = () =>
                 new URLSearchParams(window.location.search).get('view') === 'list'
                     ? 'list'
                     : 'gallery';
 
-            const applyView = (view) => {
+            const motionTargetFor = (section) =>
+                section.querySelector('[data-view-motion-content]') || section;
+
+            const cancelViewAnimations = (section) => {
+                section.getAnimations().forEach((animation) => animation.cancel());
+                const target = motionTargetFor(section);
+                if (target !== section) {
+                    target.getAnimations().forEach((animation) => animation.cancel());
+                }
+            };
+
+            const animateSection = (section, phase) => {
+                const isEntering = phase === 'enter';
+                const duration = isEntering ? 220 : 130;
+                const easing = isEntering
+                    ? 'cubic-bezier(0.22, 1, 0.36, 1)'
+                    : 'cubic-bezier(0.4, 0, 1, 1)';
+                const target = motionTargetFor(section);
+                const opacity = section.animate(
+                    isEntering
+                        ? [{ opacity: 0 }, { opacity: 1 }]
+                        : [{ opacity: 1 }, { opacity: 0 }],
+                    { duration, easing, fill: 'both' }
+                );
+                const movement = target.animate(
+                    isEntering
+                        ? [{ transform: 'translateY(8px)' }, { transform: 'translateY(0)' }]
+                        : [{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)' }],
+                    { duration, easing, fill: 'both' }
+                );
+
+                return [opacity, movement];
+            };
+
+            const applyView = async (view, animate = false) => {
+                const token = ++viewTransitionToken;
+                const sections = Array.from(document.querySelectorAll('[data-view-section]'));
+                const incoming = sections.find(
+                    (section) => section.getAttribute('data-view-section') === view
+                );
+                const outgoing = sections.find(
+                    (section) =>
+                        !section.hidden && section.getAttribute('data-view-section') !== view
+                );
+
                 document.documentElement.dataset.postViewMode = view;
-                document.querySelectorAll('[data-view-section]').forEach((el) => {
-                    el.hidden = el.getAttribute('data-view-section') !== view;
-                });
                 document.querySelectorAll('[data-view-toggle]').forEach((btn) => {
                     const active = btn.getAttribute('data-view-toggle') === view;
                     btn.dataset.active = String(active);
                     btn.setAttribute('aria-selected', String(active));
                 });
                 window.dispatchEvent(new CustomEvent('post-view-change', { detail: { view } }));
+
+                sections.forEach(cancelViewAnimations);
+
+                if (!animate || reducedMotionQuery.matches || !incoming) {
+                    sections.forEach((section) => {
+                        section.hidden = section !== incoming;
+                    });
+                    delete document.documentElement.dataset.postViewTransitioning;
+                    return;
+                }
+
+                document.documentElement.dataset.postViewTransitioning = 'true';
+
+                if (outgoing) {
+                    const exitAnimations = animateSection(outgoing, 'exit');
+                    await Promise.all(
+                        exitAnimations.map((animation) => animation.finished.catch(() => undefined))
+                    );
+                    if (token !== viewTransitionToken) return;
+                    outgoing.hidden = true;
+                    exitAnimations.forEach((animation) => animation.cancel());
+                }
+
+                incoming.hidden = false;
+                const enterAnimations = animateSection(incoming, 'enter');
+                await Promise.all(
+                    enterAnimations.map((animation) => animation.finished.catch(() => undefined))
+                );
+                if (token !== viewTransitionToken) return;
+                enterAnimations.forEach((animation) => animation.cancel());
+                delete document.documentElement.dataset.postViewTransitioning;
             };
 
             const setView = (view) => {
@@ -179,7 +260,7 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
                     '',
                     qs ? window.location.pathname + '?' + qs : window.location.pathname
                 );
-                applyView(view);
+                void applyView(view, true);
             };
 
             const bind = () => {
@@ -197,17 +278,20 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
                             setView(target);
                         });
                     });
-                applyView(currentView());
+                void applyView(currentView());
             };
 
-            window.addEventListener('popstate', () => applyView(currentView()));
+            if (!window.__solitudePostViewModeReady) {
+                window.__solitudePostViewModeReady = true;
+                window.addEventListener('popstate', () => void applyView(currentView(), true));
+                document.addEventListener('astro:page-load', bind);
+            }
 
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', bind, { once: true });
             } else {
                 bind();
             }
-            document.addEventListener('astro:page-load', bind);
         })();
     </script>
 
@@ -216,7 +300,9 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         (() => {
             const selector = '[data-post-view-scroll]';
             const hydratedAttribute = 'postViewHydrated';
-            const boundContainers = new WeakSet();
+            const boundContainers =
+                window.__solitudePostViewBoundContainers ??
+                (window.__solitudePostViewBoundContainers = new WeakSet());
 
             const bindPostViewScroll = () => {
                 document.querySelectorAll(selector).forEach((container) => {
@@ -284,7 +370,10 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
                 bindPostViewScroll();
             }
 
-            document.addEventListener('astro:page-load', bindPostViewScroll);
+            if (!window.__solitudePostViewScrollReady) {
+                window.__solitudePostViewScrollReady = true;
+                document.addEventListener('astro:page-load', bindPostViewScroll);
+            }
         })();
     </script>
 </BaseLayout>
@@ -307,11 +396,5 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
     /* 隐藏的视图段彻底移除（防止 flex/grid 类覆盖 [hidden]） */
     :global([data-view-section][hidden]) {
         display: none !important;
-    }
-
-    @media (max-width: 639px) {
-        :global(.navbar-brand .site-title) {
-            display: none;
-        }
     }
 </style>

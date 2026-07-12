@@ -19,14 +19,13 @@
         class:list={[
             'pointer-events-none flex h-6 w-6 items-center justify-center rounded-full',
             'transition-all duration-300',
-            'data-[state=checked]:translate-x-7 data-[state=unchecked]:translate-x-1',
             'bg-[var(--top-control-thumb-bg)] text-[var(--top-control-thumb-text)]',
             'shadow-[0_6px_18px_var(--top-control-thumb-shadow)]',
         ]}
     >
         <svg
             data-theme-switch-icon="sun"
-            class="hidden h-4 w-4 text-current transition-transform duration-300"
+            class="h-4 w-4 text-current transition-transform duration-300"
             xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
@@ -69,87 +68,35 @@
     </span>
 </button>
 
+<style>
+    [data-theme-switch-thumb] {
+        transform: translateX(0.25rem);
+    }
+
+    :global(html[data-theme='light']) [data-theme-switch-thumb] {
+        transform: translateX(1.75rem);
+    }
+
+    [data-theme-switch-icon='sun'] {
+        display: none;
+    }
+
+    [data-theme-switch-icon='moon'] {
+        display: block;
+    }
+
+    :global(html[data-theme='light']) [data-theme-switch-icon='sun'] {
+        display: block;
+    }
+
+    :global(html[data-theme='light']) [data-theme-switch-icon='moon'] {
+        display: none;
+    }
+</style>
+
 <script is:inline>
     (() => {
-        const STORAGE_KEY = 'theme';
         const TOGGLE_SELECTOR = '[data-theme-switch]';
-        const THEMES = new Set(['dark', 'light']);
-
-        const isTheme = (value) => THEMES.has(value);
-
-        const getDocumentTheme = () => {
-            const root = document.documentElement;
-            if (root.classList.contains('light')) return 'light';
-            if (root.classList.contains('dark')) return 'dark';
-            return 'dark';
-        };
-
-        const getStoredTheme = () => {
-            let storedTheme = null;
-
-            try {
-                storedTheme = window.localStorage.getItem(STORAGE_KEY);
-            } catch {
-                return getDocumentTheme();
-            }
-
-            if (!storedTheme) return getDocumentTheme();
-            if (isTheme(storedTheme)) return storedTheme;
-
-            try {
-                const parsed = JSON.parse(storedTheme);
-                return isTheme(parsed) ? parsed : getDocumentTheme();
-            } catch {
-                return getDocumentTheme();
-            }
-        };
-
-        const setToggleState = (button, theme) => {
-            const isLight = theme === 'light';
-            const state = isLight ? 'checked' : 'unchecked';
-            const thumb = button.querySelector('[data-theme-switch-thumb]');
-            const sunIcon = button.querySelector('[data-theme-switch-icon="sun"]');
-            const moonIcon = button.querySelector('[data-theme-switch-icon="moon"]');
-
-            button.setAttribute('aria-checked', String(isLight));
-            button.setAttribute(
-                'aria-label',
-                isLight ? 'Switch to dark theme' : 'Switch to light theme'
-            );
-            button.dataset.state = state;
-            thumb?.setAttribute('data-state', state);
-
-            if (sunIcon instanceof SVGElement) sunIcon.classList.toggle('hidden', !isLight);
-            if (moonIcon instanceof SVGElement) moonIcon.classList.toggle('hidden', isLight);
-        };
-
-        const setAllToggleStates = (theme) => {
-            document.querySelectorAll(TOGGLE_SELECTOR).forEach((button) => {
-                if (button instanceof HTMLButtonElement) {
-                    setToggleState(button, theme);
-                }
-            });
-        };
-
-        const applyTheme = (theme, shouldPersist = true) => {
-            document.documentElement.classList.toggle('dark', theme === 'dark');
-            document.documentElement.classList.toggle('light', theme === 'light');
-            setAllToggleStates(theme);
-
-            if (shouldPersist) {
-                try {
-                    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(theme));
-                } catch {
-                    // Keep the visible control interactive even when storage is unavailable.
-                }
-            }
-
-            window.dispatchEvent(
-                new CustomEvent('themeChanged', {
-                    detail: { theme },
-                })
-            );
-        };
 
         const bindToggle = (button) => {
             if (
@@ -161,18 +108,20 @@
 
             button.dataset.themeSwitchBound = 'true';
             button.addEventListener('click', () => {
-                const nextTheme = button.getAttribute('aria-checked') === 'true' ? 'dark' : 'light';
-                applyTheme(nextTheme);
+                window.__solitudeTheme?.toggleTheme();
             });
         };
 
-        const initialTheme = getStoredTheme();
-        applyTheme(initialTheme, false);
-        document.querySelectorAll(TOGGLE_SELECTOR).forEach(bindToggle);
+        const bindThemeSwitches = () => {
+            window.__solitudeTheme?.syncControls();
+            document.querySelectorAll(TOGGLE_SELECTOR).forEach(bindToggle);
+        };
 
-        window.addEventListener('themeChanged', (event) => {
-            const theme = event.detail?.theme;
-            if (isTheme(theme)) setAllToggleStates(theme);
-        });
+        if (!window.__solitudeThemeSwitchReady) {
+            window.__solitudeThemeSwitchReady = true;
+            document.addEventListener('astro:page-load', bindThemeSwitches);
+        }
+
+        bindThemeSwitches();
     })();
 </script>

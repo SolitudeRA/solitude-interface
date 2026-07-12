@@ -14,6 +14,7 @@ const { isFixed = false, readerMode = false } = Astro.props;
 <div
     data-dock-root
     data-reader-dock={readerMode ? 'true' : undefined}
+    transition:name="site-dock"
     class:list={[
         'min-h-[8vh] w-full items-center md:min-h-[9vh] lg:min-h-[10vh]',
         'pb-3 md:pb-4',

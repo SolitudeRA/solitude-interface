@@ -61,7 +61,8 @@ const locale = extractLocaleFromPost(post) ?? DEFAULT_LOCALE;
         </html>
     ) : (
         <BaseLayout
-            siteTitle={`${siteTitle} - ${post.title}`}
+            siteTitle={siteTitle}
+            pageTitle={post.title}
             coverImageUrl={coverImageUrl}
             locale={locale}
         >
@@ -71,7 +72,7 @@ const locale = extractLocaleFromPost(post) ?? DEFAULT_LOCALE;
                 siteSubTitle={siteDescription}
                 homeUrl={`/${locale}`}
                 isFixed={true}
-                readerMode={true}
+                hideTitleOnMobile={true}
             />
             <PostContent
                 title={post.title}
@@ -80,6 +81,7 @@ const locale = extractLocaleFromPost(post) ?? DEFAULT_LOCALE;
                 tags={post.tags}
                 published_at={post.published_at}
                 html={post.html}
+                backHref={`/${locale}/post-view`}
                 locale={locale}
             />
             <SiteDock isFixed={true} layout="home" lang={locale} readerMode={true} />

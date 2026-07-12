@@ -92,15 +92,17 @@ const noPostsText = getUIText('home', 'noPosts', locale);
 <script is:inline>
     (() => {
         const selector = '[data-home-showcase-scroll]';
-        const nativeReadyAttribute = 'homeShowcaseNativeScroll';
         const hydratedAttribute = 'homeShowcaseHydrated';
+        const boundContainers =
+            window.__solitudeHomeShowcaseBoundContainers ??
+            (window.__solitudeHomeShowcaseBoundContainers = new WeakSet());
 
         const bindHomeShowcaseScroll = () => {
             document.querySelectorAll(selector).forEach((container) => {
                 if (!(container instanceof HTMLElement)) return;
-                if (container.dataset[nativeReadyAttribute] === 'true') return;
+                if (boundContainers.has(container)) return;
 
-                container.dataset[nativeReadyAttribute] = 'true';
+                boundContainers.add(container);
                 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
                 container.addEventListener(
@@ -149,6 +151,9 @@ const noPostsText = getUIText('home', 'noPosts', locale);
             bindHomeShowcaseScroll();
         }
 
-        document.addEventListener('astro:page-load', bindHomeShowcaseScroll);
+        if (!window.__solitudeHomeShowcaseReady) {
+            window.__solitudeHomeShowcaseReady = true;
+            document.addEventListener('astro:page-load', bindHomeShowcaseScroll);
+        }
     })();
 </script>

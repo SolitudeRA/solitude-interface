@@ -6,9 +6,16 @@ interface Props {
     siteTitle: string;
     siteSubTitle: string;
     homeUrl?: string;
+    hideTitleOnMobile?: boolean;
 }
 
-const { logoImageUrl, siteTitle, siteSubTitle, homeUrl = '/' } = Astro.props;
+const {
+    logoImageUrl,
+    siteTitle,
+    siteSubTitle,
+    homeUrl = '/',
+    hideTitleOnMobile = false,
+} = Astro.props;
 const hasLogo = logoImageUrl && logoImageUrl.length > 0;
 ---
 
@@ -29,8 +36,7 @@ const hasLogo = logoImageUrl && logoImageUrl.length > 0;
                 width={400}
                 alt=""
                 class:list={[
-                    'h-2/5 sm:h-[45%] md:h-1/2',
-                    'min-h-10 sm:min-h-16 md:min-h-20 lg:min-h-25',
+                    'h-2/5 min-h-10 sm:h-[45%] sm:min-h-16 md:h-1/2 md:min-h-20 lg:min-h-25',
                     'w-auto rounded-[18%]',
                 ]}
             />
@@ -41,6 +47,7 @@ const hasLogo = logoImageUrl && logoImageUrl.length > 0;
             class:list={[
                 'site-title font-bold subpixel-antialiased',
                 'text-xl sm:text-2xl md:text-3xl lg:text-4xl',
+                hideTitleOnMobile && 'hidden sm:inline',
             ]}>{siteTitle}</span
         >
         <span

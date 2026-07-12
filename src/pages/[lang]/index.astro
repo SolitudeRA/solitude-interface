@@ -5,12 +5,14 @@ import BaseLayout from '@layouts/base/BaseLayout.astro';
 import IndexLayout from '@layouts/IndexLayout.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
 import SiteDock from '@components/layout/dock/SiteDock.astro';
+import PageStage from '@components/layout/PageStage.astro';
 import {
     LOCALES,
     type Locale,
     isLocale,
     LOCALE_HTML_LANG,
     generateAlternateLinks,
+    getUIText,
 } from '@lib/i18n';
 import { env } from '@api/config/env';
 
@@ -40,8 +42,10 @@ const canonicalUrl = `${env.site.url}/${locale}`;
 
 <BaseLayout
     siteTitle={siteTitle}
+    pageTitle={getUIText('nav', 'home', locale)}
     coverImageUrl={coverImageUrl}
     lang={htmlLang}
+    locale={locale}
     canonicalUrl={canonicalUrl}
     alternateLinks={alternateLinks}
 >
@@ -52,9 +56,11 @@ const canonicalUrl = `${env.site.url}/${locale}`;
         homeUrl={`/${locale}`}
     />
 
-    <main class="mx-auto">
-        <IndexLayout posts={posts} locale={locale} />
-    </main>
+    <PageStage variant="home">
+        <main class="mx-auto">
+            <IndexLayout posts={posts} locale={locale} />
+        </main>
+    </PageStage>
 
     <SiteDock isFixed={true} layout="home" lang={locale} />
 </BaseLayout>
