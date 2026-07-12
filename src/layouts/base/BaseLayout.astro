@@ -253,16 +253,17 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
         const postReturnUrlKey = 'solitude:post-return-url';
         const postViewScrollKey = 'solitude:post-view-scroll-left';
         const siteTransitionAttribute = 'data-site-transition';
+        const postForwardTransition = 'post-forward';
         const postReturnTransition = 'post-return';
 
-        const clearPostReturnTransition = () => {
-            if (
-                document.documentElement.getAttribute(siteTransitionAttribute) ===
-                postReturnTransition
-            ) {
+        const clearSiteTransition = (expectedTransition?: string) => {
+            const activeTransition = document.documentElement.getAttribute(siteTransitionAttribute);
+            if (!expectedTransition || activeTransition === expectedTransition) {
                 document.documentElement.removeAttribute(siteTransitionAttribute);
             }
         };
+
+        const clearPostReturnTransition = () => clearSiteTransition(postReturnTransition);
 
         const clearPostTransitionSource = (root: Document | Element = document) => {
             root.querySelectorAll<HTMLElement>(
@@ -271,10 +272,25 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
         };
 
         const armPostTransitionSource = (link: HTMLAnchorElement) => {
-            link.querySelector<HTMLElement>('[data-post-transition-media]')?.style.setProperty(
-                'view-transition-name',
-                'post-focus-media'
-            );
+            const destinationPath = new URL(link.href, window.location.origin).pathname;
+            const root = link.ownerDocument;
+            const scope = link.closest('[data-view-section]') ?? root;
+            const directMedia = link.querySelector<HTMLElement>('[data-post-transition-media]');
+            const fallbackMedia = Array.from(
+                scope.querySelectorAll<HTMLAnchorElement>('a[data-post-transition-source]')
+            )
+                .find(
+                    (candidate) =>
+                        new URL(candidate.href, window.location.origin).pathname ===
+                            destinationPath &&
+                        candidate.querySelector('[data-post-transition-media]')
+                )
+                ?.querySelector<HTMLElement>('[data-post-transition-media]');
+            const media =
+                directMedia ??
+                (window.matchMedia('(min-width: 1024px)').matches ? fallbackMedia : undefined);
+
+            media?.style.setProperty('view-transition-name', 'post-focus-media');
         };
 
         document.addEventListener(
@@ -294,9 +310,16 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
 
                 clearPostTransitionSource();
                 armPostTransitionSource(link);
+                const isPostSource = Boolean(document.querySelector('[data-page-stage="posts"]'));
+                if (isPostSource) {
+                    document.documentElement.setAttribute(
+                        siteTransitionAttribute,
+                        postForwardTransition
+                    );
+                }
                 try {
                     sessionStorage.setItem(postTransitionPathKey, destination.pathname);
-                    if (document.querySelector('[data-page-stage="posts"]')) {
+                    if (isPostSource) {
                         sessionStorage.setItem(
                             postReturnUrlKey,
                             `${window.location.pathname}${window.location.search}`
@@ -332,6 +355,16 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
 
             if (!isPostReturn) {
                 clearPostReturnTransition();
+                if (
+                    document.documentElement.getAttribute(siteTransitionAttribute) ===
+                    postForwardTransition
+                ) {
+                    transitionEvent.signal?.addEventListener(
+                        'abort',
+                        () => clearSiteTransition(postForwardTransition),
+                        { once: true }
+                    );
+                }
                 return;
             }
 
@@ -351,14 +384,14 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
             }
 
             document.documentElement.setAttribute(siteTransitionAttribute, postReturnTransition);
-            transitionEvent.signal?.addEventListener('abort', clearPostReturnTransition, {
-                once: true,
-            });
+            transitionEvent.signal?.addEventListener(
+                'abort',
+                () => clearSiteTransition(postReturnTransition),
+                { once: true }
+            );
         });
 
         document.addEventListener('astro:before-swap', (event) => {
-            if (!document.querySelector('.solitude-article-meta-motion-media')) return;
-
             const transitionEvent = event as Event & {
                 newDocument?: Document;
                 viewTransition?: ViewTransition;
@@ -366,19 +399,27 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
             const newDocument = transitionEvent.newDocument;
             if (!newDocument) return;
 
+            const activeTransition = document.documentElement.getAttribute(siteTransitionAttribute);
             if (
-                document.documentElement.getAttribute(siteTransitionAttribute) ===
-                postReturnTransition
+                activeTransition === postForwardTransition ||
+                activeTransition === postReturnTransition
             ) {
-                newDocument.documentElement.setAttribute(
-                    siteTransitionAttribute,
-                    postReturnTransition
-                );
-                void transitionEvent.viewTransition?.finished.then(
-                    clearPostReturnTransition,
-                    clearPostReturnTransition
-                );
+                newDocument.documentElement.setAttribute(siteTransitionAttribute, activeTransition);
+                const finishTransition = () => {
+                    clearSiteTransition(activeTransition);
+                    clearPostTransitionSource();
+                };
+                if (transitionEvent.viewTransition) {
+                    void transitionEvent.viewTransition.finished.then(
+                        finishTransition,
+                        finishTransition
+                    );
+                } else {
+                    finishTransition();
+                }
             }
+
+            if (!document.querySelector('.solitude-article-meta-motion-media')) return;
 
             let selectedPath: string | null = null;
             try {
@@ -388,9 +429,30 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
             }
             if (!selectedPath) return;
 
-            const matchingLink = Array.from(
+            const candidateLinks = Array.from(
                 newDocument.querySelectorAll<HTMLAnchorElement>('a[data-post-transition-source]')
-            ).find((link) => new URL(link.href, window.location.origin).pathname === selectedPath);
+            );
+            let preferredSection: Element | null = null;
+            try {
+                const storedUrl = sessionStorage.getItem(postReturnUrlKey);
+                const storedDestination = storedUrl
+                    ? new URL(storedUrl, window.location.origin)
+                    : null;
+                const preferredView =
+                    storedDestination?.searchParams.get('view') === 'list' ? 'list' : 'gallery';
+                preferredSection = newDocument.querySelector(
+                    `[data-view-section="${preferredView}"]`
+                );
+            } catch {
+                // Fall back to the first matching post link when storage is unavailable.
+            }
+
+            const matchesSelectedPath = (link: HTMLAnchorElement) =>
+                new URL(link.href, window.location.origin).pathname === selectedPath;
+            const matchingLink =
+                candidateLinks.find(
+                    (link) => preferredSection?.contains(link) && matchesSelectedPath(link)
+                ) ?? candidateLinks.find(matchesSelectedPath);
             if (!matchingLink) return;
 
             clearPostTransitionSource(newDocument);

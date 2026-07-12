@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, MotionConfig } from 'motion/react';
+import { AnimatePresence, motion, MotionConfig, type Variants } from 'motion/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -70,6 +70,28 @@ interface ArchiveGroup {
 const INITIAL_FILTERS: ListFilters = { category: null, type: null, query: '', page: 1 };
 const DEFAULT_LAYOUT: ArchiveLayout = 'ledger';
 const LAYOUTS: ArchiveLayout[] = ['ledger', 'series', 'years'];
+const ARCHIVE_PANEL_VARIANTS: Variants = {
+    enter: (direction: number) => ({
+        opacity: 0,
+        x: direction * 12,
+    }),
+    visible: {
+        opacity: 1,
+        x: 0,
+        transition: {
+            opacity: { duration: 0.24, ease: 'linear' },
+            x: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+        },
+    },
+    exit: (direction: number) => ({
+        opacity: 0,
+        x: direction * -6,
+        transition: {
+            opacity: { duration: 0.24, ease: 'linear' },
+            x: { duration: 0.22, ease: [0.4, 0, 0.2, 1] },
+        },
+    }),
+};
 
 function isVisible(value: string | null | undefined): value is string {
     const normalized = value?.trim().toLowerCase();
@@ -196,22 +218,35 @@ export default function PostArchiveView({
 }) {
     const [filters, setFilters] = useState<ListFilters>(INITIAL_FILTERS);
     const [layout, setLayout] = useState<ArchiveLayout>(DEFAULT_LAYOUT);
+    const [layoutDirection, setLayoutDirection] = useState(1);
+    const layoutRef = useRef<ArchiveLayout>(DEFAULT_LAYOUT);
     const [activePostId, setActivePostId] = useState(posts[0]?.id ?? '');
     const [headerPortalHost, setHeaderPortalHost] = useState<HTMLElement | null>(null);
     const [searchPortalHost, setSearchPortalHost] = useState<HTMLElement | null>(null);
     const [paginationPortalHost, setPaginationPortalHost] = useState<HTMLElement | null>(null);
     const [isListVisible, setIsListVisible] = useState(false);
 
+    const updateLayout = useCallback((next: ArchiveLayout) => {
+        const previous = layoutRef.current;
+        if (next === previous) return false;
+
+        const direction = Math.sign(LAYOUTS.indexOf(next) - LAYOUTS.indexOf(previous)) || 1;
+        layoutRef.current = next;
+        setLayoutDirection(direction);
+        setLayout(next);
+        return true;
+    }, []);
+
     useEffect(() => {
         const sync = () => {
             const state = readUrlState();
             setFilters(state.filters);
-            setLayout(state.layout);
+            updateLayout(state.layout);
         };
         sync();
         window.addEventListener('popstate', sync);
         return () => window.removeEventListener('popstate', sync);
-    }, []);
+    }, [updateLayout]);
 
     useEffect(() => {
         const syncVisibility = () => {
@@ -261,11 +296,13 @@ export default function PostArchiveView({
         },
         [layout]
     );
-    const selectLayout = (next: ArchiveLayout) => {
-        if (next === layout) return;
-        setLayout(next);
-        writeUrlState(filters, next, 'push');
-    };
+    const selectLayout = useCallback(
+        (next: ArchiveLayout) => {
+            if (!updateLayout(next)) return;
+            writeUrlState(filters, next, 'push');
+        },
+        [filters, updateLayout]
+    );
     const selectCategory = (slug: string | null) =>
         commitFilters({
             ...filters,
@@ -343,48 +380,55 @@ export default function PostArchiveView({
                 data-post-list-root
                 data-view-motion-content
                 data-archive-layout={layout}
-                className="flex h-[75svh] min-h-[580px] w-full max-w-full flex-col overflow-hidden pt-4 pb-6 md:pb-12 xl:pt-2"
+                className="post-view-main-viewport flex w-full max-w-full flex-col overflow-hidden"
             >
-                <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden px-2 pb-2 sm:px-4 md:px-6">
-                    <div className="mx-auto flex h-full min-h-0 w-full max-w-[96rem] min-w-0 flex-col overflow-x-hidden">
-                        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden">
-                            <div
-                                key={layout}
-                                data-archive-motion-panel={layout}
-                                className="animate-in fade-in-0 slide-in-from-bottom-2 h-full min-h-0 w-full duration-200 motion-reduce:animate-none"
-                            >
-                                {filtered.length === 0 ? (
-                                    <p className="text-muted-foreground border-border/55 bg-card/45 flex h-full items-center justify-center rounded-2xl border px-5 text-center text-sm backdrop-blur-xl">
-                                        {t('empty')}
-                                    </p>
-                                ) : layout === 'ledger' ? (
-                                    <LedgerView
-                                        groups={yearGroups}
-                                        activePost={activePost}
-                                        onActivate={setActivePostId}
-                                        countLabel={countLabel}
-                                        locale={locale}
-                                    />
-                                ) : (
-                                    <ArchiveRail activePost={activePost} locale={locale}>
-                                        {layout === 'series' ? (
-                                            <SeriesLibrary
-                                                groups={seriesGroups}
-                                                activePost={activePost}
-                                                onActivate={setActivePostId}
-                                                countLabel={countLabel}
-                                            />
-                                        ) : (
-                                            <YearColumns
-                                                groups={yearGroups}
-                                                activePost={activePost}
-                                                onActivate={setActivePostId}
-                                                countLabel={countLabel}
-                                            />
-                                        )}
-                                    </ArchiveRail>
-                                )}
-                            </div>
+                <div className="flex min-h-0 min-w-0 flex-1 items-center overflow-x-hidden px-2 sm:px-4 md:px-6">
+                    <div className="mx-auto flex h-[var(--post-view-content-height)] min-h-0 w-full max-w-[96rem] min-w-0 flex-col overflow-x-hidden">
+                        <div className="relative min-h-0 min-w-0 flex-1 overflow-x-hidden">
+                            <AnimatePresence initial={false} mode="sync" custom={layoutDirection}>
+                                <motion.div
+                                    key={layout}
+                                    custom={layoutDirection}
+                                    variants={ARCHIVE_PANEL_VARIANTS}
+                                    initial="enter"
+                                    animate="visible"
+                                    exit="exit"
+                                    data-archive-motion-panel={layout}
+                                    className="absolute inset-0 h-full min-h-0 w-full"
+                                >
+                                    {filtered.length === 0 ? (
+                                        <p className="text-muted-foreground border-border/55 bg-card/45 flex h-full items-center justify-center rounded-2xl border px-5 text-center text-sm backdrop-blur-xl">
+                                            {t('empty')}
+                                        </p>
+                                    ) : layout === 'ledger' ? (
+                                        <LedgerView
+                                            groups={yearGroups}
+                                            activePost={activePost}
+                                            onActivate={setActivePostId}
+                                            countLabel={countLabel}
+                                            locale={locale}
+                                        />
+                                    ) : (
+                                        <ArchiveRail activePost={activePost} locale={locale}>
+                                            {layout === 'series' ? (
+                                                <SeriesLibrary
+                                                    groups={seriesGroups}
+                                                    activePost={activePost}
+                                                    onActivate={setActivePostId}
+                                                    countLabel={countLabel}
+                                                />
+                                            ) : (
+                                                <YearColumns
+                                                    groups={yearGroups}
+                                                    activePost={activePost}
+                                                    onActivate={setActivePostId}
+                                                    countLabel={countLabel}
+                                                />
+                                            )}
+                                        </ArchiveRail>
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
                     </div>
                 </div>
@@ -434,9 +478,9 @@ function ArchiveHeaderControls({
                         data-archive-layout-button={key}
                         onClick={() => onLayout(key)}
                         className={cn(
-                            'focus-visible:ring-ring inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full border px-2 text-[0.68rem] font-semibold transition-colors focus:outline-none focus-visible:ring-2 sm:px-2.5 xl:h-9 xl:px-3 xl:text-xs',
+                            'focus-visible:ring-ring inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full border px-2 text-[0.68rem] font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-200 focus:outline-none focus-visible:ring-2 active:scale-[0.97] sm:px-2.5 xl:h-9 xl:px-3 xl:text-xs',
                             layout === key
-                                ? 'border-foreground/12 bg-foreground/[0.1] text-foreground'
+                                ? 'border-foreground/12 bg-foreground/[0.1] text-foreground shadow-sm'
                                 : 'text-muted-foreground hover:bg-foreground/[0.045] hover:text-foreground border-transparent'
                         )}
                     >

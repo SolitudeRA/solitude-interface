@@ -393,6 +393,32 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         height: 100vh;
     }
 
+    /* 精选与全部共用同一主内容视口，避免切换时容器高度跳动。 */
+    :global(.post-view-main-viewport) {
+        --post-view-content-height: clamp(500px, min(72svh, calc(100svh - 220px)), 780px);
+
+        height: 75svh;
+        min-height: 520px;
+    }
+
+    @media (pointer: coarse) {
+        :global(.post-view-main-viewport) {
+            --post-view-content-height: clamp(430px, min(68svh, 560px), 560px);
+        }
+    }
+
+    @media (pointer: fine) and (max-height: 780px) {
+        :global(.post-view-main-viewport) {
+            --post-view-content-height: clamp(460px, calc(100svh - 220px), 560px);
+        }
+    }
+
+    @media (pointer: fine) and (min-width: 1920px) {
+        :global(.post-view-main-viewport) {
+            --post-view-content-height: clamp(620px, min(72svh, calc(100svh - 220px)), 820px);
+        }
+    }
+
     /* 隐藏的视图段彻底移除（防止 flex/grid 类覆盖 [hidden]） */
     :global([data-view-section][hidden]) {
         display: none !important;

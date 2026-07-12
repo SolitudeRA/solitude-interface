@@ -316,7 +316,7 @@ export default function PostViewScrollContainer({
             onPointerEnter={() => setIsHovering(true)}
             onPointerLeave={() => setIsHovering(false)}
         >
-            <div data-view-motion-content className="relative h-[75svh] min-h-[520px]">
+            <div data-view-motion-content className="post-view-main-viewport relative">
                 <AnimatePresence>
                     {canScrollLeft && (
                         <motion.div
