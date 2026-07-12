@@ -360,6 +360,13 @@
             transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
+    .dock-nav-link[aria-current='page'] {
+        cursor: default;
+        color: oklch(0.98 0.008 270);
+        font-weight: 700;
+        text-shadow: 0 1px 10px oklch(0 0 0 / 0.42);
+    }
+
     @media (min-width: 1024px) {
         .dock-nav-link {
             padding: 0 1.76rem;
@@ -775,6 +782,12 @@
 
     .dock-menu-item:active {
         background: var(--dock-menu-item-active-bg);
+    }
+
+    .dock-menu-item--current {
+        cursor: default;
+        background: var(--dock-menu-item-hover-bg);
+        font-weight: 700;
     }
 
     /* 子菜单项（RSS 选项等） */

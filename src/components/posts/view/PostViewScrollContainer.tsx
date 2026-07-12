@@ -408,6 +408,7 @@ export default function PostViewScrollContainer({
                     className={cn(
                         'post-view-scroll-container',
                         'flex h-full items-center gap-[60px] overflow-x-auto scroll-smooth',
+                        '[padding-right:clamp(1rem,5vw,60px)] [padding-left:clamp(1rem,5vw,60px)]',
                         'scrollbar-none py-4',
                         '[&::-webkit-scrollbar]:hidden',
                         '[-ms-overflow-style:none]',
@@ -415,10 +416,6 @@ export default function PostViewScrollContainer({
                         'touch-pan-x snap-x snap-mandatory',
                         '[&_.post-card-wrapper]:snap-center'
                     )}
-                    style={{
-                        paddingLeft: 'clamp(1rem, 5vw, 60px)',
-                        paddingRight: 'clamp(1rem, 5vw, 60px)',
-                    }}
                     role="list"
                     aria-label="文章列表"
                 >

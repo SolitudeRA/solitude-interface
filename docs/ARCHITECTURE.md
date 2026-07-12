@@ -66,13 +66,21 @@
 ### 客户端交互流程
 
 ```
-用户交互 → React 组件 → Jotai Store → UI 更新
-                ↓
-        src/stores/postViewAtom.ts
+常规岛组件交互
+用户交互 → React 组件 → Jotai Store / 组件局部状态 → UI 更新
+
+跨页面导航
+用户点击链接 → Astro ClientRouter → 导航动效内核 → 文档交换
+                                      ├─ 路由与视图状态
+                                      ├─ View Transition 命名
+                                      └─ 返回位置恢复
 ```
 
 > 注：主题切换不经 Jotai，由 `ThemeSwitch.astro` 的内联脚本直接读写 `localStorage['theme']`
 > 并派发 `themeChanged` 事件（在绘制前设置 `<html>` class，避免 FOUC）。
+>
+> 导航状态也不进入 Jotai。可分享、可回退的状态保存在 URL；只服务于一次详情往返的文章路径、
+> 返回 URL 和滚动位置保存在 `sessionStorage`。
 
 ---
 
@@ -283,6 +291,63 @@ styles/
 
 ---
 
+### 6. 客户端导航与动效内核 (`src/lib/navigation/`)
+
+#### 架构决策（2026-07-12）
+
+项目继续采用 **Astro SSG + React islands + Astro ClientRouter**，不为了页面转场引入完整 SPA
+框架。页面内容仍由 Astro 在构建期生成，ClientRouter 负责同站文档交换，项目内的轻量导航内核只负责
+路由判定、转场协调和短期状态恢复。
+
+引入完整 SPA 框架会扩大 hydration、客户端路由和数据加载的责任范围，但目前站点的主要数据仍来自
+构建期 Ghost 内容，交互集中在少量岛组件。动画需求本身不足以抵消这部分复杂度与运行时成本。
+
+#### 模块边界
+
+```text
+BaseLayout.astro
+└─ Astro ClientRouter
+   └─ transitionCoordinator.ts       # 唯一的跨页面 Astro 生命周期协调器
+      ├─ routeModel.ts                # 路径和精选/全部视图的纯函数
+      ├─ navigationState.ts           # sessionStorage 的类型安全访问
+      └─ transitionRegistry.ts        # 允许使用的页面转场名称
+
+post-view.astro
+├─ postViewModeController.ts          # 精选/全部 URL、DOM 和浏览器历史同步
+├─ postViewScrollFallback.ts          # 横向滚轮的渐进增强
+└─ PostArchiveView.tsx                # 全部页面的状态与 Portal 编排
+   ├─ PostArchiveControls.tsx         # 布局、分类、搜索、分页控件
+   ├─ PostArchiveLayouts.tsx          # 编辑目录、系列书库、年代分栏
+   └─ postArchive.ts                  # URL 序列化、标签与归档分组纯逻辑
+```
+
+#### 必须保持的导航契约
+
+1. 每个浏览器窗口只注册一组全局 Astro 生命周期监听器；页面交换后只重新绑定新 DOM。
+2. 可分享、可前进后退的状态写入 URL；单次详情往返状态才写入 `sessionStorage`。
+3. 展示组件不得直接读写 `window.history`、`sessionStorage` 或 Astro 生命周期事件。
+4. 转场名称必须来自 `transitionRegistry.ts`，并在完成、取消或失败后清理。
+5. 返回文章列表时，在绘制前恢复视图、原文章目标和横向滚动位置。
+6. `prefers-reduced-motion` 和缺少 Web Animations API 的环境必须能够无动画降级。
+7. 非文章路由不得绑定文章视图控件或写入 `data-post-view-mode`。
+
+这些契约由 `transitionCoordinator.test.ts` 和 `postViewModeController.test.ts` 通过 jsdom 驱动真实
+DOM、History API、sessionStorage 与 Astro 生命周期事件验证；路由、状态和转场注册表仍使用快速纯函数
+单测。
+
+#### 何时重新评估完整 SPA 框架
+
+只有出现以下一项或多项长期需求时，才重新评估 React Router、TanStack Router 等客户端应用基建：
+
+- 多个核心路由需要客户端数据获取、写操作、缓存失效和乐观更新；
+- 跨路由存在大量必须常驻的应用级状态，URL 与短期会话状态已无法清晰表达；
+- 嵌套路由、共享 loader、权限守卫成为主要复杂度来源；
+- Astro 文档交换本身导致多个页面重复实现同一套生命周期协调器。
+
+仅增加新的页面动画、共享元素转场或局部筛选模式，不构成引入完整 SPA 框架的理由。
+
+---
+
 ## 🔧 扩展指南
 
 ### 添加新的文章类型
@@ -328,10 +393,11 @@ styles/
 
 ## 🧪 测试策略
 
-| 测试类型 | 覆盖范围               | 命令                    |
-| -------- | ---------------------- | ----------------------- |
-| 单元测试 | 适配器、工具函数、i18n | `pnpm test:unit`        |
-| 集成测试 | Ghost API 调用、数据流 | `pnpm test:integration` |
+| 测试类型   | 覆盖范围                                   | 命令                    |
+| ---------- | ------------------------------------------ | ----------------------- |
+| 单元测试   | 适配器、工具函数、i18n、路由与归档纯逻辑   | `pnpm test:unit`        |
+| 运行时契约 | DOM、History API、Astro 生命周期与状态恢复 | `pnpm test:run`         |
+| 集成测试   | Ghost API 调用、数据流                     | `pnpm test:integration` |
 
 ### 测试文件命名
 

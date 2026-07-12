@@ -6,7 +6,7 @@
 
 /**
  * 筛选/分面只读取的最小结构子集——完整的 `Post` 与注入岛的精简
- * `PostListItem`（不含庞大的 html）都满足它，故纯逻辑两者通用。
+ * 文章归档数据（不含庞大的 html）都满足它，故纯逻辑两者通用。
  */
 export interface BrowsePost {
     title: string;
