@@ -84,7 +84,7 @@ const noPostsText = getUIText('home', 'noPosts', locale);
 
 <style>
     .post-card-wrapper {
-        --post-card-height: clamp(500px, min(72svh, calc(100svh - 220px)), 780px);
+        --post-card-height: var(--post-view-content-height);
         --post-card-width: clamp(250px, calc(var(--post-card-height) / 1.98), 394px);
 
         width: var(--post-card-width);
@@ -93,21 +93,18 @@ const noPostsText = getUIText('home', 'noPosts', locale);
 
     @media (pointer: coarse) {
         .post-card-wrapper {
-            --post-card-height: clamp(430px, min(68svh, 560px), 560px);
             --post-card-width: clamp(240px, calc(var(--post-card-height) / 1.98), 320px);
         }
     }
 
     @media (pointer: fine) and (max-height: 780px) {
         .post-card-wrapper {
-            --post-card-height: clamp(460px, calc(100svh - 220px), 560px);
             --post-card-width: clamp(240px, calc(var(--post-card-height) / 1.98), 320px);
         }
     }
 
     @media (pointer: fine) and (min-width: 1920px) {
         .post-card-wrapper {
-            --post-card-height: clamp(620px, min(72svh, calc(100svh - 220px)), 820px);
             --post-card-width: clamp(300px, calc(var(--post-card-height) / 1.98), 428px);
         }
     }
