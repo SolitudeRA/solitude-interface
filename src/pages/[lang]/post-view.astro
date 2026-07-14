@@ -20,6 +20,7 @@ import {
     getUIText,
 } from '@lib/i18n';
 import { env } from '@api/config/env';
+import { getImage } from 'astro:assets';
 
 export async function getStaticPaths() {
     return LOCALES.map((lang) => ({
@@ -52,22 +53,43 @@ const posts = localizedPosts.map((item) => item.post);
 const featuredPosts = posts.slice(0, FEATURED_COUNT);
 
 // 列表：全量精简元数据（去 html、URL 转字符串），客户端筛选/分页
-const listItems: PostArchiveItem[] = posts.map((post) => ({
-    id: post.id,
-    title: post.title,
-    excerpt: post.excerpt,
-    url: post.url.pathname,
-    feature_image: post.feature_image ? post.feature_image.toString() : null,
-    published_at: post.published_at,
-    post_type: post.post_type,
-    post_category: post.post_category,
-    post_series: post.post_series,
-    ...(post.post_series_slug ? { post_series_slug: post.post_series_slug } : {}),
-    ...(post.post_series_label ? { post_series_label: post.post_series_label } : {}),
-    ...(post.post_series_number ? { post_series_number: post.post_series_number } : {}),
-    ...(post.post_type_label ? { post_type_label: post.post_type_label } : {}),
-    ...(post.post_category_label ? { post_category_label: post.post_category_label } : {}),
-}));
+const listItems: PostArchiveItem[] = await Promise.all(
+    posts.map(async (post) => {
+        const featureImage = post.feature_image
+            ? await getImage({
+                  src: post.feature_image.toString(),
+                  inferSize: true,
+                  widths: [320, 480, 640, 960],
+                  format: 'webp',
+                  quality: 74,
+              })
+            : null;
+
+        return {
+            id: post.id,
+            title: post.title,
+            excerpt: post.excerpt,
+            url: post.url.pathname,
+            feature_image: featureImage?.src ?? null,
+            ...(featureImage?.srcSet.attribute
+                ? {
+                      feature_image_srcset: featureImage.srcSet.attribute,
+                      feature_image_sizes:
+                          '(max-width: 639px) calc(100vw - 2rem), (max-width: 1279px) 48vw, 35vw',
+                  }
+                : {}),
+            published_at: post.published_at,
+            post_type: post.post_type,
+            post_category: post.post_category,
+            post_series: post.post_series,
+            ...(post.post_series_slug ? { post_series_slug: post.post_series_slug } : {}),
+            ...(post.post_series_label ? { post_series_label: post.post_series_label } : {}),
+            ...(post.post_series_number ? { post_series_number: post.post_series_number } : {}),
+            ...(post.post_type_label ? { post_type_label: post.post_type_label } : {}),
+            ...(post.post_category_label ? { post_category_label: post.post_category_label } : {}),
+        };
+    })
+);
 const initialArchiveState = parseArchiveParams(Astro.url.searchParams);
 
 const galleryLabel = getUIText('postView', 'galleryView', locale);
@@ -143,7 +165,7 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         {/* 全部视图 —— 首屏 SSR、默认隐藏，由脚本按 ?view= 显隐 */}
         <div data-view-section="list" hidden>
             <PostArchiveView
-                client:load
+                client:visible
                 posts={listItems}
                 locale={locale}
                 initialFilters={initialArchiveState.filters}

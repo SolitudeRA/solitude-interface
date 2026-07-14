@@ -1,6 +1,6 @@
 ---
 import type { FeaturedPost } from '@api/ghost/types';
-import PostsShowcaseCarousel, { PostsShowcaseSkeleton } from './PostsShowcaseCarousel';
+import PostsShowcaseCarousel from './PostsShowcaseCarousel.astro';
 import {
     filterPostsByLocale,
     type Locale,
@@ -62,14 +62,22 @@ const noPostsText = getUIText('home', 'noPosts', locale);
 <section class:list={['posts-showcase w-full', className]} aria-label="最近文章">
     {
         isLoading ? (
-            <PostsShowcaseSkeleton count={5} client:visible />
+            <div class="relative w-full">
+                <div class="flex gap-4 overflow-hidden px-4 py-3">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                            class="aspect-[4/3] w-[15rem] flex-shrink-0 animate-pulse overflow-hidden rounded-[1.45rem] border border-white/15 bg-[var(--muted)]/80 ring-1 ring-white/10 ring-inset sm:w-[17rem] sm:rounded-[1.65rem] md:w-[19rem] lg:w-[21rem]"
+                            style={`animation-delay: ${index * 100}ms`}
+                        />
+                    ))}
+                </div>
+            </div>
         ) : limitedPosts.length > 0 ? (
             <PostsShowcaseCarousel
                 posts={carouselPosts}
                 postsPageUrl={postsPageUrl}
                 showMoreButton={hasMorePosts}
                 locale={locale}
-                client:visible
             />
         ) : (
             <div class="flex min-h-[12rem] items-center justify-center px-4">
@@ -88,72 +96,3 @@ const noPostsText = getUIText('home', 'noPosts', locale);
         overflow: hidden;
     }
 </style>
-
-<script is:inline>
-    (() => {
-        const selector = '[data-home-showcase-scroll]';
-        const hydratedAttribute = 'homeShowcaseHydrated';
-        const boundContainers =
-            window.__solitudeHomeShowcaseBoundContainers ??
-            (window.__solitudeHomeShowcaseBoundContainers = new WeakSet());
-
-        const bindHomeShowcaseScroll = () => {
-            document.querySelectorAll(selector).forEach((container) => {
-                if (!(container instanceof HTMLElement)) return;
-                if (boundContainers.has(container)) return;
-
-                boundContainers.add(container);
-                const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-                container.addEventListener(
-                    'wheel',
-                    (event) => {
-                        if (container.dataset[hydratedAttribute] === 'true') return;
-
-                        const dominantDelta =
-                            Math.abs(event.deltaX) > Math.abs(event.deltaY)
-                                ? event.deltaX
-                                : event.deltaY;
-                        if (dominantDelta === 0) return;
-
-                        const { scrollLeft, scrollWidth, clientWidth } = container;
-                        const canScroll = scrollWidth > clientWidth;
-                        const atStart = scrollLeft <= 0 && dominantDelta < 0;
-                        const atEnd = scrollLeft >= scrollWidth - clientWidth && dominantDelta > 0;
-
-                        if (!canScroll || atStart || atEnd) return;
-
-                        event.preventDefault();
-                        event.stopPropagation();
-
-                        const isHorizontalGesture = Math.abs(event.deltaX) > Math.abs(event.deltaY);
-                        const direction = dominantDelta > 0 ? 1 : -1;
-                        const card = container.querySelector('.showcase-card');
-                        const cardWidth = card?.getBoundingClientRect().width || 304;
-                        const scrollDistance = cardWidth + 16;
-
-                        container.scrollBy({
-                            left: isHorizontalGesture ? event.deltaX : direction * scrollDistance,
-                            behavior:
-                                isHorizontalGesture || reducedMotionQuery.matches
-                                    ? 'auto'
-                                    : 'smooth',
-                        });
-                    },
-                    { passive: false }
-                );
-            });
-        };
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', bindHomeShowcaseScroll, { once: true });
-        } else {
-            bindHomeShowcaseScroll();
-        }
-
-        if (!window.__solitudeHomeShowcaseReady) {
-            window.__solitudeHomeShowcaseReady = true;
-            document.addEventListener('astro:page-load', bindHomeShowcaseScroll);
-        }
-    })();
-</script>

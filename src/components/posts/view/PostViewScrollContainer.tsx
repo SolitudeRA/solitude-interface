@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { useCallback, useEffect, useLayoutEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSetAtom, useAtomValue } from 'jotai';
 import { cn } from '@components/common/lib/utils';
@@ -185,7 +184,6 @@ export default function PostViewScrollContainer({
         canScrollRight,
         isHovering,
         setIsHovering,
-        prefersReducedMotion,
         handleWheel,
         scrollByPage,
         scrollToIndex,
@@ -199,28 +197,6 @@ export default function PostViewScrollContainer({
         // 追踪内容而非仅长度:postDates 引用变更(即便长度不变)也应重建观察器
         dependencyKey: `${postCountHint}:${postDates.join('|')}`,
     });
-
-    const fadeMotion = prefersReducedMotion
-        ? { initial: false as const, animate: { opacity: 1 }, exit: { opacity: 0 } }
-        : { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
-
-    const leftButtonMotion = prefersReducedMotion
-        ? { initial: false as const, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: 0 } }
-        : {
-              initial: { opacity: 0, x: 10 },
-              animate: { opacity: 1, x: 0 },
-              exit: { opacity: 0, x: 10 },
-          };
-
-    const rightButtonMotion = prefersReducedMotion
-        ? { initial: false as const, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: 0 } }
-        : {
-              initial: { opacity: 0, x: -10 },
-              animate: { opacity: 1, x: 0 },
-              exit: { opacity: 0, x: -10 },
-          };
-
-    const transition = { duration: prefersReducedMotion ? 0 : 0.2 };
 
     useEffect(() => {
         if (postDates.length > 0) {
@@ -317,89 +293,83 @@ export default function PostViewScrollContainer({
             onPointerLeave={() => setIsHovering(false)}
         >
             <div data-view-motion-content className="post-view-main-viewport relative">
-                <AnimatePresence>
-                    {canScrollLeft && (
-                        <motion.div
-                            {...fadeMotion}
-                            transition={{ duration: prefersReducedMotion ? 0 : 0.25 }}
-                            className={cn(
-                                'pointer-events-none absolute top-0 left-0 z-10',
-                                'h-full w-20 sm:w-24 lg:w-28'
-                            )}
-                            style={{
-                                background:
-                                    'linear-gradient(to right, var(--post-view-scroll-mask-start) 0%, var(--post-view-scroll-mask-end) 100%)',
-                                maskImage:
-                                    'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
-                                WebkitMaskImage:
-                                    'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
-                            }}
-                        />
+                <div
+                    aria-hidden="true"
+                    className={cn(
+                        'pointer-events-none absolute top-0 left-0 z-10 h-full w-20 sm:w-24 lg:w-28',
+                        'transition-opacity duration-250 motion-reduce:transition-none',
+                        canScrollLeft ? 'opacity-100' : 'opacity-0'
                     )}
-                </AnimatePresence>
+                    style={{
+                        background:
+                            'linear-gradient(to right, var(--post-view-scroll-mask-start) 0%, var(--post-view-scroll-mask-end) 100%)',
+                        maskImage:
+                            'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
+                        WebkitMaskImage:
+                            'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
+                    }}
+                />
 
-                <AnimatePresence>
-                    {canScrollRight && (
-                        <motion.div
-                            {...fadeMotion}
-                            transition={{ duration: prefersReducedMotion ? 0 : 0.25 }}
-                            className={cn(
-                                'pointer-events-none absolute top-0 right-0 z-10',
-                                'h-full w-20 sm:w-24 lg:w-28'
-                            )}
-                            style={{
-                                background:
-                                    'linear-gradient(to left, var(--post-view-scroll-mask-start) 0%, var(--post-view-scroll-mask-end) 100%)',
-                                maskImage:
-                                    'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
-                                WebkitMaskImage:
-                                    'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
-                            }}
-                        />
+                <div
+                    aria-hidden="true"
+                    className={cn(
+                        'pointer-events-none absolute top-0 right-0 z-10 h-full w-20 sm:w-24 lg:w-28',
+                        'transition-opacity duration-250 motion-reduce:transition-none',
+                        canScrollRight ? 'opacity-100' : 'opacity-0'
                     )}
-                </AnimatePresence>
+                    style={{
+                        background:
+                            'linear-gradient(to left, var(--post-view-scroll-mask-start) 0%, var(--post-view-scroll-mask-end) 100%)',
+                        maskImage:
+                            'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
+                        WebkitMaskImage:
+                            'linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)',
+                    }}
+                />
 
-                <AnimatePresence>
-                    {canScrollLeft && isHovering && (
-                        <motion.button
-                            {...leftButtonMotion}
-                            transition={transition}
-                            onClick={() => scrollByPage('left')}
-                            className={cn(
-                                'absolute top-1/2 left-4 z-20 -translate-y-1/2',
-                                'flex h-12 w-12 items-center justify-center',
-                                'bg-background/80 rounded-full backdrop-blur-sm',
-                                'border-border border shadow-lg',
-                                'hover:bg-background transition-all duration-200 hover:scale-110',
-                                'focus-visible:ring-ring focus:outline-none focus-visible:ring-2'
-                            )}
-                            aria-label="向左滚动"
-                        >
-                            <ChevronLeft className="h-6 w-6" />
-                        </motion.button>
+                <button
+                    type="button"
+                    onClick={() => scrollByPage('left')}
+                    tabIndex={canScrollLeft && isHovering ? 0 : -1}
+                    className={cn(
+                        'absolute top-1/2 left-4 z-20 -translate-y-1/2',
+                        'flex h-12 w-12 items-center justify-center',
+                        'bg-background/80 rounded-full backdrop-blur-sm',
+                        'border-border border shadow-lg',
+                        'hover:bg-background hover:scale-110',
+                        'transition-[opacity,transform,background-color] duration-200 motion-reduce:transition-none',
+                        'focus-visible:ring-ring focus:outline-none focus-visible:ring-2',
+                        canScrollLeft && isHovering
+                            ? 'translate-x-0 opacity-100'
+                            : 'pointer-events-none translate-x-2 opacity-0'
                     )}
-                </AnimatePresence>
+                    aria-label="向左滚动"
+                    aria-hidden={!canScrollLeft || !isHovering}
+                >
+                    <ChevronLeft className="h-6 w-6" />
+                </button>
 
-                <AnimatePresence>
-                    {canScrollRight && isHovering && (
-                        <motion.button
-                            {...rightButtonMotion}
-                            transition={transition}
-                            onClick={() => scrollByPage('right')}
-                            className={cn(
-                                'absolute top-1/2 right-4 z-20 -translate-y-1/2',
-                                'flex h-12 w-12 items-center justify-center',
-                                'bg-background/80 rounded-full backdrop-blur-sm',
-                                'border-border border shadow-lg',
-                                'hover:bg-background transition-all duration-200 hover:scale-110',
-                                'focus-visible:ring-ring focus:outline-none focus-visible:ring-2'
-                            )}
-                            aria-label="向右滚动"
-                        >
-                            <ChevronRight className="h-6 w-6" />
-                        </motion.button>
+                <button
+                    type="button"
+                    onClick={() => scrollByPage('right')}
+                    tabIndex={canScrollRight && isHovering ? 0 : -1}
+                    className={cn(
+                        'absolute top-1/2 right-4 z-20 -translate-y-1/2',
+                        'flex h-12 w-12 items-center justify-center',
+                        'bg-background/80 rounded-full backdrop-blur-sm',
+                        'border-border border shadow-lg',
+                        'hover:bg-background hover:scale-110',
+                        'transition-[opacity,transform,background-color] duration-200 motion-reduce:transition-none',
+                        'focus-visible:ring-ring focus:outline-none focus-visible:ring-2',
+                        canScrollRight && isHovering
+                            ? 'translate-x-0 opacity-100'
+                            : 'pointer-events-none -translate-x-2 opacity-0'
                     )}
-                </AnimatePresence>
+                    aria-label="向右滚动"
+                    aria-hidden={!canScrollRight || !isHovering}
+                >
+                    <ChevronRight className="h-6 w-6" />
+                </button>
 
                 <div
                     ref={containerRef}

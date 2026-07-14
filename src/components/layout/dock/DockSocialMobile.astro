@@ -1,0 +1,146 @@
+---
+import {
+    FaBilibili,
+    FaGithub,
+    FaShareNodes,
+    FaSpotify,
+    FaSquareXTwitter,
+    FaSteam,
+} from 'react-icons/fa6';
+
+const socialLinks = [
+    { name: 'GitHub', href: 'https://github.com/SolitudeRA', icon: FaGithub },
+    { name: 'X (Twitter)', href: 'https://x.com/SolitudeRA', icon: FaSquareXTwitter },
+    { name: 'Steam', href: 'https://steamcommunity.com/id/SolitudeRA/', icon: FaSteam },
+    {
+        name: 'Spotify',
+        href: 'https://open.spotify.com/user/29a85ixn15w4zcbmb0lkix9h3?si=1c70dc8fa5dc418c',
+        icon: FaSpotify,
+    },
+    { name: 'Bilibili', href: 'https://space.bilibili.com/1724972', icon: FaBilibili },
+];
+---
+
+<div data-dock-menu-root data-dock-social-mobile data-open="false">
+    <button
+        type="button"
+        data-dock-social-toggle
+        class="dock-button flex h-10 w-10 items-center justify-center sm:h-11 sm:w-11"
+        aria-label="Social links menu"
+        aria-expanded="false"
+    >
+        <FaShareNodes className="h-5 w-5 sm:h-6 sm:w-6" />
+    </button>
+
+    <button
+        type="button"
+        data-dock-social-overlay
+        class="dock-overlay pointer-events-none fixed inset-0 z-40 opacity-0 transition-opacity duration-200"
+        aria-label="Close social links menu"
+    >
+    </button>
+
+    <div
+        data-dock-social-panel
+        class="dock-menu pointer-events-none fixed right-4 bottom-24 z-50 min-w-[200px] translate-y-4 scale-95 p-4 opacity-0 transition-all duration-200 ease-out sm:right-6"
+    >
+        <div class="flex flex-col gap-3">
+            {
+                socialLinks.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                        <a
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-dock-social-close
+                            class="dock-social-item flex items-center gap-3"
+                        >
+                            <Icon className="h-5 w-5" />
+                            <span class="text-sm font-medium">{link.name}</span>
+                        </a>
+                    );
+                })
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    const socialMenuWindow = window as Window & {
+        __solitudeDockSocialMenu?: boolean;
+    };
+
+    if (!socialMenuWindow.__solitudeDockSocialMenu) {
+        socialMenuWindow.__solitudeDockSocialMenu = true;
+
+        const syncBodyLock = () => {
+            document.body.style.overflow = document.querySelector(
+                '[data-dock-menu-root][data-open="true"]'
+            )
+                ? 'hidden'
+                : '';
+        };
+
+        const setSocialOpen = (root: HTMLElement, open: boolean) => {
+            const trigger = root.querySelector<HTMLButtonElement>('[data-dock-social-toggle]');
+            const overlay = root.querySelector<HTMLElement>('[data-dock-social-overlay]');
+            const panel = root.querySelector<HTMLElement>('[data-dock-social-panel]');
+            if (!trigger || !overlay || !panel) return;
+
+            root.dataset.open = String(open);
+            trigger.setAttribute('aria-expanded', String(open));
+            trigger.classList.toggle('dock-button--active', open);
+            overlay.classList.toggle('pointer-events-auto', open);
+            overlay.classList.toggle('opacity-100', open);
+            overlay.classList.toggle('pointer-events-none', !open);
+            overlay.classList.toggle('opacity-0', !open);
+            panel.classList.toggle('pointer-events-auto', open);
+            panel.classList.toggle('translate-y-0', open);
+            panel.classList.toggle('scale-100', open);
+            panel.classList.toggle('opacity-100', open);
+            panel.classList.toggle('pointer-events-none', !open);
+            panel.classList.toggle('translate-y-4', !open);
+            panel.classList.toggle('scale-95', !open);
+            panel.classList.toggle('opacity-0', !open);
+
+            if (open) {
+                document.dispatchEvent(
+                    new CustomEvent('solitude:dock-menu-open', { detail: { root } })
+                );
+            }
+            syncBodyLock();
+        };
+
+        const closeAllSocialMenus = () => {
+            document
+                .querySelectorAll<HTMLElement>('[data-dock-social-mobile]')
+                .forEach((root) => setSocialOpen(root, false));
+        };
+
+        document.addEventListener('click', (event) => {
+            const target = event.target as Element | null;
+            const toggle = target?.closest('[data-dock-social-toggle]');
+            if (toggle) {
+                const root = toggle.closest<HTMLElement>('[data-dock-social-mobile]');
+                if (root) setSocialOpen(root, root.dataset.open !== 'true');
+                return;
+            }
+
+            if (target?.closest('[data-dock-social-overlay], [data-dock-social-close]')) {
+                const root = target.closest<HTMLElement>('[data-dock-social-mobile]');
+                if (root) setSocialOpen(root, false);
+            }
+        });
+        document.addEventListener('solitude:dock-menu-open', (event) => {
+            const activeRoot = (event as CustomEvent<{ root?: HTMLElement }>).detail?.root;
+            document.querySelectorAll<HTMLElement>('[data-dock-social-mobile]').forEach((root) => {
+                if (root !== activeRoot) setSocialOpen(root, false);
+            });
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeAllSocialMenus();
+        });
+        document.addEventListener('astro:before-preparation', closeAllSocialMenus);
+    }
+</script>

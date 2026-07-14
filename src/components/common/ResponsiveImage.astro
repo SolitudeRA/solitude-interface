@@ -1,0 +1,316 @@
+---
+import { Image, getImage } from 'astro:assets';
+
+interface Props {
+    src: string;
+    alt?: string;
+    className?: string;
+    widths?: number[];
+    sizes: string;
+    priority?: boolean;
+    progressive?: boolean;
+    quality?: number;
+    'data-post-transition-media'?: boolean;
+}
+
+const {
+    src,
+    alt = '',
+    className = '',
+    widths = [320, 480, 640, 960],
+    sizes,
+    priority = false,
+    progressive = false,
+    quality = 72,
+    'data-post-transition-media': transitionMedia = false,
+} = Astro.props;
+
+const pathname = (() => {
+    try {
+        return new URL(src, Astro.url).pathname;
+    } catch {
+        return src;
+    }
+})();
+const canOptimize = /\.(?:avif|jpe?g|png|webp)$/i.test(pathname);
+const progressiveSources =
+    progressive && canOptimize
+        ? await Promise.all([
+              getImage({
+                  src,
+                  inferSize: true,
+                  width: 160,
+                  format: 'webp',
+                  quality: 45,
+              }),
+              getImage({
+                  src,
+                  inferSize: true,
+                  width: 480,
+                  format: 'webp',
+                  quality: 68,
+              }),
+              getImage({
+                  src,
+                  inferSize: true,
+                  widths,
+                  format: 'webp',
+                  quality,
+              }),
+          ])
+        : null;
+---
+
+{
+    progressiveSources ? (
+        <span
+            class:list={['responsive-image-frame', className]}
+            data-progressive-image
+            data-progressive-phase="low"
+            data-progressive-priority={priority ? 'true' : undefined}
+            data-post-transition-media={transitionMedia || undefined}
+            aria-busy="true"
+        >
+            <img
+                src={progressiveSources[0].src}
+                width={progressiveSources[0].attributes.width}
+                height={progressiveSources[0].attributes.height}
+                alt=""
+                class="responsive-image-stage responsive-image-low"
+                loading={priority ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchpriority={priority ? 'high' : 'auto'}
+                data-progressive-low
+                aria-hidden="true"
+            />
+            <img
+                width={progressiveSources[1].attributes.width}
+                height={progressiveSources[1].attributes.height}
+                alt=""
+                class="responsive-image-stage responsive-image-medium"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="auto"
+                data-progressive-medium
+                data-progressive-src={progressiveSources[1].src}
+                aria-hidden="true"
+            />
+            <img
+                width={progressiveSources[2].attributes.width}
+                height={progressiveSources[2].attributes.height}
+                alt={alt}
+                class="responsive-image-stage responsive-image-high"
+                loading="lazy"
+                decoding="async"
+                fetchpriority={priority ? 'high' : 'auto'}
+                data-progressive-high
+                data-progressive-src={progressiveSources[2].src}
+                data-progressive-srcset={progressiveSources[2].srcSet.attribute}
+                data-progressive-sizes={sizes}
+            />
+            <noscript>
+                <Image
+                    src={src}
+                    inferSize
+                    widths={widths}
+                    sizes={sizes}
+                    format="webp"
+                    quality={quality}
+                    alt={alt}
+                    class="responsive-image-noscript"
+                    loading={priority ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchpriority={priority ? 'high' : 'auto'}
+                />
+            </noscript>
+        </span>
+    ) : canOptimize ? (
+        <Image
+            src={src}
+            inferSize
+            widths={widths}
+            sizes={sizes}
+            format="webp"
+            quality={quality}
+            alt={alt}
+            class={className}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            fetchpriority={priority ? 'high' : 'auto'}
+            data-post-transition-media={transitionMedia || undefined}
+        />
+    ) : (
+        <img
+            src={src}
+            alt={alt}
+            class={className}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            fetchpriority={priority ? 'high' : 'auto'}
+            data-post-transition-media={transitionMedia || undefined}
+        />
+    )
+}
+
+<style is:global>
+    .responsive-image-frame {
+        display: block;
+    }
+
+    .responsive-image-stage,
+    .responsive-image-noscript {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        pointer-events: none;
+    }
+
+    .responsive-image-stage {
+        opacity: 0;
+    }
+
+    .responsive-image-low {
+        opacity: 1;
+        transition: opacity 120ms ease;
+    }
+
+    .responsive-image-medium {
+        transition: opacity 140ms ease;
+    }
+
+    .responsive-image-high {
+        transition: opacity 160ms ease;
+    }
+
+    [data-progressive-phase='medium'] .responsive-image-low,
+    [data-progressive-phase='high'] .responsive-image-low,
+    [data-progressive-phase='high'] .responsive-image-medium {
+        opacity: 0;
+    }
+
+    [data-progressive-phase='medium'] .responsive-image-medium,
+    [data-progressive-phase='high'] .responsive-image-high {
+        opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .responsive-image-stage {
+            transition: none;
+        }
+    }
+</style>
+
+<script>
+    interface ProgressiveImageController {
+        initialize: () => void;
+    }
+
+    declare global {
+        interface Window {
+            __solitudeProgressiveImages?: ProgressiveImageController;
+        }
+    }
+
+    const createProgressiveImageController = (): ProgressiveImageController => {
+        let observer: IntersectionObserver | null = null;
+
+        const decodeImage = async (image: HTMLImageElement): Promise<boolean> => {
+            try {
+                if (!image.complete) {
+                    await new Promise<void>((resolve, reject) => {
+                        image.addEventListener('load', () => resolve(), { once: true });
+                        image.addEventListener(
+                            'error',
+                            () => reject(new Error('Image load failed')),
+                            {
+                                once: true,
+                            }
+                        );
+                    });
+                }
+                if (!image.naturalWidth) return false;
+                await image.decode().catch(() => undefined);
+                return true;
+            } catch {
+                return false;
+            }
+        };
+
+        const activateDeferredImage = async (image: HTMLImageElement): Promise<boolean> => {
+            const deferredSizes = image.dataset.progressiveSizes;
+            const deferredSrcset = image.dataset.progressiveSrcset;
+            const deferredSrc = image.dataset.progressiveSrc;
+
+            if (deferredSizes) image.sizes = deferredSizes;
+            if (deferredSrcset) image.srcset = deferredSrcset;
+            if (deferredSrc) image.src = deferredSrc;
+
+            return decodeImage(image);
+        };
+
+        const start = async (frame: HTMLElement) => {
+            if (frame.dataset.progressiveStarted === 'true') return;
+            frame.dataset.progressiveStarted = 'true';
+            observer?.unobserve(frame);
+
+            const low = frame.querySelector<HTMLImageElement>('[data-progressive-low]');
+            const medium = frame.querySelector<HTMLImageElement>('[data-progressive-medium]');
+            const high = frame.querySelector<HTMLImageElement>('[data-progressive-high]');
+            if (!low || !medium || !high) return;
+
+            low.loading = 'eager';
+            await decodeImage(low);
+            if (!frame.isConnected) return;
+
+            const mediumReady = await activateDeferredImage(medium);
+            if (!frame.isConnected) return;
+            if (mediumReady) frame.dataset.progressivePhase = 'medium';
+
+            const highReady = await activateDeferredImage(high);
+            if (!frame.isConnected) return;
+            if (highReady) {
+                frame.dataset.progressivePhase = 'high';
+                frame.dataset.progressiveReady = 'true';
+                frame.setAttribute('aria-busy', 'false');
+            }
+        };
+
+        const initialize = () => {
+            observer?.disconnect();
+            observer =
+                'IntersectionObserver' in window
+                    ? new IntersectionObserver(
+                          (entries) => {
+                              entries.forEach((entry) => {
+                                  if (entry.isIntersecting) void start(entry.target as HTMLElement);
+                              });
+                          },
+                          { rootMargin: '720px 0px' }
+                      )
+                    : null;
+
+            document
+                .querySelectorAll<HTMLElement>(
+                    '[data-progressive-image]:not([data-progressive-started="true"])'
+                )
+                .forEach((frame) => {
+                    if (frame.dataset.progressivePriority === 'true' || !observer) {
+                        void start(frame);
+                    } else {
+                        observer.observe(frame);
+                    }
+                });
+        };
+
+        return { initialize };
+    };
+
+    if (!window.__solitudeProgressiveImages) {
+        window.__solitudeProgressiveImages = createProgressiveImageController();
+        document.addEventListener('astro:page-load', window.__solitudeProgressiveImages.initialize);
+    }
+    window.__solitudeProgressiveImages.initialize();
+</script>

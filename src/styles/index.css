@@ -4,9 +4,7 @@
  */
 
 /* ===== 1. 字体 ===== */
-@import '@fontsource-variable/noto-sans-sc';
-@import '@fontsource-variable/noto-sans-jp';
-@import '@fontsource-variable/noto-sans';
+/* 字体由 BaseLayout 按当前页面语言加载，避免每个页面解析三套 @font-face。 */
 
 /* ===== 2. Tailwind CSS ===== */
 @import 'tailwindcss';

@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import type { FeaturedPost } from '@api/ghost/types';
 import { cn } from '@components/common/lib/utils';
@@ -40,29 +39,8 @@ function getTagPillClass(tone: 'type' | 'category'): string {
     return cn(base, tones[tone]);
 }
 
-const CARD_MOTION_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-
-const CARD_SETTLE_TRANSITION = {
-    duration: 0.34,
-    ease: CARD_MOTION_EASE,
-};
-
-const CARD_HOVER_TRANSITION = {
-    duration: 0.24,
-    ease: CARD_MOTION_EASE,
-};
-
-const CARD_HOVER_TARGET = {
-    scale: 1.016,
-    y: -2,
-    opacity: 1,
-    transition: CARD_HOVER_TRANSITION,
-};
-
-const CARD_FOCUS_TARGET = CARD_HOVER_TARGET;
-
 const CARD_VISUAL_TRANSITION_CLASS =
-    'transition-[border-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)]';
+    'transition-[opacity,transform,border-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none';
 
 const CARD_MEDIA_TRANSITION_CLASS =
     'scale-[1.02] transition-transform duration-[620ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.045]';
@@ -75,17 +53,10 @@ interface ShowcaseCardProps {
     index: number;
     isOtherHovered: boolean;
     onHover: (index: number | null) => void;
-    prefersReducedMotion: boolean;
 }
 
 // 单个文章卡片
-export function ShowcaseCard({
-    post,
-    index,
-    isOtherHovered,
-    onHover,
-    prefersReducedMotion,
-}: ShowcaseCardProps) {
+export function ShowcaseCard({ post, index, isOtherHovered, onHover }: ShowcaseCardProps) {
     const hasImage = post.feature_image && post.feature_image.toString().length > 0;
     const titleDensity = getHomeTitleDensity(post.title);
     const publishedDate = getPublishedDate(post.published_at);
@@ -101,7 +72,7 @@ export function ShowcaseCard({
           : '';
 
     return (
-        <motion.a
+        <a
             href={post.url?.toString() || '#'}
             data-title-density={titleDensity}
             className={cn(
@@ -117,20 +88,15 @@ export function ShowcaseCard({
 
                 // motion / interaction
                 CARD_VISUAL_TRANSITION_CLASS,
+                isOtherHovered ? 'opacity-[0.84]' : 'opacity-100',
+                'hover:-translate-y-0.5 hover:scale-[1.016] hover:opacity-100',
+                'focus-visible:-translate-y-0.5 focus-visible:scale-[1.016] focus-visible:opacity-100',
+                'motion-reduce:transform-none',
                 'hover:border-[var(--home-showcase-card-border-hover)] hover:shadow-[0_24px_44px_var(--home-showcase-card-shadow-hover)]',
 
                 // accessibility
                 'focus-visible:ring-ring focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
             )}
-            initial={false}
-            animate={{
-                opacity: isOtherHovered ? 0.84 : 1,
-                y: 0,
-                scale: 1,
-            }}
-            transition={prefersReducedMotion ? { duration: 0 } : CARD_SETTLE_TRANSITION}
-            whileHover={prefersReducedMotion ? { opacity: 1 } : CARD_HOVER_TARGET}
-            whileFocus={prefersReducedMotion ? { opacity: 1 } : CARD_FOCUS_TARGET}
             onPointerEnter={() => onHover(index)}
             onPointerLeave={() => onHover(null)}
             onFocus={() => onHover(index)}
@@ -213,7 +179,7 @@ export function ShowcaseCard({
                     </time>
                 )}
             </div>
-        </motion.a>
+        </a>
     );
 }
 
@@ -252,23 +218,15 @@ interface ViewMoreCardProps {
     isOtherHovered: boolean;
     onHover: (index: number | null) => void;
     locale: Locale;
-    prefersReducedMotion: boolean;
 }
 
 // "查看更多"卡片组件
-export function ViewMoreCard({
-    href,
-    index,
-    isOtherHovered,
-    onHover,
-    locale,
-    prefersReducedMotion,
-}: ViewMoreCardProps) {
+export function ViewMoreCard({ href, index, isOtherHovered, onHover, locale }: ViewMoreCardProps) {
     const viewAllText = getUIText('home', 'viewAllPosts', locale);
     const exploreMoreText = getUIText('home', 'exploreMore', locale);
 
     return (
-        <motion.a
+        <a
             href={href}
             className={cn(
                 'showcase-card group relative isolate flex-shrink-0 overflow-hidden rounded-[1.45rem] sm:rounded-[1.65rem]',
@@ -279,17 +237,12 @@ export function ViewMoreCard({
                 'ring-1 ring-[var(--home-showcase-card-ring)] ring-inset',
                 'shadow-[0_18px_34px_var(--home-showcase-card-shadow)]',
                 CARD_VISUAL_TRANSITION_CLASS,
+                isOtherHovered ? 'opacity-[0.84]' : 'opacity-100',
+                'hover:-translate-y-0.5 hover:scale-[1.016] hover:opacity-100',
+                'focus-visible:-translate-y-0.5 focus-visible:scale-[1.016] focus-visible:opacity-100',
+                'motion-reduce:transform-none',
                 'hover:border-[var(--home-showcase-card-border-hover)] hover:shadow-[0_24px_44px_var(--home-showcase-card-shadow-hover)]'
             )}
-            initial={false}
-            animate={{
-                opacity: isOtherHovered ? 0.84 : 1,
-                x: 0,
-                scale: 1,
-            }}
-            transition={prefersReducedMotion ? { duration: 0 } : CARD_SETTLE_TRANSITION}
-            whileHover={prefersReducedMotion ? { opacity: 1 } : CARD_HOVER_TARGET}
-            whileFocus={prefersReducedMotion ? { opacity: 1 } : CARD_FOCUS_TARGET}
             onPointerEnter={() => onHover(index)}
             onPointerLeave={() => onHover(null)}
             aria-label={viewAllText}
@@ -343,6 +296,6 @@ export function ViewMoreCard({
                     {exploreMoreText}
                 </p>
             </div>
-        </motion.a>
+        </a>
     );
 }

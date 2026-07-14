@@ -1,6 +1,7 @@
 ---
 import type { Post } from '@api/ghost/types';
 import { DEFAULT_LOCALE, type Locale } from '@lib/i18n';
+import ResponsiveImage from '@components/common/ResponsiveImage.astro';
 
 interface Props {
     post: Post;
@@ -94,15 +95,16 @@ const generalTags = (post.post_general_tags ?? []).filter(isVisibleTag);
 >
     {
         hasFeatureImage ? (
-            <img
-                class="base-card-media base-card-image"
-                data-post-transition-media
+            <ResponsiveImage
                 src={featureImageUrl}
                 alt=""
-                loading={priority ? 'eager' : 'lazy'}
-                decoding="async"
-                fetchpriority={priority ? 'high' : 'auto'}
+                widths={[320, 480, 640, 960, 1280]}
                 sizes="(max-width: 640px) 82vw, (min-width: 1920px) 428px, 394px"
+                quality={92}
+                priority={priority}
+                progressive
+                className="base-card-media base-card-image"
+                data-post-transition-media
             />
         ) : (
             <div
@@ -237,6 +239,21 @@ const generalTags = (post.post_general_tags ?? []).filter(isVisibleTag);
         transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
+    /* ResponsiveImage is a child Astro component, so the generated img intentionally does not
+       inherit this component's scope attribute. Keep the media contract global and class-bound
+       so optimized images retain the exact geometry and motion of the original direct img. */
+    :global(.base-card-image) {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+        filter: var(--post-view-media-card-filter, saturate(1.05) contrast(0.98));
+        transform: scale(1.025) translate3d(0, 0, 0);
+        transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
     .base-card-image-fallback {
         background:
             radial-gradient(
@@ -275,9 +292,23 @@ const generalTags = (post.post_general_tags ?? []).filter(isVisibleTag);
         transform: scale(1.04) translate3d(0, 0, 0);
     }
 
+    :global(.post-card-wrapper:hover .base-card-image),
+    :global(.post-card-wrapper:focus-visible .base-card-image),
+    :global(.base-card:hover .base-card-image) {
+        transform: scale(1.04) translate3d(0, 0, 0);
+    }
+
     :global(.post-view-scroll-container[data-post-view-scrolling='true'])
         .post-card-wrapper:not(:hover):not(:focus-visible)
         .base-card-media {
+        transform: scale(1.025) translate3d(0, 0, 0);
+    }
+
+    :global(
+        .post-view-scroll-container[data-post-view-scrolling='true']
+            .post-card-wrapper:not(:hover):not(:focus-visible)
+            .base-card-image
+    ) {
         transform: scale(1.025) translate3d(0, 0, 0);
     }
 
@@ -565,6 +596,10 @@ const generalTags = (post.post_general_tags ?? []).filter(isVisibleTag);
         .base-card-media,
         .base-card-shade::after,
         .corner-tag {
+            transition: none;
+        }
+
+        :global(.base-card-image) {
             transition: none;
         }
 

@@ -1,0 +1,223 @@
+---
+import {
+    DEFAULT_LOCALE,
+    isLocale,
+    LOCALE_FLAGS,
+    LOCALE_NAMES,
+    LOCALES,
+    type Locale,
+} from '@lib/i18n';
+
+interface Props {
+    availableLocales?: readonly Locale[] | undefined;
+    displayLocale?: Locale | undefined;
+}
+
+const { availableLocales, displayLocale } = Astro.props;
+const pathParts = Astro.url.pathname.split('/').filter(Boolean);
+const routeLocale = pathParts[0] && isLocale(pathParts[0]) ? pathParts[0] : DEFAULT_LOCALE;
+const visibleLocales =
+    availableLocales?.length && availableLocales.every(isLocale) ? availableLocales : LOCALES;
+const activeLocale = displayLocale ?? routeLocale;
+const buttonLocale = visibleLocales.includes(activeLocale)
+    ? activeLocale
+    : (visibleLocales[0] ?? DEFAULT_LOCALE);
+const canSwitchLocale = visibleLocales.length > 1;
+
+function buildLanguageUrl(targetLocale: Locale): string {
+    const nextParts = [...pathParts];
+
+    if (nextParts.length > 0 && isLocale(nextParts[0])) {
+        nextParts[0] = targetLocale;
+        return `/${nextParts.join('/')}`;
+    }
+
+    return `/${targetLocale}${Astro.url.pathname}`;
+}
+---
+
+<div class="relative" data-language-switcher>
+    <button
+        type="button"
+        data-language-trigger
+        class:list={[
+            'flex items-center gap-1.5 px-3 py-1.5',
+            'rounded-full border transition-all duration-300',
+            'border-[var(--top-control-border)] bg-[var(--top-control-bg)] text-[var(--top-control-text)]',
+            'shadow-[0_8px_24px_var(--top-control-shadow)] hover:bg-[var(--top-control-bg-hover)] hover:shadow-[0_10px_28px_var(--top-control-shadow-hover)]',
+            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+        ]}
+        aria-label="切换语言"
+        aria-expanded="false"
+        aria-haspopup={canSwitchLocale ? 'listbox' : undefined}
+        disabled={!canSwitchLocale}
+    >
+        <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+        >
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M2 12h20"></path>
+            <path d="M12 2a15.3 15.3 0 0 1 0 20"></path>
+            <path d="M12 2a15.3 15.3 0 0 0 0 20"></path>
+        </svg>
+        <span class="hidden text-sm font-medium sm:inline">{LOCALE_NAMES[buttonLocale]}</span>
+        {
+            canSwitchLocale && (
+                <svg
+                    data-language-chevron
+                    class="h-3.5 w-3.5 transition-transform duration-200"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="m6 9 6 6 6-6" />
+                </svg>
+            )
+        }
+    </button>
+
+    {
+        canSwitchLocale && (
+            <div
+                data-language-menu
+                hidden
+                class:list={[
+                    'absolute top-full right-0 z-50 mt-2 min-w-[140px] rounded-2xl border py-1.5 backdrop-blur-md',
+                    'border-[var(--top-control-menu-border)] bg-[var(--top-control-menu-bg)]',
+                    'shadow-[0_18px_42px_var(--top-control-menu-shadow)]',
+                    'animate-in fade-in-0 zoom-in-95 duration-150',
+                ]}
+                role="listbox"
+                aria-label="选择语言"
+            >
+                {visibleLocales.map((locale) => {
+                    const isSelected = locale === activeLocale;
+                    const itemClasses = [
+                        'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors duration-150',
+                        isSelected
+                            ? 'bg-[var(--top-control-menu-item-active-bg)] text-[var(--top-control-menu-item-active-text)]'
+                            : 'text-[var(--top-control-menu-item-text)] hover:bg-[var(--top-control-menu-item-hover-bg)]',
+                    ];
+                    const content = (
+                        <>
+                            <span class="text-base leading-none">{LOCALE_FLAGS[locale]}</span>
+                            <span class="flex-1 font-medium">{LOCALE_NAMES[locale]}</span>
+                            {isSelected && (
+                                <svg
+                                    class="h-4 w-4 text-[var(--top-control-accent)]"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M20 6 9 17l-5-5" />
+                                </svg>
+                            )}
+                        </>
+                    );
+
+                    return isSelected ? (
+                        <button
+                            type="button"
+                            data-language-option
+                            class:list={itemClasses}
+                            role="option"
+                            aria-selected="true"
+                        >
+                            {content}
+                        </button>
+                    ) : (
+                        <a
+                            href={buildLanguageUrl(locale)}
+                            data-language-option
+                            data-astro-prefetch="tap"
+                            class:list={itemClasses}
+                            role="option"
+                            aria-selected="false"
+                        >
+                            {content}
+                        </a>
+                    );
+                })}
+            </div>
+        )
+    }
+</div>
+
+<script>
+    const languageWindow = window as Window & {
+        __solitudeLanguageSwitcher?: boolean;
+    };
+
+    if (!languageWindow.__solitudeLanguageSwitcher) {
+        languageWindow.__solitudeLanguageSwitcher = true;
+
+        const closeSwitcher = (root: HTMLElement) => {
+            const trigger = root.querySelector<HTMLButtonElement>('[data-language-trigger]');
+            const menu = root.querySelector<HTMLElement>('[data-language-menu]');
+            const chevron = root.querySelector<HTMLElement>('[data-language-chevron]');
+
+            if (!trigger || !menu) return;
+            trigger.setAttribute('aria-expanded', 'false');
+            menu.hidden = true;
+            chevron?.classList.remove('rotate-180');
+        };
+
+        const closeAllSwitchers = (except?: HTMLElement) => {
+            document.querySelectorAll<HTMLElement>('[data-language-switcher]').forEach((root) => {
+                if (root !== except) closeSwitcher(root);
+            });
+        };
+
+        document.addEventListener('click', (event) => {
+            const target = event.target as Element | null;
+            const trigger = target?.closest<HTMLButtonElement>('[data-language-trigger]');
+
+            if (trigger) {
+                const root = trigger.closest<HTMLElement>('[data-language-switcher]');
+                const menu = root?.querySelector<HTMLElement>('[data-language-menu]');
+                if (!root || !menu || trigger.disabled) return;
+
+                const willOpen = menu.hidden;
+                closeAllSwitchers(root);
+                menu.hidden = !willOpen;
+                trigger.setAttribute('aria-expanded', String(willOpen));
+                root.querySelector('[data-language-chevron]')?.classList.toggle(
+                    'rotate-180',
+                    willOpen
+                );
+                return;
+            }
+
+            const option = target?.closest('[data-language-option]');
+            if (option) {
+                const root = option.closest<HTMLElement>('[data-language-switcher]');
+                if (root) closeSwitcher(root);
+                return;
+            }
+
+            if (!target?.closest('[data-language-switcher]')) closeAllSwitchers();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            closeAllSwitchers();
+        });
+
+        document.addEventListener('astro:before-preparation', () => closeAllSwitchers());
+    }
+</script>

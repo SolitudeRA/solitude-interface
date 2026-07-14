@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import ResponsiveImage from '@components/common/ResponsiveImage.astro';
 
 interface Props {
     logoImageUrl: string;
@@ -21,6 +21,7 @@ const hasLogo = logoImageUrl && logoImageUrl.length > 0;
 
 <a
     href={homeUrl}
+    data-astro-prefetch="hover"
     class:list={[
         'navbar-brand flex h-full items-center',
         'space-x-4 sm:space-x-6 md:space-x-8 lg:space-x-10',
@@ -30,15 +31,14 @@ const hasLogo = logoImageUrl && logoImageUrl.length > 0;
 >
     {
         hasLogo && (
-            <Image
+            <ResponsiveImage
                 src={logoImageUrl}
-                height={400}
-                width={400}
                 alt=""
-                class:list={[
-                    'h-2/5 min-h-10 sm:h-[45%] sm:min-h-16 md:h-1/2 md:min-h-20 lg:min-h-25',
-                    'w-auto rounded-[18%]',
-                ]}
+                widths={[48, 80, 120, 160, 200]}
+                sizes="(max-width: 639px) 48px, (max-width: 1023px) 80px, 100px"
+                quality={80}
+                priority
+                className="h-2/5 min-h-10 w-auto rounded-[18%] sm:h-[45%] sm:min-h-16 md:h-1/2 md:min-h-20 lg:min-h-25"
             />
         )
     }

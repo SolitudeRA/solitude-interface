@@ -1,6 +1,6 @@
 ---
-import DockNavMobile from './DockNavMobile.tsx';
-import RssSelector from '@components/common/RssSelector.tsx';
+import DockNavMobile from './DockNavMobile.astro';
+import RssSelector from '@components/common/RssSelector.astro';
 import { type Locale, DEFAULT_LOCALE, buildLocalePath } from '@lib/i18n';
 import { isCurrentDockDestination } from '@lib/navigation/dockNavigationGuard';
 
@@ -28,7 +28,7 @@ const isCurrentRoute = (href: string) =>
 
 <!-- 移动端汉堡菜单 - 小于768px -->
 <div class="flex justify-center md:hidden">
-    <DockNavMobile client:idle />
+    <DockNavMobile lang={lang} />
 </div>
 
 <!-- 桌面端导航栏 - 768px及以上 -->
@@ -47,6 +47,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={homeLink}
                 data-dock-route
+                data-astro-prefetch="hover"
                 aria-current={isCurrentRoute(homeLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{homeLabel}</a
@@ -56,6 +57,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={postsLink}
                 data-dock-route
+                data-astro-prefetch="hover"
                 aria-current={isCurrentRoute(postsLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{postsLabel}</a
@@ -65,6 +67,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={aboutLink}
                 data-dock-route
+                data-astro-prefetch="hover"
                 aria-current={isCurrentRoute(aboutLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{aboutLabel}</a
@@ -75,6 +78,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={contactLink}
                 data-dock-route
+                data-astro-prefetch="hover"
                 aria-current={isCurrentRoute(contactLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{contactLabel}</a
@@ -82,13 +86,14 @@ const isCurrentRoute = (href: string) =>
         </div>
         <!-- RSS 选择器 - lg 时为右侧，xl 时为普通 -->
         <div class="dock-nav-item dock-nav-item-right-lg hidden lg:flex">
-            <RssSelector client:idle showLabel={true} textLocale="en" />
+            <RssSelector showLabel={true} textLocale="en" />
         </div>
         <!-- Privacy Policy 仅在大屏显示，xl+ 为右侧 -->
         <div class="dock-nav-item-right hidden xl:flex">
             <a
                 href={privacyLink}
                 data-dock-route
+                data-astro-prefetch="hover"
                 aria-current={isCurrentRoute(privacyLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{privacyLabel}</a

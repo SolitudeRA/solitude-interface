@@ -1,5 +1,4 @@
 ---
-import SmartNavbar from './SmartNavbar.tsx';
 import NavbarBrand from './NavbarBrand.astro';
 import NavbarUtility from './NavbarUtility.astro';
 import type { Locale } from '@lib/i18n';
@@ -27,16 +26,92 @@ const {
 } = Astro.props;
 ---
 
-<SmartNavbar isFixed={isFixed} transitionName="site-navbar" client:idle>
-    <NavbarBrand
-        logoImageUrl={logoUrl}
-        siteTitle={siteTitle}
-        siteSubTitle={siteSubTitle}
-        homeUrl={homeUrl}
-        hideTitleOnMobile={hideTitleOnMobile}
-    />
-    <NavbarUtility availableLocales={availableLocales} displayLocale={displayLocale}>
-        <div slot="start"><slot name="utility-start" /></div>
-        <div slot="end"><slot name="utility-end" /></div>
-    </NavbarUtility>
-</SmartNavbar>
+<nav
+    class:list={[
+        'smart-navbar z-50 h-[12svh] min-h-[60px] w-full translate-y-0 overflow-visible transition-transform duration-300 ease-in-out sm:h-[13svh] sm:min-h-[70px] md:h-[14svh] md:min-h-[80px]',
+        isFixed ? 'fixed top-0 right-0 left-0' : 'relative',
+    ]}
+    data-site-navbar
+    data-smart-navbar-fixed={isFixed ? 'true' : undefined}
+    style="view-transition-name: site-navbar"
+>
+    <div class="flex h-full w-full items-center justify-between overflow-visible">
+        <NavbarBrand
+            logoImageUrl={logoUrl}
+            siteTitle={siteTitle}
+            siteSubTitle={siteSubTitle}
+            homeUrl={homeUrl}
+            hideTitleOnMobile={hideTitleOnMobile}
+        />
+        <NavbarUtility availableLocales={availableLocales} displayLocale={displayLocale}>
+            <div slot="start"><slot name="utility-start" /></div>
+            <div slot="end"><slot name="utility-end" /></div>
+        </NavbarUtility>
+    </div>
+</nav>
+
+<script>
+    const navbarWindow = window as Window & {
+        __solitudeSmartNavbar?: boolean;
+    };
+
+    if (!navbarWindow.__solitudeSmartNavbar) {
+        navbarWindow.__solitudeSmartNavbar = true;
+
+        const SCROLL_THRESHOLD = 100;
+        const SCROLL_DELTA = 10;
+        let lastScrollY = window.scrollY;
+        let navbarFrame: number | null = null;
+
+        const updateNavbar = () => {
+            navbarFrame = null;
+            const currentScrollY = window.scrollY;
+            const delta = currentScrollY - lastScrollY;
+
+            document
+                .querySelectorAll<HTMLElement>('[data-smart-navbar-fixed="true"]')
+                .forEach((navbar) => {
+                    navbar.classList.toggle(
+                        'smart-navbar-scrolled',
+                        currentScrollY > SCROLL_THRESHOLD
+                    );
+
+                    const shouldHide = currentScrollY > SCROLL_THRESHOLD && delta > SCROLL_DELTA;
+                    const shouldShow = delta < -SCROLL_DELTA || currentScrollY < SCROLL_THRESHOLD;
+
+                    if (shouldHide) {
+                        navbar.classList.add('-translate-y-full');
+                        navbar.classList.remove('translate-y-0');
+                    } else if (shouldShow) {
+                        navbar.classList.remove('-translate-y-full');
+                        navbar.classList.add('translate-y-0');
+                    }
+                });
+
+            lastScrollY = currentScrollY;
+        };
+
+        const scheduleNavbarUpdate = () => {
+            if (navbarFrame !== null) return;
+            navbarFrame = window.requestAnimationFrame(updateNavbar);
+        };
+
+        const resetNavbar = () => {
+            lastScrollY = window.scrollY;
+            document
+                .querySelectorAll<HTMLElement>('[data-smart-navbar-fixed="true"]')
+                .forEach((navbar) => {
+                    navbar.classList.remove('-translate-y-full');
+                    navbar.classList.add('translate-y-0');
+                    navbar.classList.toggle(
+                        'smart-navbar-scrolled',
+                        window.scrollY > SCROLL_THRESHOLD
+                    );
+                });
+        };
+
+        window.addEventListener('scroll', scheduleNavbarUpdate, { passive: true });
+        document.addEventListener('astro:after-swap', resetNavbar);
+        resetNavbar();
+    }
+</script>

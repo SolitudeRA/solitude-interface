@@ -1,0 +1,485 @@
+---
+import type { CodeBlockLabels } from '@api/utils/articleHtml';
+
+interface TocLabels {
+    title: string;
+    open: string;
+    close: string;
+    dialog: string;
+    copyLink: string;
+    linkCopied: string;
+    backToTop: string;
+}
+
+interface Props {
+    labels: TocLabels;
+    codeLabels: CodeBlockLabels;
+    contentSelector?: string;
+}
+
+const { labels, codeLabels, contentSelector = '.solitude-article-content' } = Astro.props;
+---
+
+<div
+    data-article-reading-tools
+    data-content-selector={contentSelector}
+    data-toc-title={labels.title}
+    data-label-code-wrap={codeLabels.wrap}
+    data-label-code-scroll={codeLabels.scroll}
+    data-label-code-copy={codeLabels.copy}
+    data-label-code-copied={codeLabels.copied}
+    data-label-code-failed={codeLabels.failed}
+    data-label-code-expand={codeLabels.expand}
+    data-label-code-collapse={codeLabels.collapse}
+>
+    <div class="reading-progress-bar" aria-hidden="true">
+        <span data-reading-progress style="transform: scaleX(0)"></span>
+    </div>
+
+    <div class="mobile-reader-actions" aria-label={labels.dialog}>
+        <button
+            type="button"
+            class="mobile-reader-action"
+            data-reader-open
+            aria-label={labels.open}
+            title={labels.open}
+            hidden
+        >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path>
+            </svg>
+        </button>
+        <button
+            type="button"
+            class="mobile-reader-action"
+            data-reader-copy
+            aria-label={labels.copyLink}
+            title={labels.copyLink}
+            data-default-label={labels.copyLink}
+            data-copied-label={labels.linkCopied}
+        >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span class="sr-only" aria-live="polite" data-reader-copy-status></span>
+        </button>
+        <button
+            type="button"
+            class="mobile-reader-action"
+            data-reader-top
+            aria-label={labels.backToTop}
+            title={labels.backToTop}
+        >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="m18 15-6-6-6 6"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="mobile-toc-layer" data-mobile-toc-layer role="presentation" hidden>
+        <button
+            type="button"
+            class="mobile-toc-backdrop"
+            data-reader-close
+            aria-label={labels.close}></button>
+        <section
+            class="mobile-toc-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={labels.dialog}
+        >
+            <header class="mobile-toc-sheet-header">
+                <span>{labels.title}</span>
+                <button
+                    type="button"
+                    class="mobile-toc-close"
+                    data-reader-close
+                    aria-label={labels.close}
+                >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M18 6 6 18M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </header>
+            <ol class="mobile-toc-list" data-mobile-toc-list></ol>
+        </section>
+    </div>
+</div>
+
+<script>
+    interface TocItem {
+        id: string;
+        text: string;
+        level: number;
+    }
+
+    interface ArticleReadingController {
+        initialize: () => void;
+        cleanup: () => void;
+    }
+
+    declare global {
+        interface Window {
+            __solitudeArticleReading?: ArticleReadingController;
+        }
+    }
+
+    const installArticleReadingController = () => {
+        let disposeCurrent = () => undefined;
+
+        const initialize = () => {
+            disposeCurrent();
+
+            const root = document.querySelector<HTMLElement>('[data-article-reading-tools]');
+            if (!root) return;
+
+            const contentSelector = root.dataset.contentSelector ?? '.solitude-article-content';
+            const content = document.querySelector<HTMLElement>(contentSelector);
+            if (!content) return;
+
+            const progressBar = root.querySelector<HTMLElement>('[data-reading-progress]');
+            const openButton = root.querySelector<HTMLButtonElement>('[data-reader-open]');
+            const copyButton = root.querySelector<HTMLButtonElement>('[data-reader-copy]');
+            const copyStatus = root.querySelector<HTMLElement>('[data-reader-copy-status]');
+            const mobileLayer = root.querySelector<HTMLElement>('[data-mobile-toc-layer]');
+            const mobileList = root.querySelector<HTMLOListElement>('[data-mobile-toc-list]');
+            const desktopMount = document.querySelector<HTMLElement>('[data-article-toc]');
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const timers = new Set<number>();
+            let headings: HTMLElement[] = [];
+            let tocItems: TocItem[] = [];
+            let activeId = '';
+            let lastHashId = window.location.hash.slice(1);
+            let frame: number | null = null;
+            let headingObserver: IntersectionObserver | null = null;
+            let contentObserver: ResizeObserver | null = null;
+            let mutationObserver: MutationObserver | null = null;
+
+            const addTimer = (callback: () => void, delay: number) => {
+                const timer = window.setTimeout(() => {
+                    timers.delete(timer);
+                    callback();
+                }, delay);
+                timers.add(timer);
+            };
+
+            const createTocButton = (item: TocItem, mobile = false) => {
+                const listItem = document.createElement('li');
+                listItem.className = mobile
+                    ? `mobile-toc-item mobile-toc-level-${item.level}`
+                    : `toc-item toc-level-${item.level}`;
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset.tocTarget = item.id;
+                button.className = mobile ? 'mobile-toc-link' : 'toc-link';
+                button.textContent = item.text;
+                button.title = item.text;
+                listItem.append(button);
+
+                return listItem;
+            };
+
+            const renderToc = () => {
+                const hasHeadings = tocItems.length > 0;
+                if (openButton) openButton.hidden = !hasHeadings;
+
+                if (mobileList) {
+                    mobileList.replaceChildren(
+                        ...tocItems.map((item) => createTocButton(item, true))
+                    );
+                }
+
+                if (!desktopMount) return;
+                desktopMount.hidden = !hasHeadings;
+                desktopMount.replaceChildren();
+                if (!hasHeadings) return;
+
+                const nav = document.createElement('nav');
+                nav.className = 'toc-container';
+                nav.setAttribute('aria-label', root.dataset.tocTitle ?? 'Contents');
+
+                const header = document.createElement('div');
+                header.className = 'toc-header';
+                header.innerHTML =
+                    '<svg class="toc-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h12"></path></svg>';
+                const title = document.createElement('span');
+                title.textContent = root.dataset.tocTitle ?? 'Contents';
+                const count = document.createElement('span');
+                count.className = 'toc-count';
+                count.textContent = String(tocItems.length);
+                header.append(title, count);
+
+                const list = document.createElement('ul');
+                list.className = 'toc-list';
+                list.append(...tocItems.map((item) => createTocButton(item)));
+                nav.append(header, list);
+                desktopMount.append(nav);
+            };
+
+            const syncActiveToc = () => {
+                document.querySelectorAll<HTMLElement>('[data-toc-target]').forEach((button) => {
+                    const isActive = button.dataset.tocTarget === activeId;
+                    button.classList.toggle('is-active', isActive);
+                    button.parentElement?.classList.toggle('toc-active', isActive);
+                    if (isActive) {
+                        button.setAttribute('aria-current', 'location');
+                    } else {
+                        button.removeAttribute('aria-current');
+                    }
+                });
+            };
+
+            const updateHash = (id: string) => {
+                if (!id || id === lastHashId || window.scrollY < content.offsetTop - 80) return;
+
+                const url = new URL(window.location.href);
+                url.hash = id;
+                window.history.replaceState(window.history.state, '', url);
+                lastHashId = id;
+            };
+
+            const updateReadingState = () => {
+                const start = content.offsetTop;
+                const end = Math.max(start + content.scrollHeight - window.innerHeight, start + 1);
+                const progress = Math.min(1, Math.max(0, (window.scrollY - start) / (end - start)));
+                if (progressBar) progressBar.style.transform = `scaleX(${progress})`;
+
+                const scrollPosition = window.scrollY + 140;
+                let nextActiveId = headings[0]?.id ?? '';
+                for (const heading of headings) {
+                    if (heading.offsetTop <= scrollPosition) nextActiveId = heading.id;
+                }
+
+                if (nextActiveId !== activeId) {
+                    activeId = nextActiveId;
+                    syncActiveToc();
+                }
+                updateHash(nextActiveId);
+            };
+
+            const scheduleUpdate = () => {
+                if (frame !== null) return;
+                frame = window.requestAnimationFrame(() => {
+                    frame = null;
+                    updateReadingState();
+                });
+            };
+
+            const rebuild = () => {
+                headings = Array.from(content.querySelectorAll<HTMLElement>('h2, h3, h4'));
+                tocItems = headings
+                    .map((heading, index) => {
+                        if (!heading.id) heading.id = `heading-${index}`;
+                        return {
+                            id: heading.id,
+                            text: heading.textContent?.trim() ?? '',
+                            level: Number.parseInt(heading.tagName.slice(1), 10),
+                        };
+                    })
+                    .filter((item) => item.text);
+
+                activeId = tocItems.some((item) => item.id === activeId)
+                    ? activeId
+                    : (tocItems[0]?.id ?? '');
+                renderToc();
+                syncActiveToc();
+                headingObserver?.disconnect();
+                headingObserver = null;
+                if ('IntersectionObserver' in window && headings.length > 0) {
+                    headingObserver = new IntersectionObserver(scheduleUpdate, {
+                        rootMargin: '-96px 0px -70% 0px',
+                        threshold: [0, 0.5, 1],
+                    });
+                    headings.forEach((heading) => headingObserver?.observe(heading));
+                }
+                updateReadingState();
+            };
+
+            const scheduleRebuild = () => {
+                if (frame !== null) return;
+                frame = window.requestAnimationFrame(() => {
+                    frame = null;
+                    rebuild();
+                });
+            };
+
+            const closeMobileToc = () => {
+                if (mobileLayer) mobileLayer.hidden = true;
+            };
+
+            const handleRootClick = async (event: Event) => {
+                const target = event.target as Element | null;
+                if (target?.closest('[data-reader-open]')) {
+                    if (mobileLayer) mobileLayer.hidden = false;
+                    return;
+                }
+                if (target?.closest('[data-reader-close]')) {
+                    closeMobileToc();
+                    return;
+                }
+                if (target?.closest('[data-reader-top]')) {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                    });
+                    return;
+                }
+                if (!target?.closest('[data-reader-copy]') || !copyButton) return;
+
+                const defaultLabel = copyButton.dataset.defaultLabel ?? 'Copy link';
+                const copiedLabel = copyButton.dataset.copiedLabel ?? 'Copied link';
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    copyButton.setAttribute('aria-label', copiedLabel);
+                    copyButton.title = copiedLabel;
+                    if (copyStatus) copyStatus.textContent = copiedLabel;
+                    addTimer(() => {
+                        copyButton.setAttribute('aria-label', defaultLabel);
+                        copyButton.title = defaultLabel;
+                        if (copyStatus) copyStatus.textContent = '';
+                    }, 1600);
+                } catch {
+                    if (copyStatus) copyStatus.textContent = '';
+                }
+            };
+
+            const handleTocClick = (event: Event) => {
+                const button = (event.target as Element | null)?.closest<HTMLButtonElement>(
+                    '[data-toc-target]'
+                );
+                const id = button?.dataset.tocTarget;
+                const heading = id ? document.getElementById(id) : null;
+                if (!id || !heading) return;
+
+                heading.scrollIntoView({
+                    block: 'start',
+                    behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                });
+                activeId = id;
+                syncActiveToc();
+                updateHash(id);
+                closeMobileToc();
+            };
+
+            const handleCodeClick = async (event: Event) => {
+                const target = event.target as Element | null;
+                const shell = target?.closest<HTMLElement>('.code-block-shell');
+                if (!shell) return;
+
+                const wrapButton = target?.closest<HTMLButtonElement>('[data-code-wrap]');
+                if (wrapButton) {
+                    shell.classList.toggle('is-wrapped');
+                    const label = shell.classList.contains('is-wrapped')
+                        ? (root.dataset.labelCodeScroll ?? 'Scroll')
+                        : (root.dataset.labelCodeWrap ?? 'Wrap');
+                    wrapButton.textContent = label;
+                    wrapButton.setAttribute('aria-label', label);
+                    wrapButton.title = label;
+                    return;
+                }
+
+                const lineButton = target?.closest<HTMLButtonElement>('[data-code-toggle-lines]');
+                if (lineButton) {
+                    shell.classList.toggle('is-expanded');
+                    const isExpanded = shell.classList.contains('is-expanded');
+                    const label = isExpanded
+                        ? (root.dataset.labelCodeCollapse ?? 'Show less')
+                        : (root.dataset.labelCodeExpand ?? 'Show more');
+                    lineButton.textContent = label;
+                    lineButton.setAttribute('aria-label', label);
+                    lineButton.setAttribute('aria-expanded', String(isExpanded));
+                    lineButton.title = label;
+                    return;
+                }
+
+                const copyCodeButton = target?.closest<HTMLButtonElement>('[data-code-copy]');
+                if (!copyCodeButton) return;
+                const code =
+                    shell.querySelector('code')?.textContent ??
+                    shell.querySelector('pre')?.textContent ??
+                    '';
+                if (!code.trim()) return;
+
+                const status = shell.querySelector<HTMLElement>('[data-code-status]');
+                const resetLabel = root.dataset.labelCodeCopy ?? 'Copy';
+                try {
+                    await navigator.clipboard.writeText(code);
+                    const label = root.dataset.labelCodeCopied ?? 'Copied';
+                    copyCodeButton.textContent = label;
+                    copyCodeButton.setAttribute('aria-label', label);
+                    copyCodeButton.title = label;
+                    if (status) status.textContent = label;
+                } catch {
+                    const label = root.dataset.labelCodeFailed ?? 'Failed';
+                    copyCodeButton.textContent = label;
+                    copyCodeButton.setAttribute('aria-label', label);
+                    copyCodeButton.title = label;
+                    if (status) status.textContent = label;
+                }
+                addTimer(() => {
+                    copyCodeButton.textContent = resetLabel;
+                    copyCodeButton.setAttribute('aria-label', resetLabel);
+                    copyCodeButton.title = resetLabel;
+                    if (status) status.textContent = '';
+                }, 1400);
+            };
+
+            const handleKeydown = (event: KeyboardEvent) => {
+                if (event.key === 'Escape') closeMobileToc();
+            };
+
+            root.addEventListener('click', handleRootClick);
+            document.addEventListener('click', handleTocClick);
+            content.addEventListener('click', handleCodeClick);
+            document.addEventListener('keydown', handleKeydown);
+            window.addEventListener('scroll', scheduleUpdate, { passive: true });
+            window.addEventListener('resize', scheduleRebuild);
+            window.addEventListener('orientationchange', scheduleRebuild, { passive: true });
+
+            if ('ResizeObserver' in window) {
+                contentObserver = new ResizeObserver(scheduleUpdate);
+                contentObserver.observe(content);
+            }
+            if ('MutationObserver' in window) {
+                mutationObserver = new MutationObserver(scheduleRebuild);
+                mutationObserver.observe(content, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true,
+                });
+            }
+
+            rebuild();
+            document.fonts?.ready.then(scheduleRebuild).catch(() => undefined);
+
+            disposeCurrent = () => {
+                root.removeEventListener('click', handleRootClick);
+                document.removeEventListener('click', handleTocClick);
+                content.removeEventListener('click', handleCodeClick);
+                document.removeEventListener('keydown', handleKeydown);
+                window.removeEventListener('scroll', scheduleUpdate);
+                window.removeEventListener('resize', scheduleRebuild);
+                window.removeEventListener('orientationchange', scheduleRebuild);
+                headingObserver?.disconnect();
+                contentObserver?.disconnect();
+                mutationObserver?.disconnect();
+                timers.forEach((timer) => window.clearTimeout(timer));
+                timers.clear();
+                if (frame !== null) window.cancelAnimationFrame(frame);
+                frame = null;
+            };
+        };
+
+        window.__solitudeArticleReading = {
+            initialize,
+            cleanup: () => disposeCurrent(),
+        };
+        document.addEventListener('astro:page-load', initialize);
+        document.addEventListener('astro:before-preparation', () => disposeCurrent());
+        initialize();
+    };
+
+    if (!window.__solitudeArticleReading) installArticleReadingController();
+</script>

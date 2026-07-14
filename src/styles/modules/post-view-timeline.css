@@ -92,7 +92,9 @@
     align-items: center;
     justify-content: center;
     height: 26px;
-    overflow: visible;
+    /* 轨道会随 active marker 横移；只裁掉横向越界，保留 aura 的纵向柔光。 */
+    overflow-x: clip;
+    overflow-y: visible;
 }
 
 .pvp-track {

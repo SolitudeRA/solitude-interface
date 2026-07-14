@@ -1,0 +1,273 @@
+---
+import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
+import {
+    buildLocalePath,
+    DEFAULT_LOCALE,
+    getUIText,
+    LOCALE_FLAGS,
+    LOCALE_NAMES,
+    LOCALES,
+    type Locale,
+} from '@lib/i18n';
+import { isCurrentDockDestination } from '@lib/navigation/dockNavigationGuard';
+
+interface Props {
+    lang?: Locale;
+}
+
+const { lang = DEFAULT_LOCALE } = Astro.props;
+const navItems = [
+    { href: `/${lang}`, label: 'Home' },
+    { href: buildLocalePath(lang, 'post-view'), label: 'Posts' },
+    { href: buildLocalePath(lang, 'about'), label: 'About Me' },
+    { href: '/contact', label: 'Contact' },
+    { href: buildLocalePath(lang, 'privacy-policy'), label: 'Privacy Policy' },
+];
+const rssOptions = [
+    {
+        id: 'all',
+        label: getUIText('rss', 'allLanguages', 'en'),
+        href: '/rss.xml',
+        flag: '📡',
+    },
+    ...LOCALES.map((locale) => ({
+        id: locale,
+        label: LOCALE_NAMES[locale],
+        href: `/${locale}/rss.xml`,
+        flag: LOCALE_FLAGS[locale],
+    })),
+];
+const currentText = getUIText('rss', 'current', 'en');
+const isCurrentRoute = (href: string) =>
+    isCurrentDockDestination(Astro.url, new URL(href, Astro.url));
+---
+
+<div class="relative md:hidden" data-dock-menu-root data-dock-nav-mobile data-open="false">
+    <button
+        type="button"
+        data-dock-nav-toggle
+        class="dock-button text-color-ui flex h-12 w-12 items-center justify-center"
+        aria-label="打开菜单"
+        aria-expanded="false"
+    >
+        <HiOutlineMenu data-dock-nav-open-icon className="h-6 w-6" />
+        <HiOutlineX data-dock-nav-close-icon className="hidden h-6 w-6" />
+    </button>
+
+    <button
+        type="button"
+        data-dock-nav-overlay
+        class="dock-overlay pointer-events-none fixed inset-0 z-40 opacity-0 transition-opacity duration-300"
+        aria-label="Close navigation menu"
+    >
+    </button>
+
+    <div
+        data-dock-nav-panel
+        class="dock-menu pointer-events-none fixed right-4 bottom-20 left-4 z-50 max-h-[70vh] translate-y-4 scale-95 overflow-y-auto p-4 opacity-0 transition-all duration-300 ease-out"
+        role="navigation"
+        aria-label="移动端导航菜单"
+    >
+        <nav class="flex flex-col gap-2">
+            {
+                navItems.slice(0, 4).map((item) => (
+                    <a
+                        href={item.href}
+                        data-dock-route
+                        data-astro-prefetch="tap"
+                        data-dock-nav-close
+                        aria-current={isCurrentRoute(item.href) ? 'page' : undefined}
+                        class:list={[
+                            'dock-menu-item text-color-ui block',
+                            isCurrentRoute(item.href) ? 'dock-menu-item--current' : '',
+                        ]}
+                    >
+                        {item.label}
+                    </a>
+                ))
+            }
+
+            <div>
+                <button
+                    type="button"
+                    data-dock-rss-toggle
+                    class="dock-menu-item text-color-ui flex w-full items-center justify-between"
+                    aria-expanded="false"
+                >
+                    <span>RSS</span>
+                    <svg
+                        data-dock-rss-chevron
+                        class="h-4 w-4 transition-transform duration-200"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                </button>
+
+                <div
+                    data-dock-rss-panel
+                    class="max-h-0 overflow-hidden opacity-0 transition-all duration-200"
+                >
+                    <div class="mt-1 ml-4 flex flex-col gap-1">
+                        {
+                            rssOptions.map((option) => (
+                                <a
+                                    href={option.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    data-dock-nav-close
+                                    class:list={[
+                                        'dock-menu-subitem text-color-ui flex items-center gap-2',
+                                        option.id === lang ? 'bg-primary/10 text-primary' : '',
+                                    ]}
+                                >
+                                    <span class="text-base">{option.flag}</span>
+                                    <span>{option.label}</span>
+                                    {option.id === lang && (
+                                        <span class="text-primary ml-auto text-xs">
+                                            {currentText}
+                                        </span>
+                                    )}
+                                </a>
+                            ))
+                        }
+                    </div>
+                </div>
+            </div>
+
+            {
+                navItems.slice(4).map((item) => (
+                    <a
+                        href={item.href}
+                        data-dock-route
+                        data-astro-prefetch="tap"
+                        data-dock-nav-close
+                        aria-current={isCurrentRoute(item.href) ? 'page' : undefined}
+                        class:list={[
+                            'dock-menu-item text-color-ui block',
+                            isCurrentRoute(item.href) ? 'dock-menu-item--current' : '',
+                        ]}
+                    >
+                        {item.label}
+                    </a>
+                ))
+            }
+        </nav>
+    </div>
+</div>
+
+<script>
+    const navMenuWindow = window as Window & {
+        __solitudeDockNavMenu?: boolean;
+    };
+
+    if (!navMenuWindow.__solitudeDockNavMenu) {
+        navMenuWindow.__solitudeDockNavMenu = true;
+
+        const syncBodyLock = () => {
+            document.body.style.overflow = document.querySelector(
+                '[data-dock-menu-root][data-open="true"]'
+            )
+                ? 'hidden'
+                : '';
+        };
+
+        const setRssExpanded = (root: HTMLElement, expanded: boolean) => {
+            const trigger = root.querySelector<HTMLButtonElement>('[data-dock-rss-toggle]');
+            const panel = root.querySelector<HTMLElement>('[data-dock-rss-panel]');
+            const chevron = root.querySelector<HTMLElement>('[data-dock-rss-chevron]');
+            if (!trigger || !panel) return;
+
+            trigger.setAttribute('aria-expanded', String(expanded));
+            trigger.classList.toggle('dock-menu-item--active', expanded);
+            trigger.style.background = expanded ? 'var(--dock-menu-item-hover-bg)' : '';
+            panel.classList.toggle('max-h-60', expanded);
+            panel.classList.toggle('opacity-100', expanded);
+            panel.classList.toggle('max-h-0', !expanded);
+            panel.classList.toggle('opacity-0', !expanded);
+            chevron?.classList.toggle('rotate-180', expanded);
+        };
+
+        const setNavOpen = (root: HTMLElement, open: boolean) => {
+            const trigger = root.querySelector<HTMLButtonElement>('[data-dock-nav-toggle]');
+            const overlay = root.querySelector<HTMLElement>('[data-dock-nav-overlay]');
+            const panel = root.querySelector<HTMLElement>('[data-dock-nav-panel]');
+            if (!trigger || !overlay || !panel) return;
+
+            root.dataset.open = String(open);
+            trigger.setAttribute('aria-expanded', String(open));
+            trigger.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+            trigger.classList.toggle('dock-button--active', open);
+            root.querySelector('[data-dock-nav-open-icon]')?.classList.toggle('hidden', open);
+            root.querySelector('[data-dock-nav-close-icon]')?.classList.toggle('hidden', !open);
+            overlay.classList.toggle('pointer-events-auto', open);
+            overlay.classList.toggle('opacity-100', open);
+            overlay.classList.toggle('pointer-events-none', !open);
+            overlay.classList.toggle('opacity-0', !open);
+            panel.classList.toggle('pointer-events-auto', open);
+            panel.classList.toggle('translate-y-0', open);
+            panel.classList.toggle('scale-100', open);
+            panel.classList.toggle('opacity-100', open);
+            panel.classList.toggle('pointer-events-none', !open);
+            panel.classList.toggle('translate-y-4', !open);
+            panel.classList.toggle('scale-95', !open);
+            panel.classList.toggle('opacity-0', !open);
+
+            if (open) {
+                document.dispatchEvent(
+                    new CustomEvent('solitude:dock-menu-open', { detail: { root } })
+                );
+            } else {
+                setRssExpanded(root, false);
+            }
+            syncBodyLock();
+        };
+
+        const closeAllNavMenus = () => {
+            document.querySelectorAll<HTMLElement>('[data-dock-nav-mobile]').forEach((root) => {
+                setNavOpen(root, false);
+            });
+        };
+
+        document.addEventListener('click', (event) => {
+            const target = event.target as Element | null;
+            const toggle = target?.closest('[data-dock-nav-toggle]');
+            if (toggle) {
+                const root = toggle.closest<HTMLElement>('[data-dock-nav-mobile]');
+                if (root) setNavOpen(root, root.dataset.open !== 'true');
+                return;
+            }
+
+            const rssToggle = target?.closest('[data-dock-rss-toggle]');
+            if (rssToggle) {
+                const root = rssToggle.closest<HTMLElement>('[data-dock-nav-mobile]');
+                if (root) {
+                    setRssExpanded(root, rssToggle.getAttribute('aria-expanded') !== 'true');
+                }
+                return;
+            }
+
+            if (target?.closest('[data-dock-nav-overlay], [data-dock-nav-close]')) {
+                const root = target.closest<HTMLElement>('[data-dock-nav-mobile]');
+                if (root) setNavOpen(root, false);
+            }
+        });
+
+        document.addEventListener('solitude:dock-menu-open', (event) => {
+            const activeRoot = (event as CustomEvent<{ root?: HTMLElement }>).detail?.root;
+            document.querySelectorAll<HTMLElement>('[data-dock-nav-mobile]').forEach((root) => {
+                if (root !== activeRoot) setNavOpen(root, false);
+            });
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeAllNavMenus();
+        });
+        document.addEventListener('astro:before-preparation', closeAllNavMenus);
+    }
+</script>
