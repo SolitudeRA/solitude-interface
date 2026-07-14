@@ -208,11 +208,16 @@ components/
 
 #### Astro vs React 组件选择
 
-| 组件类型 | 文件格式        | 使用场景                               |
-| -------- | --------------- | -------------------------------------- |
-| 静态布局 | `.astro`        | Navbar, Footer, PageHero               |
-| 交互组件 | `.tsx`          | ThemeSwitch, Carousel, ScrollContainer |
-| 混合组件 | `.astro` + slot | 布局包裹交互内容                       |
+| 组件类型       | 文件格式        | 使用场景                                   |
+| -------------- | --------------- | ------------------------------------------ |
+| 静态布局       | `.astro`        | Navbar, Footer, PageHero                   |
+| 轻量 DOM 交互  | `.astro`        | ThemeSwitch, 菜单、RSS、文章目录与代码复制 |
+| 有状态复杂交互 | `.tsx`          | Carousel, ScrollContainer, ArchiveView     |
+| 混合组件       | `.astro` + slot | 布局包裹交互内容                           |
+
+React island 只用于需要持续组件状态、复杂组合或跨组件状态同步的交互。能通过事件委托、DOM 属性和
+Astro 生命周期完成的全局壳层与文章增强功能保持为 `.astro` 原生脚本，避免静态路由仅为小控件加载 React
+运行时。
 
 ---
 
@@ -382,12 +387,39 @@ DOM、History API、sessionStorage 与 Astro 生命周期事件验证；路由�
 ### 代码分割
 
 - Astro 自动分割每个页面
-- React 组件按需 hydration (`client:load`, `client:visible`)
+- React island 必须按可见性和断点选择 hydration 指令，隐藏或当前断点不可见的控件不得使用
+  `client:load`
+- `PostArchiveView` 保持 SSR 输出，但仅在用户切到“全部”后通过 `client:visible` 下载和 hydration；
+  精选首屏不得预取归档交互包
+- Navbar、语言切换、移动 Dock、社交菜单和 RSS 选择器由 Astro 原生脚本渐进增强；静态信息页保持
+  零 React island
+- 首页精选轮播由 Astro 直接输出卡片并使用原生控制器渐进增强；不得仅为滚动、箭头与 hover 状态
+  引入 React runtime
+- 文章阅读进度、移动/桌面目录和代码块操作共用一个原生控制器，文章详情页不得仅为这些 DOM 交互
+  引入 React runtime
+- 简单的 opacity / transform 显隐和 hover 动效优先使用 CSS，避免把 Motion 运行时带入首页或精选首屏
+
+### 字体加载
+
+- `BaseLayout.astro` 按 `locale` 只链接当前页面需要的 Noto Sans 字体样式
+- 全局样式入口不得重新导入 SC、JP、Latin 三套完整 `@font-face`
+- 新增语言时同时补充 `BaseLayout` 的字体映射，并检查生成页面的 `data-solitude-font`
+
+### 响应式启动成本
+
+- 全局壳层使用单次注册的事件委托，并在 Astro 页面交换后重新绑定当前 DOM；不可见断点不创建额外
+  React root
+- 横向轨道必须在自身容器内裁掉横向越界，根文档在 360px–4K 验收中保持零横向溢出
+- Astro 预取默认关闭全量扫描，只在明确的高意图入口上启用：桌面 hover，触屏 tap；卡片列表不得因
+  普通浏览就批量请求详情页
 
 ### 图片优化
 
-- 使用 Astro Image 组件
-- 远程图片域名白名单配置
+- 远程图片域名从 `.env` 和运行时环境共同加载到 Astro 白名单，避免构建阶段因配置读取时机错误而
+  退化成原图直出
+- 内容封面统一通过 `ResponsiveImage.astro` 生成响应式 WebP；`widths` 和 `sizes` 必须匹配真实布局，
+  首屏关键图使用 eager/high，其余图片保持 lazy/async
+- 无法由 Astro 优化的格式保留原生 `img` 回退，不能因此阻断页面构建
 
 ---
 

@@ -73,7 +73,12 @@ function formatDate(value: string): string {
 
             <div class="post-series-grid">
                 {previousPost && (
-                    <a class="post-series-card" href={previousPost.href} rel="prev">
+                    <a
+                        class="post-series-card"
+                        href={previousPost.href}
+                        rel="prev"
+                        data-astro-prefetch="hover"
+                    >
                         <span class="post-series-card-label">{copy.previous}</span>
                         <strong>{previousPost.title}</strong>
                         <time datetime={previousPost.published_at}>
@@ -83,7 +88,12 @@ function formatDate(value: string): string {
                 )}
 
                 {nextPost && (
-                    <a class="post-series-card is-next" href={nextPost.href} rel="next">
+                    <a
+                        class="post-series-card is-next"
+                        href={nextPost.href}
+                        rel="next"
+                        data-astro-prefetch="hover"
+                    >
                         <span class="post-series-card-label">{copy.next}</span>
                         <strong>{nextPost.title}</strong>
                         <time datetime={nextPost.published_at}>

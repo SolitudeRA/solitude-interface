@@ -1,6 +1,5 @@
 ---
-import { Avatar } from '@components/common/avatar';
-import DockSocialMobile from './DockSocialMobile.tsx';
+import DockSocialMobile from './DockSocialMobile.astro';
 import { FaGithub, FaSquareXTwitter, FaSteam, FaSpotify, FaBilibili } from 'react-icons/fa6';
 import solitudeAvatar from '@assets/avatar.jpg';
 import { type Locale, DEFAULT_LOCALE, buildLocalePath } from '@lib/i18n';
@@ -19,13 +18,14 @@ const aboutUrl = buildLocalePath(lang, '/about');
 >
     <!-- 移动端、平板、小桌面：社交链接汉堡菜单（<1536px） -->
     <div data-dock-social-compact class="flex items-center gap-3 sm:gap-4 2xl:hidden">
-        <DockSocialMobile client:idle />
+        <DockSocialMobile />
         <a href={aboutUrl} class="block transition-transform hover:scale-105">
-            <Avatar
-                className="h-10 w-10 shadow-xl sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16"
+            <img
+                class="aspect-square h-10 w-10 rounded-full object-cover shadow-xl sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16"
                 src={solitudeAvatar.src}
-                showFallback={true}
-                client:visible
+                alt="SolitudeRA"
+                loading="lazy"
+                decoding="async"
             />
         </a>
     </div>
@@ -80,11 +80,12 @@ const aboutUrl = buildLocalePath(lang, '/about');
             </span>
         </div>
         <a href={aboutUrl} class="block transition-transform hover:scale-105">
-            <Avatar
-                className="h-20 w-20 shadow-xl"
+            <img
+                class="aspect-square h-20 w-20 rounded-full object-cover shadow-xl"
                 src={solitudeAvatar.src}
-                showFallback={true}
-                client:visible
+                alt="SolitudeRA"
+                loading="lazy"
+                decoding="async"
             />
         </a>
     </div>

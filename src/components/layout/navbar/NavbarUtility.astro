@@ -1,6 +1,6 @@
 ---
 import ThemeSwitch from './ThemeSwitch.astro';
-import LanguageSwitcher from './LanguageSwitcher';
+import LanguageSwitcher from './LanguageSwitcher.astro';
 import type { Locale } from '@lib/i18n';
 
 interface Props {
@@ -21,11 +21,7 @@ const { availableLocales, displayLocale } = Astro.props;
     <div class="flex shrink-0">
         <slot name="start" />
     </div>
-    <LanguageSwitcher
-        availableLocales={availableLocales}
-        displayLocale={displayLocale}
-        client:visible
-    />
+    <LanguageSwitcher availableLocales={availableLocales} displayLocale={displayLocale} />
     <ThemeSwitch />
     <div class="flex shrink-0">
         <slot name="end" />

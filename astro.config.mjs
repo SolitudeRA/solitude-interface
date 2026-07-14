@@ -2,14 +2,21 @@
 import { defineConfig, envField } from 'astro/config';
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
+import { loadEnv } from 'vite';
 import { extractDomains } from './src/api/utils/url';
 
-// 配置远程图片允许的域名
-const imageDomains = extractDomains(process.env.GHOST_URL, process.env.IMAGE_HOST_URL);
+// Astro 配置求值早于 env schema 注入；显式读取 env 文件，确保远程 Ghost 图片能够进入
+// Sharp 构建期优化，而不是因 allowlist 为空退化为原图直出。
+const fileEnv = loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), '');
+const imageDomains = extractDomains(
+    process.env.GHOST_URL ?? fileEnv.GHOST_URL,
+    process.env.IMAGE_HOST_URL ?? fileEnv.IMAGE_HOST_URL
+);
+const siteUrl = process.env.SITE_URL ?? fileEnv.SITE_URL;
 
 // https://astro.build/config
 export default defineConfig({
-    site: process.env.SITE_URL,
+    ...(siteUrl ? { site: siteUrl } : {}),
     devToolbar: {
         enabled: false,
     },
@@ -69,7 +76,10 @@ export default defineConfig({
         },
     },
 
-    prefetch: true,
+    prefetch: {
+        prefetchAll: false,
+        defaultStrategy: 'hover',
+    },
     integrations: [react()],
 
     image: {
@@ -80,7 +90,6 @@ export default defineConfig({
         resolve: {
             dedupe: ['react', 'react-dom'],
         },
-        // @ts-expect-error - @tailwindcss/vite uses Vite 7.x types, Astro uses Vite 6.x
         plugins: [tailwindcss()],
     },
 });

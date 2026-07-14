@@ -4,6 +4,16 @@
  */
 
 @layer components {
+    [data-article-reading-tools] {
+        display: contents;
+    }
+
+    [data-article-toc][hidden],
+    [data-reader-open][hidden],
+    .mobile-toc-layer[hidden] {
+        display: none !important;
+    }
+
     .toc-wrapper {
         position: sticky;
         top: clamp(5.75rem, 9svh, 7.5rem);
@@ -190,6 +200,15 @@
             background 160ms ease,
             border-color 160ms ease,
             transform 160ms ease;
+    }
+
+    .mobile-reader-action svg,
+    .mobile-toc-close svg {
+        width: 1rem;
+        height: 1rem;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
     }
 
     .mobile-reader-action:hover {

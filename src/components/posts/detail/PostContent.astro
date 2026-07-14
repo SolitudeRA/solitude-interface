@@ -1,8 +1,7 @@
 ---
 import PostHeader from './PostHeader.astro';
-import TableOfContents from './TableOfContents.tsx';
-import ReadingProgress from './ReadingProgress.tsx';
-import CodeBlockEnhancer from './CodeBlockEnhancer.tsx';
+import ArticleReadingTools from './ArticleReadingTools.astro';
+import ResponsiveImage from '@components/common/ResponsiveImage.astro';
 import type { PostTag } from '@api/ghost/types';
 import { sanitizeHtml, containsSuspiciousContent } from '@api/utils/sanitize';
 import { highlightCodeBlocks } from '@api/utils/codeHighlight';
@@ -132,7 +131,7 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
 ---
 
 <div class="solitude-article-container grid grid-cols-1 xl:grid-cols-12">
-    <ReadingProgress labels={copy.toc} client:idle />
+    <ArticleReadingTools labels={copy.toc} codeLabels={copy.code} />
 
     <div class="solitude-article-rail hidden xl:col-span-2 xl:block"></div>
 
@@ -144,10 +143,23 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
                 transition:name="post-focus-media"
                 aria-hidden="true"
             >
+                {
+                    featureImageUrl && (
+                        <ResponsiveImage
+                            src={featureImageUrl}
+                            alt=""
+                            widths={[480, 768, 1200, 1600, 2400]}
+                            sizes="(min-width: 1280px) 58vw, 100vw"
+                            quality={76}
+                            priority
+                            className="solitude-article-meta-image"
+                        />
+                    )
+                }
             </div>
             <div class="solitude-article-meta-motion-content" transition:name="post-focus-content">
                 <div class="solitude-article-meta-motion-overlay" aria-hidden="true"></div>
-                <a class="article-back-link" href={backHref}>
+                <a class="article-back-link" href={backHref} data-astro-prefetch="hover">
                     <svg
                         aria-hidden="true"
                         viewBox="0 0 24 24"
@@ -172,23 +184,16 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
         </div>
         <div>
             <div class="solitude-article-content" set:html={articleHtml} />
-            <CodeBlockEnhancer labels={copy.code} client:idle />
         </div>
     </div>
 
     <!-- 右侧 TOC 区域 - 在移动端和平板隐藏 -->
     <div class="solitude-article-rail hidden xl:col-span-3 xl:flex">
-        <div class="toc-wrapper w-full">
-            <TableOfContents labels={copy.toc} client:idle />
-        </div>
+        <div class="toc-wrapper w-full" data-article-toc hidden></div>
     </div>
 </div>
 
-<style
-    define:vars={{
-        featureImageUrl: featureImageUrl ? `url(${featureImageUrl})` : 'none',
-    }}
->
+<style>
     .solitude-article-meta {
         position: relative;
         border-radius: 0 0 24px 24px;
@@ -203,9 +208,13 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
         z-index: -2;
         border-radius: inherit;
         background-color: var(--card-image-fallback-start);
-        background-image: var(--featureImageUrl);
-        background-position: center;
-        background-size: cover;
+    }
+
+    .solitude-article-meta-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
     }
 
     .solitude-article-meta-motion-content {

@@ -1,0 +1,292 @@
+---
+import type { FeaturedPost } from '@api/ghost/types';
+import { DEFAULT_LOCALE, getUIText, type Locale } from '@lib/i18n';
+import HomeShowcaseCard from './HomeShowcaseCard.astro';
+
+interface Props {
+    posts: FeaturedPost[];
+    postsPageUrl?: string;
+    showMoreButton?: boolean;
+    locale?: Locale;
+}
+
+const {
+    posts,
+    postsPageUrl = '/post-view',
+    showMoreButton = true,
+    locale = DEFAULT_LOCALE,
+} = Astro.props;
+const viewAllText = getUIText('home', 'viewAllPosts', locale);
+const exploreMoreText = getUIText('home', 'exploreMore', locale);
+---
+
+<div
+    class="home-showcase relative w-full"
+    data-home-showcase
+    data-can-scroll-left="false"
+    data-can-scroll-right="false"
+    data-hovered="false"
+>
+    <div
+        data-home-showcase-left-fade
+        class="pointer-events-none absolute top-0 left-0 z-10 h-full w-24 bg-gradient-to-r from-[var(--background)] via-[color-mix(in_srgb,var(--background)_40%,transparent)] to-transparent opacity-0 transition-opacity duration-200 motion-reduce:transition-none"
+        aria-hidden="true"
+    >
+    </div>
+    <div
+        data-home-showcase-right-fade
+        class="pointer-events-none absolute top-0 right-0 z-10 h-full w-24 bg-gradient-to-l from-[var(--background)] via-[color-mix(in_srgb,var(--background)_40%,transparent)] to-transparent opacity-0 transition-opacity duration-200 motion-reduce:transition-none"
+        aria-hidden="true"
+    >
+    </div>
+
+    <button
+        type="button"
+        data-home-showcase-previous
+        tabindex="-1"
+        aria-hidden="true"
+        aria-label="向左滚动"
+        class="home-showcase-control absolute top-1/2 left-2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)]/80 opacity-0 shadow-lg backdrop-blur-sm transition-[opacity,transform,background-color] duration-200 hover:scale-110 hover:bg-[var(--background)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none motion-reduce:transition-none"
+    >
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="m15 18-6-6 6-6"></path>
+        </svg>
+    </button>
+    <button
+        type="button"
+        data-home-showcase-next
+        tabindex="-1"
+        aria-hidden="true"
+        aria-label="向右滚动"
+        class="home-showcase-control absolute top-1/2 right-2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)]/80 opacity-0 shadow-lg backdrop-blur-sm transition-[opacity,transform,background-color] duration-200 hover:scale-110 hover:bg-[var(--background)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none motion-reduce:transition-none"
+    >
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="m9 18 6-6-6-6"></path>
+        </svg>
+    </button>
+
+    <div
+        data-home-showcase-scroll
+        class="scrollbar-none flex touch-pan-x gap-4 overflow-x-auto scroll-smooth px-4 py-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="list"
+        aria-label="推荐文章列表"
+    >
+        {posts.map((post, index) => <HomeShowcaseCard post={post} index={index} />)}
+        {
+            showMoreButton && (
+                <a
+                    href={postsPageUrl}
+                    data-astro-prefetch="hover"
+                    class="showcase-card group relative isolate aspect-[4/3] w-[15rem] flex-shrink-0 cursor-pointer overflow-hidden rounded-[1.45rem] border border-[var(--home-showcase-card-border)] bg-[var(--home-showcase-card-bg)] shadow-[0_18px_34px_var(--home-showcase-card-shadow)] ring-1 ring-[var(--home-showcase-card-ring)] transition-[opacity,transform,border-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ring-inset hover:-translate-y-0.5 hover:scale-[1.016] hover:border-[var(--home-showcase-card-border-hover)] hover:opacity-100 hover:shadow-[0_24px_44px_var(--home-showcase-card-shadow-hover)] focus-visible:-translate-y-0.5 focus-visible:scale-[1.016] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transform-none motion-reduce:transition-none sm:w-[17rem] sm:rounded-[1.65rem] md:w-[19rem] lg:w-[21rem]"
+                    aria-label={viewAllText}
+                >
+                    <div class="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_28%_18%,var(--card-image-fallback-highlight),transparent_34%),linear-gradient(135deg,var(--card-image-fallback-start),var(--card-image-fallback-end))]" />
+                    <div
+                        class="pointer-events-none absolute inset-0 -z-20"
+                        style="background: var(--home-showcase-more-overlay);"
+                    />
+                    <div
+                        class="pointer-events-none absolute inset-0 -z-10 opacity-80"
+                        style="background: var(--home-showcase-more-glow);"
+                    />
+                    <div
+                        class="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[66%]"
+                        style="background: var(--home-showcase-title-gradient);"
+                    />
+                    <div class="absolute inset-0 z-20 flex items-center justify-center">
+                        <span class="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--home-showcase-control-border)] bg-[var(--home-showcase-control-bg)] text-white shadow-[0_10px_28px_var(--home-showcase-control-shadow)] backdrop-blur-md transition-[background,transform] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 group-hover:bg-[var(--home-showcase-control-bg-hover)]">
+                            <svg
+                                class="h-7 w-7 transition-transform duration-[320ms] group-hover:translate-x-0.5"
+                                aria-hidden="true"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                            >
+                                <path d="M5 12h14M13 6l6 6-6 6" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-3 pt-16 pb-3 sm:px-4 sm:pt-20 sm:pb-4">
+                        <h3 class="m-0 line-clamp-2 text-[1.03rem] leading-tight font-extrabold text-white [text-shadow:0_2px_12px_rgba(3,7,18,0.82)] sm:text-[1.1rem]">
+                            {viewAllText}
+                        </h3>
+                        <p class="mt-2 line-clamp-1 text-[0.68rem] leading-none font-bold text-white/70 [text-shadow:0_1px_8px_rgba(3,7,18,0.72)]">
+                            {exploreMoreText}
+                        </p>
+                    </div>
+                </a>
+            )
+        }
+    </div>
+</div>
+
+<style>
+    [data-home-showcase-scroll] {
+        border-radius: 0 24px 24px 0;
+        mask-image: linear-gradient(to right, black 0%, black 75%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, black 0%, black 65%, transparent 100%);
+    }
+
+    [data-home-showcase-left-fade],
+    [data-home-showcase-right-fade] {
+        mask-image: linear-gradient(
+            to bottom,
+            transparent 0%,
+            black 15%,
+            black 85%,
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            transparent 0%,
+            black 15%,
+            black 85%,
+            transparent 100%
+        );
+    }
+
+    [data-home-showcase][data-can-scroll-left='true'] [data-home-showcase-left-fade],
+    [data-home-showcase][data-can-scroll-right='true'] [data-home-showcase-right-fade] {
+        opacity: 0.9;
+    }
+
+    [data-home-showcase][data-hovered='true'][data-can-scroll-left='true']
+        [data-home-showcase-previous],
+    [data-home-showcase][data-hovered='true'][data-can-scroll-right='true']
+        [data-home-showcase-next] {
+        pointer-events: auto;
+        opacity: 1;
+    }
+
+    [data-home-showcase]:has(:global(.showcase-card:hover)) :global(.showcase-card:not(:hover)) {
+        opacity: 0.84;
+    }
+
+    .home-showcase-control {
+        pointer-events: none;
+    }
+
+    .home-showcase-control svg {
+        width: 1.25rem;
+        height: 1.25rem;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+</style>
+
+<script>
+    interface HomeShowcaseController {
+        initialize: () => void;
+    }
+
+    declare global {
+        interface Window {
+            __solitudeHomeShowcase?: HomeShowcaseController;
+        }
+    }
+
+    const createHomeShowcaseController = (): HomeShowcaseController => {
+        const cleanups = new Map<HTMLElement, () => void>();
+
+        const bind = (root: HTMLElement) => {
+            if (cleanups.has(root)) return;
+            const container = root.querySelector<HTMLElement>('[data-home-showcase-scroll]');
+            const previous = root.querySelector<HTMLButtonElement>('[data-home-showcase-previous]');
+            const next = root.querySelector<HTMLButtonElement>('[data-home-showcase-next]');
+            if (!container || !previous || !next) return;
+
+            let frame: number | null = null;
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const update = () => {
+                frame = null;
+                const maxScroll = Math.max(container.scrollWidth - container.clientWidth, 0);
+                const canScrollLeft = container.scrollLeft > 1;
+                const canScrollRight = container.scrollLeft < maxScroll - 1;
+                root.dataset.canScrollLeft = String(canScrollLeft);
+                root.dataset.canScrollRight = String(canScrollRight);
+                previous.tabIndex = canScrollLeft ? 0 : -1;
+                next.tabIndex = canScrollRight ? 0 : -1;
+                previous.setAttribute('aria-hidden', String(!canScrollLeft));
+                next.setAttribute('aria-hidden', String(!canScrollRight));
+            };
+            const scheduleUpdate = () => {
+                if (frame !== null) return;
+                frame = window.requestAnimationFrame(update);
+            };
+            const scrollByCard = (direction: -1 | 1) => {
+                const card = container.querySelector<HTMLElement>('.showcase-card');
+                const distance = (card?.getBoundingClientRect().width ?? 304) + 16;
+                container.scrollBy({
+                    left: direction * distance,
+                    behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                });
+            };
+            const handleWheel = (event: WheelEvent) => {
+                const delta =
+                    Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+                if (!delta) return;
+                const maxScroll = container.scrollWidth - container.clientWidth;
+                const atStart = container.scrollLeft <= 0 && delta < 0;
+                const atEnd = container.scrollLeft >= maxScroll - 1 && delta > 0;
+                if (maxScroll <= 0 || atStart || atEnd) return;
+
+                event.preventDefault();
+                const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+                const card = container.querySelector<HTMLElement>('.showcase-card');
+                const distance = (card?.getBoundingClientRect().width ?? 304) + 16;
+                container.scrollBy({
+                    left: horizontal ? event.deltaX : Math.sign(delta) * distance,
+                    behavior: horizontal || reducedMotion.matches ? 'auto' : 'smooth',
+                });
+            };
+            const handlePointerEnter = () => {
+                root.dataset.hovered = 'true';
+            };
+            const handlePointerLeave = () => {
+                root.dataset.hovered = 'false';
+            };
+            const handlePrevious = () => scrollByCard(-1);
+            const handleNext = () => scrollByCard(1);
+
+            const resizeObserver = new ResizeObserver(scheduleUpdate);
+            resizeObserver.observe(container);
+            container.addEventListener('scroll', scheduleUpdate, { passive: true });
+            container.addEventListener('wheel', handleWheel, { passive: false });
+            root.addEventListener('pointerenter', handlePointerEnter);
+            root.addEventListener('pointerleave', handlePointerLeave);
+            previous.addEventListener('click', handlePrevious);
+            next.addEventListener('click', handleNext);
+            update();
+
+            cleanups.set(root, () => {
+                resizeObserver.disconnect();
+                container.removeEventListener('scroll', scheduleUpdate);
+                container.removeEventListener('wheel', handleWheel);
+                root.removeEventListener('pointerenter', handlePointerEnter);
+                root.removeEventListener('pointerleave', handlePointerLeave);
+                previous.removeEventListener('click', handlePrevious);
+                next.removeEventListener('click', handleNext);
+                if (frame !== null) window.cancelAnimationFrame(frame);
+            });
+        };
+
+        const initialize = () => {
+            cleanups.forEach((cleanup, root) => {
+                if (!root.isConnected) {
+                    cleanup();
+                    cleanups.delete(root);
+                }
+            });
+            document.querySelectorAll<HTMLElement>('[data-home-showcase]').forEach(bind);
+        };
+
+        return { initialize };
+    };
+
+    if (!window.__solitudeHomeShowcase) {
+        window.__solitudeHomeShowcase = createHomeShowcaseController();
+        document.addEventListener('astro:page-load', window.__solitudeHomeShowcase.initialize);
+    }
+    window.__solitudeHomeShowcase.initialize();
+</script>

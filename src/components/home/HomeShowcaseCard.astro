@@ -1,0 +1,130 @@
+---
+import type { FeaturedPost } from '@api/ghost/types';
+import ResponsiveImage from '@components/common/ResponsiveImage.astro';
+
+interface Props {
+    post: FeaturedPost;
+    index: number;
+}
+
+const { post, index } = Astro.props;
+
+function isVisibleTag(value: string | null | undefined): value is string {
+    return Boolean(value && value.trim() && value.trim().toLowerCase() !== 'default');
+}
+
+function titleCaseTag(value: string): string {
+    return value
+        .trim()
+        .replace(/[-_]+/g, ' ')
+        .replace(/\b[a-z]/g, (char) => char.toUpperCase());
+}
+
+const featureImageUrl = post.feature_image?.toString() ?? '';
+const titleDensity = Array.from(post.title.trim()).length > 34 ? 'long' : 'normal';
+const publishedDate = post.published_at?.split('T')[0] ?? '';
+const typeLabel = isVisibleTag(post.post_type_label)
+    ? post.post_type_label
+    : isVisibleTag(post.post_type)
+      ? titleCaseTag(post.post_type)
+      : '';
+const categoryLabel = isVisibleTag(post.post_category_label)
+    ? post.post_category_label
+    : isVisibleTag(post.post_category)
+      ? titleCaseTag(post.post_category)
+      : '';
+---
+
+<a
+    href={post.url.pathname}
+    data-title-density={titleDensity}
+    data-astro-prefetch="tap"
+    class="showcase-card group relative isolate aspect-[4/3] w-[15rem] flex-shrink-0 cursor-pointer overflow-hidden rounded-[1.45rem] border border-[var(--home-showcase-card-border)] bg-[var(--home-showcase-card-bg)] shadow-[0_18px_34px_var(--home-showcase-card-shadow)] ring-1 ring-[var(--home-showcase-card-ring)] transition-[opacity,transform,border-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ring-inset hover:-translate-y-0.5 hover:scale-[1.016] hover:border-[var(--home-showcase-card-border-hover)] hover:opacity-100 hover:shadow-[0_24px_44px_var(--home-showcase-card-shadow-hover)] focus-visible:-translate-y-0.5 focus-visible:scale-[1.016] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transform-none motion-reduce:transition-none sm:w-[17rem] sm:rounded-[1.65rem] md:w-[19rem] lg:w-[21rem]"
+    aria-label={`阅读文章: ${post.title}`}
+>
+    <div class="absolute inset-0 -z-30 overflow-hidden">
+        {
+            featureImageUrl ? (
+                <ResponsiveImage
+                    src={featureImageUrl}
+                    alt=""
+                    widths={[320, 480, 640, 960, 1280]}
+                    sizes="(max-width: 639px) 240px, (max-width: 767px) 272px, (max-width: 1023px) 304px, 336px"
+                    quality={92}
+                    priority={index < 2}
+                    progressive
+                    className="h-full w-full scale-[1.02] object-cover object-center transition-transform duration-[620ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.045] motion-reduce:transform-none motion-reduce:transition-none"
+                />
+            ) : (
+                <div class="h-full w-full bg-[radial-gradient(circle_at_30%_20%,var(--card-image-fallback-highlight),transparent_32%),linear-gradient(135deg,var(--card-image-fallback-start),var(--card-image-fallback-end))]" />
+            )
+        }
+    </div>
+
+    <div
+        class="pointer-events-none absolute inset-0 -z-20"
+        style="background: var(--home-showcase-media-overlay);"
+        aria-hidden="true"
+    >
+    </div>
+    <div
+        class="pointer-events-none absolute inset-0 -z-10 scale-[0.985] opacity-0 transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-100 group-hover:opacity-100"
+        aria-hidden="true"
+    >
+        <div class="absolute inset-0" style="background: var(--home-showcase-glow);"></div>
+        <div class="absolute inset-0 ring-1 ring-[var(--home-showcase-card-ring)] ring-inset"></div>
+    </div>
+    <div
+        class="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[66%]"
+        style="background: var(--home-showcase-title-gradient);"
+        aria-hidden="true"
+    >
+    </div>
+
+    <div
+        class="pointer-events-none absolute top-3 right-3 left-3 z-20 flex items-start justify-between gap-3 sm:top-4 sm:right-4 sm:left-4"
+        aria-label="Post type and category"
+    >
+        {
+            typeLabel ? (
+                <span class="inline-flex min-h-6 max-w-[min(9rem,44%)] items-center overflow-hidden rounded-full border border-cyan-200/50 bg-cyan-300/15 px-2.5 py-1 text-[0.65rem] leading-none font-extrabold text-white/90 shadow-sm backdrop-blur-md [text-shadow:0_1px_8px_rgba(3,7,18,0.5)]">
+                    {typeLabel}
+                </span>
+            ) : (
+                <span />
+            )
+        }
+        {
+            categoryLabel && (
+                <span class="inline-flex min-h-6 max-w-[min(9rem,44%)] items-center overflow-hidden rounded-full border border-lime-200/45 bg-lime-300/15 px-2.5 py-1 text-[0.65rem] leading-none font-extrabold text-white/90 shadow-sm backdrop-blur-md [text-shadow:0_1px_8px_rgba(3,7,18,0.5)]">
+                    {categoryLabel}
+                </span>
+            )
+        }
+    </div>
+
+    <div
+        class="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pt-16 pb-3 sm:px-4 sm:pt-20 sm:pb-4"
+    >
+        <h3
+            class:list={[
+                'm-0 line-clamp-2 overflow-hidden leading-tight font-extrabold text-white [text-shadow:0_2px_12px_rgba(3,7,18,0.82)]',
+                titleDensity === 'long'
+                    ? 'text-[0.92rem] sm:line-clamp-3 sm:text-[1rem]'
+                    : 'text-[1.03rem] sm:text-[1.1rem]',
+            ]}
+        >
+            {post.title}
+        </h3>
+        {
+            publishedDate && (
+                <time
+                    class="mt-2 block text-[0.68rem] leading-none font-bold text-white/70 [text-shadow:0_1px_8px_rgba(3,7,18,0.72)]"
+                    datetime={publishedDate}
+                >
+                    {publishedDate}
+                </time>
+            )
+        }
+    </div>
+</a>

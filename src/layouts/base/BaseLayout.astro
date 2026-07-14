@@ -1,5 +1,8 @@
 ---
 import '@styles/index.css';
+import notoSansScStylesheet from '@fontsource-variable/noto-sans-sc/index.css?url';
+import notoSansJpStylesheet from '@fontsource-variable/noto-sans-jp/index.css?url';
+import notoSansStylesheet from '@fontsource-variable/noto-sans/index.css?url';
 import GoogleAnalytics from '@components/utils/GoogleAnalytics.astro';
 import { ClientRouter } from 'astro:transitions';
 import type { AlternateLink } from '@lib/i18n';
@@ -26,12 +29,25 @@ const {
 } = Astro.props;
 
 const documentTitle = pageTitle ? `${pageTitle} · ${siteTitle}` : siteTitle;
+const fontStylesheet = {
+    zh: notoSansScStylesheet,
+    ja: notoSansJpStylesheet,
+    en: notoSansStylesheet,
+}[locale];
 
 // RSS Feed URLs
 const rssCurrentLang = `/${locale}/rss.xml`;
 const rssAll = '/rss.xml';
 
 const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'none';
+const imageOrigin = (() => {
+    if (!coverImageUrl) return '';
+    try {
+        return new URL(coverImageUrl.toString()).origin;
+    } catch {
+        return '';
+    }
+})();
 ---
 
 <!doctype html>
@@ -40,6 +56,8 @@ const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'n
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        {imageOrigin && <link rel="preconnect" href={imageOrigin} crossorigin="anonymous" />}
+        <link rel="stylesheet" href={fontStylesheet} data-solitude-font={locale} />
         <meta name="generator" content={Astro.generator} />
 
         <!-- Security Headers -->

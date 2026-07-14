@@ -115,7 +115,8 @@ export function SeriesLibrary({
             className="grid h-full min-h-0 min-w-0 auto-rows-[minmax(30rem,1fr)] grid-cols-1 gap-4 overflow-x-hidden overflow-y-auto overscroll-contain pr-1 pb-1 sm:auto-rows-fr sm:grid-cols-2"
         >
             {groups.map((group) => {
-                const cover = group.posts.find((post) => post.feature_image)?.feature_image;
+                const coverPost = group.posts.find((post) => post.feature_image);
+                const cover = coverPost?.feature_image;
                 return (
                     <section
                         key={group.key}
@@ -125,6 +126,8 @@ export function SeriesLibrary({
                             {cover ? (
                                 <img
                                     src={cover}
+                                    srcSet={coverPost?.feature_image_srcset}
+                                    sizes={coverPost?.feature_image_sizes}
                                     alt=""
                                     loading="lazy"
                                     decoding="async"
@@ -149,6 +152,7 @@ export function SeriesLibrary({
                                     key={post.id}
                                     href={post.url}
                                     data-post-transition-source
+                                    data-astro-prefetch="tap"
                                     data-archive-post-id={post.id}
                                     onPointerEnter={() => onActivate(post.id)}
                                     onPointerMove={() => {
@@ -249,6 +253,7 @@ function ArchiveRow({
         <a
             href={post.url}
             data-post-transition-source
+            data-astro-prefetch="tap"
             data-archive-post-id={post.id}
             onPointerEnter={() => onActivate(post.id)}
             onPointerMove={() => {
@@ -297,6 +302,7 @@ function ArchivePreview({
         <a
             href={post.url}
             data-post-transition-source
+            data-astro-prefetch="tap"
             aria-label={post.title}
             className={cn(
                 'group/preview border-border/55 bg-card/58 focus-visible:ring-ring relative min-h-0 flex-col justify-end overflow-hidden rounded-[1.35rem] border shadow-[0_24px_70px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 motion-reduce:transform-none',
@@ -307,6 +313,8 @@ function ArchivePreview({
                 <img
                     key={post.id}
                     src={post.feature_image}
+                    srcSet={post.feature_image_srcset}
+                    sizes={post.feature_image_sizes}
                     data-post-transition-media
                     alt=""
                     loading="eager"

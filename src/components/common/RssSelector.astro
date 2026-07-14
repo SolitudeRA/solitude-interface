@@ -1,0 +1,136 @@
+---
+import {
+    DEFAULT_LOCALE,
+    getUIText,
+    isLocale,
+    LOCALE_FLAGS,
+    LOCALE_NAMES,
+    LOCALES,
+    type Locale,
+} from '@lib/i18n';
+
+interface Props {
+    className?: string;
+    showLabel?: boolean;
+    textLocale?: Locale;
+}
+
+const { className = '', showLabel = true, textLocale } = Astro.props;
+const firstPathPart = Astro.url.pathname.split('/').filter(Boolean)[0];
+const currentLocale = firstPathPart && isLocale(firstPathPart) ? firstPathPart : DEFAULT_LOCALE;
+const displayLocale = textLocale ?? currentLocale;
+const currentText = getUIText('rss', 'current', displayLocale);
+const rssLabel = getUIText('rss', 'label', displayLocale);
+const rssOptions = [
+    {
+        id: 'all',
+        label: getUIText('rss', 'allLanguages', displayLocale),
+        href: '/rss.xml',
+        flag: '📡',
+    },
+    ...LOCALES.map((locale) => ({
+        id: locale,
+        label: LOCALE_NAMES[locale],
+        href: `/${locale}/rss.xml`,
+        flag: LOCALE_FLAGS[locale],
+    })),
+];
+---
+
+<div class:list={['relative', className]} data-rss-selector>
+    <button
+        type="button"
+        data-rss-selector-trigger
+        class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
+        aria-label={rssLabel}
+        aria-expanded="false"
+        aria-haspopup="listbox"
+    >
+        {showLabel && rssLabel}
+    </button>
+
+    <div
+        data-rss-selector-menu
+        hidden
+        class="animate-in fade-in-0 zoom-in-95 bg-background/95 border-border absolute bottom-full left-1/2 z-50 mb-2 min-w-[160px] -translate-x-1/2 rounded-xl border py-1.5 shadow-lg shadow-black/10 backdrop-blur-md duration-150"
+        role="listbox"
+        aria-label="选择 RSS 订阅源"
+    >
+        {
+            rssOptions.map((option) => {
+                const isCurrent = option.id === currentLocale;
+                return (
+                    <a
+                        href={option.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-rss-selector-option
+                        class:list={[
+                            'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors duration-150',
+                            isCurrent
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-foreground/80 hover:bg-muted/50 hover:text-foreground',
+                        ]}
+                        role="option"
+                        aria-selected={isCurrent}
+                    >
+                        <span class="text-base leading-none">{option.flag}</span>
+                        <span class="flex-1 font-medium">{option.label}</span>
+                        {isCurrent && <span class="text-primary text-xs">{currentText}</span>}
+                    </a>
+                );
+            })
+        }
+    </div>
+</div>
+
+<script>
+    const rssWindow = window as Window & {
+        __solitudeRssSelector?: boolean;
+    };
+
+    if (!rssWindow.__solitudeRssSelector) {
+        rssWindow.__solitudeRssSelector = true;
+
+        const closeRss = (root: HTMLElement) => {
+            const trigger = root.querySelector<HTMLButtonElement>('[data-rss-selector-trigger]');
+            const menu = root.querySelector<HTMLElement>('[data-rss-selector-menu]');
+            if (!trigger || !menu) return;
+            trigger.setAttribute('aria-expanded', 'false');
+            menu.hidden = true;
+        };
+
+        const closeAllRss = (except?: HTMLElement) => {
+            document.querySelectorAll<HTMLElement>('[data-rss-selector]').forEach((root) => {
+                if (root !== except) closeRss(root);
+            });
+        };
+
+        document.addEventListener('click', (event) => {
+            const target = event.target as Element | null;
+            const trigger = target?.closest('[data-rss-selector-trigger]');
+            if (trigger) {
+                const root = trigger.closest<HTMLElement>('[data-rss-selector]');
+                const menu = root?.querySelector<HTMLElement>('[data-rss-selector-menu]');
+                if (!root || !menu) return;
+                const willOpen = menu.hidden;
+                closeAllRss(root);
+                menu.hidden = !willOpen;
+                trigger.setAttribute('aria-expanded', String(willOpen));
+                return;
+            }
+
+            if (target?.closest('[data-rss-selector-option]')) {
+                const root = target.closest<HTMLElement>('[data-rss-selector]');
+                if (root) closeRss(root);
+                return;
+            }
+
+            if (!target?.closest('[data-rss-selector]')) closeAllRss();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeAllRss();
+        });
+        document.addEventListener('astro:before-preparation', () => closeAllRss());
+    }
+</script>

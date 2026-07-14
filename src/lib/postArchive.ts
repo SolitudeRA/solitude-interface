@@ -4,6 +4,8 @@ export interface PostArchiveItem extends BrowsePost {
     id: string;
     url: string;
     feature_image: string | null;
+    feature_image_srcset?: string;
+    feature_image_sizes?: string;
     published_at: string;
     post_series: string;
     post_series_slug?: string;
