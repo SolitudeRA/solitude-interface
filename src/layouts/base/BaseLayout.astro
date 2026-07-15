@@ -4,6 +4,7 @@ import notoSansScStylesheet from '@fontsource-variable/noto-sans-sc/index.css?ur
 import notoSansJpStylesheet from '@fontsource-variable/noto-sans-jp/index.css?url';
 import notoSansStylesheet from '@fontsource-variable/noto-sans/index.css?url';
 import GoogleAnalytics from '@components/utils/GoogleAnalytics.astro';
+import ResponsiveImage from '@components/common/ResponsiveImage.astro';
 import { ClientRouter } from 'astro:transitions';
 import type { AlternateLink } from '@lib/i18n';
 
@@ -39,7 +40,7 @@ const fontStylesheet = {
 const rssCurrentLang = `/${locale}/rss.xml`;
 const rssAll = '/rss.xml';
 
-const coverImageUrlStr = coverImageUrl ? `url(${coverImageUrl.toString()})` : 'none';
+const coverImageSrc = coverImageUrl?.toString() ?? '';
 const imageOrigin = (() => {
     if (!coverImageUrl) return '';
     try {
@@ -220,12 +221,27 @@ const imageOrigin = (() => {
         <ClientRouter fallback="animate" />
     </head>
     <body>
-        <div class="solitude-body" transition:persist="site-background"></div>
+        <div class="solitude-body" transition:persist="site-background">
+            {
+                coverImageSrc && (
+                    <ResponsiveImage
+                        src={coverImageSrc}
+                        alt=""
+                        widths={[480, 960, 1440, 1920, 2560, 3840]}
+                        sizes="100vw"
+                        quality={100}
+                        priority
+                        progressive
+                        className="solitude-body-image"
+                    />
+                )
+            }
+        </div>
         <slot />
     </body>
 </html>
 
-<style define:vars={{ coverImageUrlStr }}>
+<style>
     .solitude-body {
         top: 0;
         left: 0;
@@ -233,8 +249,17 @@ const imageOrigin = (() => {
         z-index: -10;
         height: 100vh;
         width: 100vw;
-        background-size: cover;
-        background-image: var(--coverImageUrlStr);
+        isolation: isolate;
+        overflow: hidden;
+        background-color: var(--background);
+    }
+
+    .solitude-body :global(.solitude-body-image) {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
     }
 
     /* 遮罩层使用伪元素：上浅下深渐变 + 暗角效果 */
@@ -242,6 +267,7 @@ const imageOrigin = (() => {
         content: '';
         position: absolute;
         inset: 0;
+        z-index: 1;
         background:
             /* 径向暗角 - 四周略深，聚焦视觉中心 */
             radial-gradient(

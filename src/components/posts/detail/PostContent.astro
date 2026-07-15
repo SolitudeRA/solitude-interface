@@ -150,8 +150,9 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
                             alt=""
                             widths={[480, 768, 1200, 1600, 2400]}
                             sizes="(min-width: 1280px) 58vw, 100vw"
-                            quality={76}
+                            quality={100}
                             priority
+                            progressive
                             className="solitude-article-meta-image"
                         />
                     )
@@ -210,7 +211,9 @@ const articleHtml = prepareArticleHtml(highlightedHtml, copy.code, copy.tableReg
         background-color: var(--card-image-fallback-start);
     }
 
-    .solitude-article-meta-image {
+    .solitude-article-meta-motion-media :global(.solitude-article-meta-image) {
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
