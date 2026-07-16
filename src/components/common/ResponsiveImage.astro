@@ -154,6 +154,8 @@ const progressiveSources =
 
 <style is:global>
     .responsive-image-frame {
+        --progressive-high-fade-duration: 160ms;
+
         display: block;
     }
 
@@ -182,18 +184,21 @@ const progressiveSources =
     }
 
     .responsive-image-high {
-        transition: opacity 160ms ease;
-    }
-
-    [data-progressive-phase='medium'] .responsive-image-low,
-    [data-progressive-phase='high'] .responsive-image-low,
-    [data-progressive-phase='high'] .responsive-image-medium {
-        opacity: 0;
+        transition: opacity var(--progressive-high-fade-duration) ease;
     }
 
     [data-progressive-phase='medium'] .responsive-image-medium,
     [data-progressive-phase='high'] .responsive-image-high {
         opacity: 1;
+    }
+
+    /* Keep the outgoing image fully opaque while the next decoded image fades over it.
+       The lower stages are only released after the high stage has finished covering them,
+       avoiding the 25% transparency dip produced by a symmetric cross-fade. */
+    [data-progressive-phase='high'] .responsive-image-low,
+    [data-progressive-phase='high'] .responsive-image-medium {
+        opacity: 0;
+        transition-delay: var(--progressive-high-fade-duration);
     }
 
     @media (prefers-reduced-motion: reduce) {
