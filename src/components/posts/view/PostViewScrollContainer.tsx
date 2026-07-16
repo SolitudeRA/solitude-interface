@@ -52,6 +52,7 @@ export default function PostViewScrollContainer({
     const postCountHint = postDates.length || React.Children.count(children);
     const scrollMetricsRef = React.useRef<ScrollMetrics | null>(null);
     const scrollIdleTimerRef = React.useRef<number | null>(null);
+    const lastScrollBroadcastRef = React.useRef(0);
 
     const getScrollMetrics = useCallback(
         (container: HTMLDivElement): ScrollMetrics => {
@@ -91,7 +92,7 @@ export default function PostViewScrollContainer({
     );
 
     const updateVisiblePosts = useCallback(
-        (container: HTMLDivElement) => {
+        (container: HTMLDivElement, forceScrollBroadcast = false) => {
             const metrics = getScrollMetrics(container);
             const visibleIndices: number[] = [];
             const scrollLeft = container.scrollLeft;
@@ -142,33 +143,42 @@ export default function PostViewScrollContainer({
                 };
             });
 
-            // 滚动度量单独写入(供 minimap),仅在数值变化时更新以减少重渲染
-            setPostViewScroll((prev) => {
-                if (
-                    prev.scrollLeft === scrollLeft &&
-                    prev.scrollWidth === scrollWidth &&
-                    prev.clientWidth === clientWidth
-                ) {
-                    return prev;
-                }
-                return { scrollLeft, scrollWidth, clientWidth };
-            });
+            // 总览条自身会用弹簧逐帧插值；滚动期间只需约 20fps 广播目标值，
+            // 停止时再强制写入终点，避免 React/Jotai 与手势争用每一帧。
+            const now = performance.now();
+            if (forceScrollBroadcast || now - lastScrollBroadcastRef.current >= 50) {
+                lastScrollBroadcastRef.current = now;
+                setPostViewScroll((prev) => {
+                    if (
+                        prev.scrollLeft === scrollLeft &&
+                        prev.scrollWidth === scrollWidth &&
+                        prev.clientWidth === clientWidth
+                    ) {
+                        return prev;
+                    }
+                    return { scrollLeft, scrollWidth, clientWidth };
+                });
+            }
         },
         [getScrollMetrics, postDates, setPostViewState, setPostViewScroll]
     );
 
-    const markContainerScrolling = useCallback((container: HTMLDivElement) => {
-        container.dataset.postViewScrolling = 'true';
+    const markContainerScrolling = useCallback(
+        (container: HTMLDivElement) => {
+            container.dataset.postViewScrolling = 'true';
 
-        if (scrollIdleTimerRef.current !== null) {
-            window.clearTimeout(scrollIdleTimerRef.current);
-        }
+            if (scrollIdleTimerRef.current !== null) {
+                window.clearTimeout(scrollIdleTimerRef.current);
+            }
 
-        scrollIdleTimerRef.current = window.setTimeout(() => {
-            delete container.dataset.postViewScrolling;
-            scrollIdleTimerRef.current = null;
-        }, 160);
-    }, []);
+            scrollIdleTimerRef.current = window.setTimeout(() => {
+                delete container.dataset.postViewScrolling;
+                scrollIdleTimerRef.current = null;
+                updateVisiblePosts(container, true);
+            }, 160);
+        },
+        [updateVisiblePosts]
+    );
 
     const handleScrollUpdate = useCallback(
         (container: HTMLDivElement) => {
@@ -377,7 +387,7 @@ export default function PostViewScrollContainer({
                     onWheel={handleWheel}
                     className={cn(
                         'post-view-scroll-container',
-                        'flex h-full items-center gap-[60px] overflow-x-auto scroll-smooth',
+                        'flex h-full items-center gap-[60px] overflow-x-auto',
                         '[padding-right:clamp(1rem,5vw,60px)] [padding-left:clamp(1rem,5vw,60px)]',
                         'scrollbar-none py-4',
                         '[&::-webkit-scrollbar]:hidden',
