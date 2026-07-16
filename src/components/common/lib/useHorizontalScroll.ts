@@ -74,6 +74,9 @@ export function useHorizontalScroll<T extends HTMLElement = HTMLDivElement>({
                 Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
             if (dominantDelta === 0) return;
 
+            const isHorizontalGesture = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+            if (isHorizontalGesture) return;
+
             const { scrollWidth, clientWidth, scrollLeft } = container;
             const canScroll = scrollWidth > clientWidth;
             const atStart = scrollLeft <= 0 && dominantDelta < 0;
@@ -84,11 +87,10 @@ export function useHorizontalScroll<T extends HTMLElement = HTMLDivElement>({
             event.preventDefault();
             event.stopPropagation();
 
-            const isHorizontalGesture = Math.abs(event.deltaX) > Math.abs(event.deltaY);
             const direction = dominantDelta > 0 ? 1 : -1;
             container.scrollBy({
-                left: isHorizontalGesture ? event.deltaX : direction * getScrollDistance(),
-                behavior: isHorizontalGesture ? 'auto' : scrollBehavior,
+                left: direction * getScrollDistance(),
+                behavior: scrollBehavior,
             });
         },
         [getScrollDistance, isHovering, requireHover, scrollBehavior]

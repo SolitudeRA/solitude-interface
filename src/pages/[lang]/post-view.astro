@@ -21,6 +21,7 @@ import {
 } from '@lib/i18n';
 import { env } from '@api/config/env';
 import { getImage } from 'astro:assets';
+import { getRemoteImageDimensions } from '@lib/remoteImageDimensions';
 
 export async function getStaticPaths() {
     return LOCALES.map((lang) => ({
@@ -55,22 +56,28 @@ const featuredPosts = posts.slice(0, FEATURED_COUNT);
 // 列表：全量精简元数据（去 html、URL 转字符串），客户端筛选/分页
 const listItems: PostArchiveItem[] = await Promise.all(
     posts.map(async (post) => {
-        const featureImage = post.feature_image
-            ? await getImage({
-                  src: post.feature_image.toString(),
-                  inferSize: true,
-                  widths: [320, 480, 640, 960],
-                  format: 'webp',
-                  quality: 74,
-              })
+        const featureImageUrl = post.feature_image?.toString() ?? null;
+        const featureImageDimensions = featureImageUrl
+            ? await getRemoteImageDimensions(featureImageUrl)
             : null;
+        const featureImage =
+            featureImageUrl && featureImageDimensions
+                ? await getImage({
+                      src: featureImageUrl,
+                      width: featureImageDimensions.width,
+                      height: featureImageDimensions.height,
+                      widths: [320, 480, 640, 960],
+                      format: 'webp',
+                      quality: 74,
+                  })
+                : null;
 
         return {
             id: post.id,
             title: post.title,
             excerpt: post.excerpt,
             url: post.url.pathname,
-            feature_image: featureImage?.src ?? null,
+            feature_image: featureImage?.src ?? featureImageUrl,
             ...(featureImage?.srcSet.attribute
                 ? {
                       feature_image_srcset: featureImage.srcSet.attribute,

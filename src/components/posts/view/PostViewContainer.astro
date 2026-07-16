@@ -25,7 +25,7 @@ const noPostsText = getUIText('home', 'noPosts', locale);
 
 {
     posts.length > 0 ? (
-        <PostViewScrollContainer client:idle postDates={postDates}>
+        <PostViewScrollContainer client:load postDates={postDates}>
             {posts.map((post, index) => {
                 const PostCardComponent = (() => {
                     switch (post.post_type) {
@@ -48,8 +48,9 @@ const noPostsText = getUIText('home', 'noPosts', locale);
                     <a
                         href={post.url.pathname}
                         data-post-transition-source
+                        data-progressive-observer-boundary
                         data-astro-prefetch="tap"
-                        class="post-card-wrapper flex shrink-0 items-center justify-center rounded-[35px] transition-all duration-300 ease-out hover:z-10 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none"
+                        class="post-card-wrapper flex shrink-0 items-center justify-center rounded-[35px] transition-transform duration-300 ease-out hover:z-10 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none"
                         role="listitem"
                         aria-label={post.title}
                     >
@@ -61,7 +62,7 @@ const noPostsText = getUIText('home', 'noPosts', locale);
                 <button
                     type="button"
                     data-view-switch="list"
-                    class="post-card-wrapper post-view-all-card flex shrink-0 cursor-pointer flex-col items-center justify-center gap-4 rounded-[35px] border border-dashed border-[var(--border)] bg-[var(--card)]/40 text-[var(--muted-foreground)] transition-all duration-300 ease-out hover:scale-[1.02] hover:border-[var(--ring)] hover:text-[var(--foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none"
+                    class="post-card-wrapper post-view-all-card flex shrink-0 cursor-pointer flex-col items-center justify-center gap-4 rounded-[35px] border border-dashed border-[var(--border)] bg-[var(--card)]/40 text-[var(--muted-foreground)] transition-[transform,border-color,color] duration-300 ease-out hover:scale-[1.02] hover:border-[var(--ring)] hover:text-[var(--foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none"
                     aria-label={viewAllLabel}
                 >
                     <span
@@ -90,6 +91,13 @@ const noPostsText = getUIText('home', 'noPosts', locale);
 
         width: var(--post-card-width);
         height: var(--post-card-height);
+        contain: layout;
+    }
+
+    :global(.post-view-scroll-container[data-post-view-scrolling='true']) .post-card-wrapper {
+        z-index: auto;
+        transform: none;
+        transition: none;
     }
 
     @media (pointer: coarse) {

@@ -317,7 +317,7 @@ function ArchivePreview({
                     sizes={post.feature_image_sizes}
                     data-post-transition-media
                     alt=""
-                    loading="eager"
+                    loading="lazy"
                     decoding="async"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/preview:scale-[1.025] motion-reduce:transform-none"
                 />

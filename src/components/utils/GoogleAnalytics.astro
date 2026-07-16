@@ -9,23 +9,14 @@ const GA4_ID_PATTERN = /^G-[A-Z0-9]{10,}$/i;
 
 const id = (GOOGLE_ANALYTICS_TAG_ID ?? '').trim();
 const isValidGAId = GA4_ID_PATTERN.test(id);
-const enabled = import.meta.env.PROD && isValidGAId;
-
 // 开发环境下警告无效的 GA ID
 if (import.meta.env.DEV && id && !isValidGAId) {
     console.warn(`[GoogleAnalytics] Invalid GA4 ID format: "${id}". Expected format: G-XXXXXXXXXX`);
 }
 ---
 
-{
-    enabled && (
-        <>
-            <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${id}`} />
-            <script is:inline define:vars={{ id }}>
-                window.dataLayer = window.dataLayer || []; function gtag()
-                {dataLayer.push(arguments)}
-                gtag('js', new Date()); gtag('config', id);
-            </script>
-        </>
-    )
-}
+<script>
+    import { initializeGoogleAnalytics } from '@lib/analytics/googleAnalytics';
+
+    initializeGoogleAnalytics();
+</script>

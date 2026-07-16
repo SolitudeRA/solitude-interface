@@ -1,5 +1,6 @@
 ---
 import { Image, getImage } from 'astro:assets';
+import { getRemoteImageDimensions } from '@lib/remoteImageDimensions';
 
 interface Props {
     src: string;
@@ -8,6 +9,7 @@ interface Props {
     widths?: number[];
     sizes: string;
     priority?: boolean;
+    critical?: boolean;
     progressive?: boolean;
     quality?: number;
     'data-post-transition-media'?: boolean;
@@ -20,6 +22,7 @@ const {
     widths = [320, 480, 640, 960],
     sizes,
     priority = false,
+    critical = false,
     progressive = false,
     quality = 72,
     'data-post-transition-media': transitionMedia = false,
@@ -33,32 +36,49 @@ const pathname = (() => {
     }
 })();
 const canOptimize = /\.(?:avif|jpe?g|png|webp)$/i.test(pathname);
-const progressiveSources =
-    progressive && canOptimize
-        ? await Promise.all([
-              getImage({
-                  src,
-                  inferSize: true,
-                  width: 160,
-                  format: 'webp',
-                  quality: 45,
-              }),
-              getImage({
-                  src,
-                  inferSize: true,
-                  width: 480,
-                  format: 'webp',
-                  quality: 68,
-              }),
-              getImage({
-                  src,
-                  inferSize: true,
-                  widths,
-                  format: 'webp',
-                  quality,
-              }),
-          ])
-        : null;
+const isHttpRemote = /^https?:\/\//i.test(src);
+const remoteDimensions = canOptimize && isHttpRemote ? await getRemoteImageDimensions(src) : null;
+const deferLowStage = !priority && !critical;
+const progressiveSources = await (async () => {
+    if (!progressive || !canOptimize) return null;
+    if (isHttpRemote && !remoteDimensions) return null;
+
+    if (remoteDimensions) {
+        const scaledHeight = (width: number) =>
+            Math.max(1, Math.round((width / remoteDimensions.width) * remoteDimensions.height));
+
+        return Promise.all([
+            getImage({
+                src,
+                width: 160,
+                height: scaledHeight(160),
+                format: 'webp',
+                quality: 45,
+            }),
+            getImage({
+                src,
+                width: 480,
+                height: scaledHeight(480),
+                format: 'webp',
+                quality: 68,
+            }),
+            getImage({
+                src,
+                width: remoteDimensions.width,
+                height: remoteDimensions.height,
+                widths,
+                format: 'webp',
+                quality,
+            }),
+        ]);
+    }
+
+    return Promise.all([
+        getImage({ src, inferSize: true, width: 160, format: 'webp', quality: 45 }),
+        getImage({ src, inferSize: true, width: 480, format: 'webp', quality: 68 }),
+        getImage({ src, inferSize: true, widths, format: 'webp', quality }),
+    ]);
+})();
 ---
 
 {
@@ -66,21 +86,23 @@ const progressiveSources =
         <span
             class:list={['responsive-image-frame', className]}
             data-progressive-image
-            data-progressive-phase="low"
+            data-progressive-phase={deferLowStage ? 'placeholder' : 'low'}
             data-progressive-priority={priority ? 'true' : undefined}
+            data-progressive-critical={critical ? 'true' : undefined}
             data-post-transition-media={transitionMedia || undefined}
             aria-busy="true"
         >
             <img
-                src={progressiveSources[0].src}
+                src={deferLowStage ? undefined : progressiveSources[0].src}
                 width={progressiveSources[0].attributes.width}
                 height={progressiveSources[0].attributes.height}
                 alt=""
                 class="responsive-image-stage responsive-image-low"
-                loading={priority ? 'eager' : 'lazy'}
+                loading={deferLowStage ? 'lazy' : 'eager'}
                 decoding="async"
                 fetchpriority={priority ? 'high' : 'auto'}
                 data-progressive-low
+                data-progressive-src={deferLowStage ? progressiveSources[0].src : undefined}
                 aria-hidden="true"
             />
             <img
@@ -102,20 +124,15 @@ const progressiveSources =
                 class="responsive-image-stage responsive-image-high"
                 loading="lazy"
                 decoding="async"
-                fetchpriority={priority ? 'high' : 'auto'}
+                fetchpriority={critical ? 'high' : 'auto'}
                 data-progressive-high
                 data-progressive-src={progressiveSources[2].src}
                 data-progressive-srcset={progressiveSources[2].srcSet.attribute}
                 data-progressive-sizes={sizes}
             />
             <noscript>
-                <Image
+                <img
                     src={src}
-                    inferSize
-                    widths={widths}
-                    sizes={sizes}
-                    format="webp"
-                    quality={quality}
                     alt={alt}
                     class="responsive-image-noscript"
                     loading={priority ? 'eager' : 'lazy'}
@@ -124,7 +141,23 @@ const progressiveSources =
                 />
             </noscript>
         </span>
-    ) : canOptimize ? (
+    ) : canOptimize && isHttpRemote && remoteDimensions ? (
+        <Image
+            src={src}
+            width={remoteDimensions.width}
+            height={remoteDimensions.height}
+            widths={widths}
+            sizes={sizes}
+            format="webp"
+            quality={quality}
+            alt={alt}
+            class={className}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            fetchpriority={priority ? 'high' : 'auto'}
+            data-post-transition-media={transitionMedia || undefined}
+        />
+    ) : canOptimize && !isHttpRemote ? (
         <Image
             src={src}
             inferSize
@@ -174,7 +207,9 @@ const progressiveSources =
         opacity: 0;
     }
 
-    .responsive-image-low {
+    [data-progressive-phase='low'] .responsive-image-low,
+    [data-progressive-phase='medium'] .responsive-image-low,
+    [data-progressive-phase='high'] .responsive-image-low {
         opacity: 1;
         transition: opacity 120ms ease;
     }
@@ -221,26 +256,107 @@ const progressiveSources =
 
     const createProgressiveImageController = (): ProgressiveImageController => {
         let observer: IntersectionObserver | null = null;
+        let lastInteractionAt = performance.now();
+        let hasUserInteracted = false;
+        let resolveFirstInteraction: () => void = () => undefined;
+        const firstInteraction = new Promise<void>((resolve) => {
+            resolveFirstInteraction = resolve;
+        });
+
+        const trackActivity = () => {
+            lastInteractionAt = performance.now();
+        };
+
+        const trackUserInteraction = () => {
+            trackActivity();
+            if (hasUserInteracted) return;
+            hasUserInteracted = true;
+            resolveFirstInteraction();
+        };
+
+        document.addEventListener('scroll', trackActivity, { capture: true, passive: true });
+        ['wheel', 'pointerdown', 'keydown', 'touchstart'].forEach((eventName) => {
+            document.addEventListener(eventName, trackUserInteraction, {
+                capture: true,
+                passive: true,
+            });
+        });
+
+        interface TaskQueue {
+            enqueue: <T>(task: () => Promise<T>) => Promise<T>;
+        }
+
+        const createTaskQueue = (concurrency: number): TaskQueue => {
+            let active = 0;
+            const pending: Array<{
+                task: () => Promise<unknown>;
+                resolve: (value: unknown) => void;
+                reject: (reason?: unknown) => void;
+            }> = [];
+
+            const pump = () => {
+                while (active < concurrency && pending.length > 0) {
+                    const item = pending.shift();
+                    if (!item) return;
+                    active += 1;
+                    void item
+                        .task()
+                        .then(item.resolve, item.reject)
+                        .finally(() => {
+                            active -= 1;
+                            pump();
+                        });
+                }
+            };
+
+            return {
+                enqueue: <T,>(task: () => Promise<T>) =>
+                    new Promise<T>((resolve, reject) => {
+                        pending.push({
+                            task,
+                            resolve: resolve as (value: unknown) => void,
+                            reject,
+                        });
+                        pump();
+                    }),
+            };
+        };
+
+        const lowQueue = createTaskQueue(2);
+        const mediumQueue = createTaskQueue(2);
+        const highQueue = createTaskQueue(1);
+
+        const waitForIdle = (timeout: number) =>
+            new Promise<void>((resolve) => {
+                if ('requestIdleCallback' in window) {
+                    window.requestIdleCallback(() => resolve(), { timeout });
+                } else {
+                    globalThis.setTimeout(resolve, 32);
+                }
+            });
+
+        const waitForInteractionIdle = async (quietWindow = 320) => {
+            while (true) {
+                const remaining = lastInteractionAt + quietWindow - performance.now();
+                if (remaining <= 0) return;
+                await new Promise<void>((resolve) => window.setTimeout(resolve, remaining));
+            }
+        };
+
+        const waitForFirstInteractionOrTimeout = async (timeout: number) => {
+            if (hasUserInteracted) return;
+            await Promise.race([
+                firstInteraction,
+                new Promise<void>((resolve) => window.setTimeout(resolve, timeout)),
+            ]);
+        };
 
         const decodeImage = async (image: HTMLImageElement): Promise<boolean> => {
             try {
-                if (!image.complete) {
-                    await new Promise<void>((resolve, reject) => {
-                        image.addEventListener('load', () => resolve(), { once: true });
-                        image.addEventListener(
-                            'error',
-                            () => reject(new Error('Image load failed')),
-                            {
-                                once: true,
-                            }
-                        );
-                    });
-                }
-                if (!image.naturalWidth) return false;
-                await image.decode().catch(() => undefined);
-                return true;
+                await image.decode();
+                return image.naturalWidth > 0;
             } catch {
-                return false;
+                return image.complete && image.naturalWidth > 0;
             }
         };
 
@@ -256,58 +372,234 @@ const progressiveSources =
             return decodeImage(image);
         };
 
-        const start = async (frame: HTMLElement) => {
+        interface ProgressiveGates {
+            medium: Promise<void>;
+            high: Promise<void>;
+        }
+
+        interface CriticalBatch extends ProgressiveGates {
+            markMedium: () => void;
+            markHigh: () => void;
+        }
+
+        const createCriticalBatch = (count: number): CriticalBatch => {
+            if (count === 0) {
+                return {
+                    medium: Promise.resolve(),
+                    high: Promise.resolve(),
+                    markMedium: () => undefined,
+                    markHigh: () => undefined,
+                };
+            }
+
+            let mediumRemaining = count;
+            let highRemaining = count;
+            let resolveMedium: () => void = () => undefined;
+            let resolveHigh: () => void = () => undefined;
+            const medium = new Promise<void>((resolve) => {
+                resolveMedium = resolve;
+            });
+            const high = new Promise<void>((resolve) => {
+                resolveHigh = resolve;
+            });
+
+            return {
+                medium,
+                high,
+                markMedium: () => {
+                    mediumRemaining -= 1;
+                    if (mediumRemaining === 0) resolveMedium();
+                },
+                markHigh: () => {
+                    highRemaining -= 1;
+                    if (highRemaining === 0) resolveHigh();
+                },
+            };
+        };
+
+        const getStages = (frame: HTMLElement) => ({
+            low: frame.querySelector<HTMLImageElement>('[data-progressive-low]'),
+            medium: frame.querySelector<HTMLImageElement>('[data-progressive-medium]'),
+            high: frame.querySelector<HTMLImageElement>('[data-progressive-high]'),
+        });
+
+        const finishHighStage = (frame: HTMLElement) => {
+            frame.dataset.progressivePhase = 'high';
+            frame.dataset.progressiveReady = 'true';
+            frame.setAttribute('aria-busy', 'false');
+        };
+
+        const startCritical = async (frame: HTMLElement, batch: CriticalBatch) => {
             if (frame.dataset.progressiveStarted === 'true') return;
             frame.dataset.progressiveStarted = 'true';
             observer?.unobserve(frame);
 
-            const low = frame.querySelector<HTMLImageElement>('[data-progressive-low]');
-            const medium = frame.querySelector<HTMLImageElement>('[data-progressive-medium]');
-            const high = frame.querySelector<HTMLImageElement>('[data-progressive-high]');
-            if (!low || !medium || !high) return;
+            const { low, medium, high } = getStages(frame);
+            if (!low || !medium || !high) {
+                batch.markMedium();
+                batch.markHigh();
+                return;
+            }
 
             low.loading = 'eager';
             await decodeImage(low);
-            if (!frame.isConnected) return;
+            if (!frame.isConnected) {
+                batch.markMedium();
+                batch.markHigh();
+                return;
+            }
 
             const mediumReady = await activateDeferredImage(medium);
-            if (!frame.isConnected) return;
             if (mediumReady) frame.dataset.progressivePhase = 'medium';
+            batch.markMedium();
+            if (!frame.isConnected) {
+                batch.markHigh();
+                return;
+            }
 
+            await waitForFirstInteractionOrTimeout(6000);
+            await waitForInteractionIdle(600);
+            await waitForIdle(1500);
+            await waitForInteractionIdle(300);
             const highReady = await activateDeferredImage(high);
+            await waitForInteractionIdle();
+            if (frame.isConnected && highReady) finishHighStage(frame);
+            batch.markHigh();
+        };
+
+        const startStandard = async (
+            frame: HTMLElement,
+            gates: ProgressiveGates,
+            loadVisibleLowImmediately = false
+        ) => {
+            if (frame.dataset.progressiveStarted === 'true') return;
+            frame.dataset.progressiveStarted = 'true';
+            observer?.unobserve(frame);
+
+            const { low, medium, high } = getStages(frame);
+            if (!low || !medium || !high) return;
+
+            const hasDeferredLow = Boolean(low.dataset.progressiveSrc);
+            if (hasDeferredLow && loadVisibleLowImmediately) {
+                const lowReady = await lowQueue.enqueue(() => activateDeferredImage(low));
+                await waitForInteractionIdle(240);
+                if (frame.isConnected && lowReady) frame.dataset.progressivePhase = 'low';
+            } else if (!hasDeferredLow) {
+                await decodeImage(low);
+            }
             if (!frame.isConnected) return;
-            if (highReady) {
-                frame.dataset.progressivePhase = 'high';
-                frame.dataset.progressiveReady = 'true';
-                frame.setAttribute('aria-busy', 'false');
+
+            await gates.medium;
+            await waitForFirstInteractionOrTimeout(
+                frame.dataset.progressivePriority === 'true' ? 2200 : 3200
+            );
+            await waitForInteractionIdle(420);
+            if (!frame.isConnected) return;
+
+            if (hasDeferredLow && !loadVisibleLowImmediately) {
+                await waitForIdle(800);
+                await waitForInteractionIdle(240);
+                const lowReady = await lowQueue.enqueue(async () => {
+                    await waitForInteractionIdle(240);
+                    return activateDeferredImage(low);
+                });
+                await waitForInteractionIdle(240);
+                if (frame.isConnected && lowReady) frame.dataset.progressivePhase = 'low';
+            }
+            if (!frame.isConnected) return;
+
+            const mediumReady = await mediumQueue.enqueue(async () => {
+                await waitForInteractionIdle();
+                return activateDeferredImage(medium);
+            });
+            if (!frame.isConnected) return;
+            await waitForInteractionIdle();
+            if (frame.isConnected && mediumReady) frame.dataset.progressivePhase = 'medium';
+
+            await gates.high;
+            if (!frame.isConnected) return;
+
+            await waitForIdle(frame.dataset.progressivePriority === 'true' ? 650 : 1200);
+            await waitForInteractionIdle();
+            if (!frame.isConnected) return;
+
+            const highReady = await highQueue.enqueue(async () => {
+                await waitForInteractionIdle();
+                return activateDeferredImage(high);
+            });
+            await waitForInteractionIdle();
+            if (frame.isConnected && highReady) {
+                finishHighStage(frame);
             }
         };
 
         const initialize = () => {
             observer?.disconnect();
+            const frames = Array.from(
+                document.querySelectorAll<HTMLElement>(
+                    '[data-progressive-image]:not([data-progressive-started="true"])'
+                )
+            );
+            const criticalFrames = frames.filter(
+                (frame) => frame.dataset.progressiveCritical === 'true'
+            );
+            const standardFrames = frames.filter(
+                (frame) => frame.dataset.progressiveCritical !== 'true'
+            );
+            const criticalBatch = createCriticalBatch(criticalFrames.length);
+            const isWithinViewport = (element: HTMLElement) => {
+                const rect = element.getBoundingClientRect();
+                return (
+                    rect.width > 0 &&
+                    rect.height > 0 &&
+                    rect.right > 0 &&
+                    rect.bottom > 0 &&
+                    rect.left < window.innerWidth &&
+                    rect.top < window.innerHeight
+                );
+            };
+
             observer =
                 'IntersectionObserver' in window
                     ? new IntersectionObserver(
                           (entries) => {
                               entries.forEach((entry) => {
-                                  if (entry.isIntersecting) void start(entry.target as HTMLElement);
+                                  if (entry.isIntersecting) {
+                                      observer?.unobserve(entry.target);
+                                      const target = entry.target as HTMLElement;
+                                      const frame = target.matches('[data-progressive-image]')
+                                          ? target
+                                          : target.querySelector<HTMLElement>(
+                                                '[data-progressive-image]:not([data-progressive-started="true"])'
+                                            );
+                                      if (frame) {
+                                          void startStandard(
+                                              frame,
+                                              criticalBatch,
+                                              !hasUserInteracted && isWithinViewport(target)
+                                          );
+                                      }
+                                  }
                               });
                           },
-                          { rootMargin: '720px 0px' }
+                          { rootMargin: '360px' }
                       )
                     : null;
 
-            document
-                .querySelectorAll<HTMLElement>(
-                    '[data-progressive-image]:not([data-progressive-started="true"])'
-                )
-                .forEach((frame) => {
-                    if (frame.dataset.progressivePriority === 'true' || !observer) {
-                        void start(frame);
-                    } else {
-                        observer.observe(frame);
-                    }
-                });
+            criticalFrames.forEach((frame) => void startCritical(frame, criticalBatch));
+            standardFrames.forEach((frame) => {
+                if (frame.dataset.progressivePriority === 'true' || !observer) {
+                    void startStandard(
+                        frame,
+                        criticalBatch,
+                        !hasUserInteracted && isWithinViewport(frame)
+                    );
+                } else {
+                    observer.observe(
+                        frame.closest<HTMLElement>('[data-progressive-observer-boundary]') ?? frame
+                    );
+                }
+            });
         };
 
         return { initialize };
