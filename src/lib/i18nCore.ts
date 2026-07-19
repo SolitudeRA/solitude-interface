@@ -178,6 +178,46 @@ export const UI_TEXTS = {
             ja: '記事をシリーズで整理し、内容のつながりを優先します。',
             en: 'Organize posts by series and foreground their reading relationships.',
         },
+        seriesAtlas: {
+            zh: '系列总览',
+            ja: 'シリーズ一覧',
+            en: 'Series atlas',
+        },
+        seriesBrowseTitle: {
+            zh: '选择一条阅读路径',
+            ja: '読む道筋を選ぶ',
+            en: 'Choose a reading path',
+        },
+        seriesBrowseHint: {
+            zh: '悬停预览，点击打开目录',
+            ja: 'プレビューして、クリックで目次を開く',
+            en: 'Preview, then open its directory',
+        },
+        seriesPreview: {
+            zh: '系列预览',
+            ja: 'シリーズプレビュー',
+            en: 'Series preview',
+        },
+        seriesBack: {
+            zh: '全部系列',
+            ja: 'すべてのシリーズ',
+            en: 'All series',
+        },
+        seriesOpen: {
+            zh: '打开系列目录：{series}',
+            ja: 'シリーズ目次を開く：{series}',
+            en: 'Open series directory: {series}',
+        },
+        seriesUpdated: {
+            zh: '更新于 {date}',
+            ja: '{date} 更新',
+            en: 'Updated {date}',
+        },
+        standaloneSeriesDescription: {
+            zh: '不属于固定系列的独立文章与阶段性记录。',
+            ja: '特定のシリーズに属さない単独記事と記録。',
+            en: 'Standalone essays and notes outside a fixed series.',
+        },
         archiveYearsDescription: {
             zh: '每个年份是一章，横向回溯不同阶段的写作。',
             ja: '年ごとに章を分け、執筆の変化を横方向にたどります。',

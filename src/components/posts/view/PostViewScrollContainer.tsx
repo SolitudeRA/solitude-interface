@@ -416,7 +416,7 @@ export default function PostViewScrollContainer({
                 onScrollToPost={scrollToPost}
                 className={cn(
                     'lg:fixed lg:bottom-0 lg:left-0 lg:z-[60]',
-                    'lg:min-h-[10vh] lg:w-1/3 lg:items-center lg:pt-0 lg:pb-4',
+                    'lg:min-h-[var(--site-dock-height)] lg:w-1/3 lg:items-center lg:pt-0 lg:pb-4',
                     '3xl:px-16 lg:px-8 xl:px-10 2xl:px-12'
                 )}
             />

@@ -7,7 +7,7 @@
     .solitude-article-container {
         --article-reader-measure: min(52rem, 42em);
         width: 100%;
-        margin-top: max(60px, 12svh);
+        margin-top: var(--site-navbar-height);
     }
 
     html:lang(en) .solitude-article-container {
@@ -17,18 +17,6 @@
     html:lang(zh) .solitude-article-container,
     html:lang(ja) .solitude-article-container {
         --article-reader-measure: min(52rem, 42em);
-    }
-
-    @media (min-width: 640px) {
-        .solitude-article-container {
-            margin-top: max(70px, 13svh);
-        }
-    }
-
-    @media (min-width: 768px) {
-        .solitude-article-container {
-            margin-top: max(80px, 14svh);
-        }
     }
 
     /* 侧边栏样式 */

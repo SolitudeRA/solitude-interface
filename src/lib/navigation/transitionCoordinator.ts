@@ -1,13 +1,27 @@
 import {
+    clearPostArchiveScroll,
+    clearPostInputModality,
     clearPostReturnUrl,
+    readPostArchiveScroll,
     readPostDestination,
+    readPostInputModality,
     readPostReturnUrl,
     readPostViewScroll,
+    rememberPostArchiveScroll,
     rememberPostDestination,
+    rememberPostInputModality,
     rememberPostReturnUrl,
     rememberPostViewScroll,
+    type PostArchiveScrollState,
+    type PostInputModality,
 } from './navigationState';
-import { getPostViewMode, isPostViewPath, toPathWithSearchAndHash } from './routeModel';
+import { POST_ARCHIVE_RENDER_EVENT } from './postArchiveStateController';
+import {
+    getPostViewMode,
+    isPostViewPath,
+    toPathWithSearchAndHash,
+    type PostViewMode,
+} from './routeModel';
 import {
     isSiteTransition,
     SITE_TRANSITION_ATTRIBUTE,
@@ -29,9 +43,25 @@ type BeforeSwapEvent = Event & {
     viewTransition?: ViewTransition;
 };
 
+type PendingMainFocus = {
+    destination: string;
+};
+
+type PendingPostReturnFocus = {
+    selectedPath: string;
+    preferredView: PostViewMode;
+};
+
 const POST_TRANSITION_MEDIA_SELECTOR = '[data-post-transition-media]';
 const POST_TRANSITION_NAMED_SELECTOR = '[data-post-transition-media], [data-post-transition-title]';
 const POST_TRANSITION_SOURCE_SELECTOR = 'a[data-post-transition-source]';
+const SITE_MAIN_SELECTOR = '[data-site-main-content]';
+let pendingPostArchiveScroll: PostArchiveScrollState | null = null;
+let pendingMainFocus: PendingMainFocus | null = null;
+let pendingPostReturnFocus: PendingPostReturnFocus | null = null;
+let postReturnFocusScheduled = false;
+let postArchiveFocusReady = false;
+let currentInputModality: PostInputModality = 'pointer';
 
 function getActiveTransition(): string | null {
     return document.documentElement.getAttribute(SITE_TRANSITION_ATTRIBUTE);
@@ -86,6 +116,64 @@ function armPostTransitionSource(link: HTMLAnchorElement): void {
     media?.style.setProperty('view-transition-name', 'post-focus-media');
 }
 
+function rememberArchiveScroll(link: HTMLAnchorElement): void {
+    const archiveRoot = link.closest<HTMLElement>('[data-post-list-root]');
+    const layout = archiveRoot?.dataset.archiveLayout?.trim();
+    const page = Number.parseInt(archiveRoot?.dataset.archivePage ?? '', 10);
+    if (!archiveRoot || !layout || !Number.isSafeInteger(page) || page < 1) {
+        rememberPostArchiveScroll(null);
+        return;
+    }
+
+    const outerScroll = archiveRoot.querySelector<HTMLElement>('[data-archive-scroll-root]');
+    const group = link.dataset.archiveGroupKey?.trim() || null;
+    const groupList = group
+        ? Array.from(archiveRoot.querySelectorAll<HTMLElement>('[data-archive-group-list]')).find(
+              (element) => element.dataset.archiveGroupList === group
+          )
+        : null;
+
+    rememberPostArchiveScroll({
+        layout,
+        page,
+        outerTop: outerScroll?.scrollTop ?? 0,
+        group,
+        groupTop: groupList?.scrollTop ?? 0,
+    });
+}
+
+function prepareMainFocus(event: BeforePreparationEvent, skip: boolean): void {
+    pendingMainFocus = null;
+
+    const destination = event.to;
+    if (skip || !destination || destination.origin !== window.location.origin) return;
+    if (destination.hash) return;
+    if (
+        destination.pathname === window.location.pathname &&
+        destination.search === window.location.search
+    ) {
+        return;
+    }
+
+    const request = { destination: `${destination.pathname}${destination.search}` };
+    pendingMainFocus = request;
+    event.signal?.addEventListener(
+        'abort',
+        () => {
+            if (pendingMainFocus === request) pendingMainFocus = null;
+        },
+        { once: true }
+    );
+}
+
+function handleKeyboardInput(): void {
+    currentInputModality = 'keyboard';
+}
+
+function handlePointerInput(): void {
+    currentInputModality = 'pointer';
+}
+
 function handlePostSourceClick(event: MouseEvent): void {
     if (event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -97,6 +185,7 @@ function handlePostSourceClick(event: MouseEvent): void {
     const destination = new URL(link.href, window.location.href);
     if (destination.origin !== window.location.origin) return;
 
+    pendingPostArchiveScroll = null;
     clearPostTransitionSource();
     armPostTransitionSource(link);
 
@@ -108,17 +197,26 @@ function handlePostSourceClick(event: MouseEvent): void {
     rememberPostDestination(destination.pathname);
     if (!isPostSource) return;
 
+    rememberPostInputModality(currentInputModality);
+
     const returnUrl = new URL(window.location.href);
-    const archiveRoot = link.closest<HTMLElement>('[data-post-list-root]');
-    const archivePage = Number.parseInt(archiveRoot?.dataset.archiveActivePage ?? '', 10);
-    if (Number.isFinite(archivePage) && archivePage > 1) {
-        returnUrl.searchParams.set('page', String(archivePage));
+    const archiveGroup = link.dataset.archiveGroupKey?.trim();
+    const archiveGroupPage = Number.parseInt(link.dataset.archiveGroupPage ?? '', 10);
+    if (archiveGroup) {
+        returnUrl.searchParams.set('archiveGroup', archiveGroup);
+        if (Number.isFinite(archiveGroupPage) && archiveGroupPage > 1) {
+            returnUrl.searchParams.set('archiveGroupPage', String(archiveGroupPage));
+        } else {
+            returnUrl.searchParams.delete('archiveGroupPage');
+        }
     } else {
-        returnUrl.searchParams.delete('page');
+        returnUrl.searchParams.delete('archiveGroup');
+        returnUrl.searchParams.delete('archiveGroupPage');
     }
     rememberPostReturnUrl(toPathWithSearchAndHash(returnUrl));
     const scrollContainer = link.closest<HTMLElement>('[data-post-view-scroll]');
     rememberPostViewScroll(scrollContainer?.scrollLeft ?? null);
+    rememberArchiveScroll(link);
 }
 
 function handleBeforePreparation(event: BeforePreparationEvent): void {
@@ -127,6 +225,14 @@ function handleBeforePreparation(event: BeforePreparationEvent): void {
         event.to &&
         isPostViewPath(event.to.pathname)
     );
+    const isPostForward = getActiveTransition() === SITE_TRANSITIONS.postForward;
+    prepareMainFocus(event, isPostReturn || isPostForward);
+
+    if (!isPostReturn) {
+        pendingPostReturnFocus = null;
+        postArchiveFocusReady = false;
+    }
+
     if (!isPostReturn) {
         clearSiteTransition(SITE_TRANSITIONS.postReturn);
         if (getActiveTransition() === SITE_TRANSITIONS.postForward) {
@@ -157,13 +263,20 @@ function finishTransition(activeTransition: SiteTransition): void {
     clearPostTransitionSource();
 }
 
-function findReturnTarget(newDocument: Document, selectedPath: string): HTMLAnchorElement | null {
+function findReturnTarget(
+    newDocument: Document,
+    selectedPath: string,
+    preferredView?: PostViewMode
+): HTMLAnchorElement | null {
     const candidateLinks = Array.from(
         newDocument.querySelectorAll<HTMLAnchorElement>(POST_TRANSITION_SOURCE_SELECTOR)
     );
     const storedDestination = parseStoredLocalUrl(readPostReturnUrl());
-    const preferredView = storedDestination ? getPostViewMode(storedDestination) : 'gallery';
-    const preferredSection = newDocument.querySelector(`[data-view-section="${preferredView}"]`);
+    const resolvedPreferredView =
+        preferredView ?? (storedDestination ? getPostViewMode(storedDestination) : 'gallery');
+    const preferredSection = newDocument.querySelector(
+        `[data-view-section="${resolvedPreferredView}"]`
+    );
     const matchesSelectedPath = (link: HTMLAnchorElement) =>
         new URL(link.href, window.location.origin).pathname === selectedPath;
 
@@ -216,6 +329,66 @@ function applyPostReturnHref(): void {
     backLink.href = toPathWithSearchAndHash(destination);
 }
 
+function focusMainContentAfterNavigation(): void {
+    const request = pendingMainFocus;
+    if (!request) return;
+    const currentLocation = `${window.location.pathname}${window.location.search}`;
+    if (request.destination !== currentLocation) return;
+
+    pendingMainFocus = null;
+    if (isSiteTransition(getActiveTransition())) return;
+
+    const mainContent = document.querySelector<HTMLElement>(SITE_MAIN_SELECTOR);
+    mainContent?.focus({ preventScroll: true });
+}
+
+function focusPendingPostReturnTarget(): void {
+    const pendingFocus = pendingPostReturnFocus;
+    if (!pendingFocus) return;
+
+    const target = findReturnTarget(
+        document,
+        pendingFocus.selectedPath,
+        pendingFocus.preferredView
+    );
+    if (!target) return;
+
+    const targetSection = target.closest<HTMLElement>('[data-view-section]');
+    if (targetSection?.hidden) return;
+    if (target.closest('[data-post-list-root]') && !postArchiveFocusReady) return;
+
+    target.focus({ preventScroll: true });
+    pendingPostReturnFocus = null;
+}
+
+function schedulePostReturnFocus(): void {
+    if (!pendingPostReturnFocus || postReturnFocusScheduled) return;
+    postReturnFocusScheduled = true;
+
+    window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+            postReturnFocusScheduled = false;
+            focusPendingPostReturnTarget();
+        });
+    });
+}
+
+function preparePostReturnFocus(): void {
+    const inputModality = readPostInputModality();
+    const selectedPath = readPostDestination();
+    const storedDestination = parseStoredLocalUrl(readPostReturnUrl());
+    clearPostInputModality();
+
+    pendingPostReturnFocus =
+        inputModality === 'keyboard' && selectedPath
+            ? {
+                  selectedPath,
+                  preferredView: storedDestination ? getPostViewMode(storedDestination) : 'gallery',
+              }
+            : null;
+    schedulePostReturnFocus();
+}
+
 function restorePostViewScroll(): void {
     if (getActiveTransition() !== SITE_TRANSITIONS.postReturn) return;
 
@@ -249,7 +422,61 @@ function restorePostViewScroll(): void {
         });
     }
 
+    pendingPostArchiveScroll = readPostArchiveScroll();
+    postArchiveFocusReady = false;
+    restorePendingPostArchiveScroll();
+    preparePostReturnFocus();
+
     clearPostReturnUrl();
+}
+
+function restoreScrollTop(element: HTMLElement, scrollTop: number): void {
+    const previousScrollBehavior = element.style.scrollBehavior;
+    element.style.scrollBehavior = 'auto';
+    element.scrollTop = scrollTop;
+    void element.offsetWidth;
+
+    window.requestAnimationFrame(() => {
+        if (previousScrollBehavior) {
+            element.style.scrollBehavior = previousScrollBehavior;
+        } else {
+            element.style.removeProperty('scroll-behavior');
+        }
+    });
+}
+
+function restorePendingPostArchiveScroll(): void {
+    const snapshot = pendingPostArchiveScroll;
+    if (!snapshot) return;
+
+    const archiveRoot = document.querySelector<HTMLElement>('[data-post-list-root]');
+    const page = Number.parseInt(archiveRoot?.dataset.archivePage ?? '', 10);
+    if (
+        !archiveRoot ||
+        archiveRoot.dataset.archiveLayout !== snapshot.layout ||
+        page !== snapshot.page
+    ) {
+        return;
+    }
+
+    const outerScroll = archiveRoot.querySelector<HTMLElement>('[data-archive-scroll-root]');
+    const groupList = snapshot.group
+        ? Array.from(archiveRoot.querySelectorAll<HTMLElement>('[data-archive-group-list]')).find(
+              (element) => element.dataset.archiveGroupList === snapshot.group
+          )
+        : null;
+    if (!outerScroll || (snapshot.group && !groupList)) return;
+
+    restoreScrollTop(outerScroll, snapshot.outerTop);
+    if (groupList) restoreScrollTop(groupList, snapshot.groupTop);
+    pendingPostArchiveScroll = null;
+    clearPostArchiveScroll();
+}
+
+function handlePostArchiveRender(): void {
+    restorePendingPostArchiveScroll();
+    postArchiveFocusReady = true;
+    schedulePostReturnFocus();
 }
 
 export function initSiteNavigationMotion(): void {
@@ -257,6 +484,8 @@ export function initSiteNavigationMotion(): void {
     if (siteMotionWindow.__solitudeSiteMotionReady) return;
 
     siteMotionWindow.__solitudeSiteMotionReady = true;
+    document.addEventListener('keydown', handleKeyboardInput, { capture: true });
+    document.addEventListener('pointerdown', handlePointerInput, { capture: true });
     document.addEventListener('click', handlePostSourceClick, { capture: true });
     document.addEventListener('astro:before-preparation', (event) =>
         handleBeforePreparation(event as BeforePreparationEvent)
@@ -266,5 +495,9 @@ export function initSiteNavigationMotion(): void {
     );
     document.addEventListener('astro:after-swap', restorePostViewScroll);
     document.addEventListener('astro:page-load', applyPostReturnHref);
+    document.addEventListener('astro:page-load', focusMainContentAfterNavigation);
+    document.addEventListener('astro:page-load', schedulePostReturnFocus);
+    window.addEventListener(POST_ARCHIVE_RENDER_EVENT, handlePostArchiveRender);
+    window.addEventListener('post-view-change', schedulePostReturnFocus);
     applyPostReturnHref();
 }

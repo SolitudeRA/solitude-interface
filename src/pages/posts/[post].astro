@@ -3,6 +3,7 @@ import { initializeSiteData } from '@api/ghost/settings';
 import { listAllPosts } from '@api/ghost/posts';
 import type { Post } from '@api/ghost/types';
 import BaseLayout from '@layouts/base/BaseLayout.astro';
+import PageStage from '@components/layout/PageStage.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
 import SiteDock from '@components/layout/dock/SiteDock.astro';
 import PostContent from '@components/posts/detail/PostContent.astro';
@@ -74,16 +75,18 @@ const locale = extractLocaleFromPost(post) ?? DEFAULT_LOCALE;
                 isFixed={true}
                 hideTitleOnMobile={true}
             />
-            <PostContent
-                title={post.title}
-                feature_image={post.feature_image}
-                primary_tag={post.primary_tag}
-                tags={post.tags}
-                published_at={post.published_at}
-                html={post.html}
-                backHref={`/${locale}/post-view`}
-                locale={locale}
-            />
+            <PageStage variant="article">
+                <PostContent
+                    title={post.title}
+                    feature_image={post.feature_image}
+                    primary_tag={post.primary_tag}
+                    tags={post.tags}
+                    published_at={post.published_at}
+                    html={post.html}
+                    backHref={`/${locale}/post-view`}
+                    locale={locale}
+                />
+            </PageStage>
             <SiteDock isFixed={true} layout="home" lang={locale} readerMode={true} />
         </BaseLayout>
     )

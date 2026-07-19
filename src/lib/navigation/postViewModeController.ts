@@ -32,6 +32,16 @@ function cancelViewAnimations(section: HTMLElement): void {
     }
 }
 
+function moveFocusOutOfOutgoingView(outgoing: HTMLElement | undefined, view: PostViewMode): void {
+    const activeElement = document.activeElement;
+    if (!(activeElement instanceof HTMLElement) || !outgoing?.contains(activeElement)) return;
+
+    const activeToggle = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-view-toggle]')
+    ).find((toggle) => toggle.dataset.viewToggle === view);
+    activeToggle?.focus({ preventScroll: true });
+}
+
 function animateSection(section: HTMLElement, phase: ViewAnimationPhase): Animation[] {
     const isEntering = phase === 'enter';
     const duration = isEntering ? 220 : 130;
@@ -68,7 +78,9 @@ async function applyView(view: PostViewMode, animate = false): Promise<void> {
         const active = button.dataset.viewToggle === view;
         button.dataset.active = String(active);
         button.setAttribute('aria-selected', String(active));
+        button.tabIndex = active ? 0 : -1;
     });
+    moveFocusOutOfOutgoingView(outgoing, view);
     window.dispatchEvent(new CustomEvent('post-view-change', { detail: { view } }));
 
     sections.forEach(cancelViewAnimations);
@@ -100,8 +112,34 @@ async function applyView(view: PostViewMode, animate = false): Promise<void> {
 }
 
 function setView(view: PostViewMode): void {
+    if (getCurrentView() === view) return;
     window.history.pushState(null, '', buildPostViewPath(new URL(window.location.href), view));
     void applyView(view, true);
+}
+
+function bindViewTabKeyboard(tab: HTMLElement): void {
+    if (tab.dataset.viewKeyboardBound === '1') return;
+    tab.dataset.viewKeyboardBound = '1';
+    tab.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        const tablist = tab.closest<HTMLElement>('[role="tablist"]');
+        const tabs = Array.from(tablist?.querySelectorAll<HTMLElement>('[data-view-toggle]') ?? []);
+        const currentIndex = tabs.indexOf(tab);
+        if (currentIndex < 0 || tabs.length === 0) return;
+
+        const nextIndex = (() => {
+            if (event.key === 'Home') return 0;
+            if (event.key === 'End') return tabs.length - 1;
+            if (event.key === 'ArrowRight') return (currentIndex + 1) % tabs.length;
+            return (currentIndex - 1 + tabs.length) % tabs.length;
+        })();
+        const nextTab = tabs[nextIndex];
+        if (!nextTab) return;
+
+        event.preventDefault();
+        nextTab.focus();
+        nextTab.click();
+    });
 }
 
 function bindPostViewMode(): void {
@@ -112,6 +150,7 @@ function bindPostViewMode(): void {
         .forEach((element) => {
             if (element.dataset.viewBound === '1') return;
             element.dataset.viewBound = '1';
+            if (element.dataset.viewToggle) bindViewTabKeyboard(element);
             element.addEventListener('click', (event) => {
                 const target = element.dataset.viewSwitch ?? element.dataset.viewToggle ?? null;
                 if (!isPostViewMode(target)) return;
@@ -128,7 +167,9 @@ export function initPostViewModeController(): void {
         postViewWindow.__solitudePostViewModeReady = true;
         window.addEventListener('popstate', () => {
             if (!isPostViewPath(window.location.pathname)) return;
-            void applyView(getCurrentView(), true);
+            const nextView = getCurrentView();
+            const currentView = document.documentElement.dataset.postViewMode;
+            void applyView(nextView, currentView !== nextView);
         });
         document.addEventListener('astro:page-load', bindPostViewMode);
     }

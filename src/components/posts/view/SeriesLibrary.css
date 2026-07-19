@@ -1,0 +1,20 @@
+.archive-series-atlas {
+    container-type: inline-size;
+}
+
+.archive-series-entry {
+    flex: 0 0 calc((100% - 0.5rem) / 2);
+}
+
+@container (min-width: 34rem) {
+    .archive-series-entry {
+        flex-basis: calc((100% - 1.5rem) / 4);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .archive-series-entry,
+    .archive-series-preview-image {
+        transition: none;
+    }
+}

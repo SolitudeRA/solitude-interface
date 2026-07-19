@@ -1,0 +1,98 @@
+---
+import { initializeSiteData } from '@api/ghost/settings';
+import BaseLayout from '@layouts/base/BaseLayout.astro';
+import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
+import SiteDock from '@components/layout/dock/SiteDock.astro';
+import PageHero from '@components/layout/PageHero.astro';
+import PageStage from '@components/layout/PageStage.astro';
+import ContactContent from '@components/pages/contact/ContactContent.astro';
+import {
+    LOCALES,
+    type Locale,
+    isLocale,
+    LOCALE_HTML_LANG,
+    generateAlternateLinks,
+} from '@lib/i18n';
+import { env } from '@api/config/env';
+
+export async function getStaticPaths() {
+    return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+if (!isLocale(lang)) return Astro.redirect('/zh/contact');
+
+const locale = lang as Locale;
+const copy = {
+    zh: { title: 'Contact', badge: '联系我' },
+    ja: { title: 'Contact', badge: 'お問い合わせ' },
+    en: { title: 'Contact', badge: 'Get in Touch' },
+}[locale];
+const { siteTitle, siteDescription, logoUrl, coverImageUrl } = await initializeSiteData();
+const alternateLinks = generateAlternateLinks(env.site.url, '/contact', LOCALES);
+const canonicalUrl = `${env.site.url}/${locale}/contact`;
+---
+
+<BaseLayout
+    siteTitle={siteTitle}
+    pageTitle={copy.title}
+    coverImageUrl={coverImageUrl}
+    lang={LOCALE_HTML_LANG[locale]}
+    locale={locale}
+    canonicalUrl={canonicalUrl}
+    alternateLinks={alternateLinks}
+>
+    <SiteNavbar
+        logoUrl={logoUrl}
+        siteTitle={siteTitle}
+        siteSubTitle={siteDescription}
+        homeUrl={`/${locale}`}
+        isFixed={true}
+    />
+
+    <PageStage variant="content" transitionKey="contact">
+        <PageHero
+            title={copy.title}
+            backgroundImage={coverImageUrl?.toString()}
+            badgeText={copy.badge}
+            badgeIcon={true}
+        >
+            <svg
+                slot="badge-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <path
+                    d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                ></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+        </PageHero>
+
+        <div class="contact-page min-h-screen">
+            <div
+                class="contact-content-wrapper 3xl:max-w-[72rem] mx-auto max-w-4xl px-5 sm:px-8 lg:px-12"
+            >
+                <ContactContent />
+            </div>
+        </div>
+    </PageStage>
+    <SiteDock isFixed={true} layout="home" lang={locale} />
+</BaseLayout>
+
+<style>
+    .contact-page {
+        position: relative;
+        background-color: var(--page-hero-floor, var(--article-body-bg));
+    }
+
+    .contact-content-wrapper {
+        padding-top: clamp(2rem, 4svh, 3rem);
+        padding-bottom: calc(var(--site-dock-height) + clamp(2rem, 4svh, 4rem));
+    }
+</style>

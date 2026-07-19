@@ -24,18 +24,24 @@ const {
     availableLocales,
     displayLocale,
 } = Astro.props;
+const hasSecondary = Astro.slots.has('utility-secondary');
 ---
 
 <nav
     class:list={[
-        'smart-navbar z-50 h-[12svh] min-h-[60px] w-full translate-y-0 overflow-visible transition-transform duration-300 ease-in-out sm:h-[13svh] sm:min-h-[70px] md:h-[14svh] md:min-h-[80px]',
+        'smart-navbar z-50 h-[var(--site-navbar-height)] w-full translate-y-0 overflow-visible transition-transform duration-300 ease-in-out',
         isFixed ? 'fixed top-0 right-0 left-0' : 'relative',
     ]}
     data-site-navbar
+    data-navbar-has-secondary={hasSecondary ? 'true' : 'false'}
     data-smart-navbar-fixed={isFixed ? 'true' : undefined}
     style="view-transition-name: site-navbar"
 >
-    <div class="flex h-full w-full items-center justify-between overflow-visible">
+    <div
+        class="site-navbar-shell overflow-visible"
+        data-navbar-shell
+        data-navbar-has-secondary={hasSecondary ? 'true' : 'false'}
+    >
         <NavbarBrand
             logoImageUrl={logoUrl}
             siteTitle={siteTitle}
@@ -43,6 +49,13 @@ const {
             homeUrl={homeUrl}
             hideTitleOnMobile={hideTitleOnMobile}
         />
+        {
+            hasSecondary && (
+                <div class="site-navbar-secondary" data-navbar-secondary>
+                    <slot name="utility-secondary" />
+                </div>
+            )
+        }
         <NavbarUtility availableLocales={availableLocales} displayLocale={displayLocale}>
             <div slot="start"><slot name="utility-start" /></div>
             <div slot="end"><slot name="utility-end" /></div>

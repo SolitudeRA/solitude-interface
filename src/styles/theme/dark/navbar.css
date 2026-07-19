@@ -7,12 +7,15 @@
     --navbar-scrolled-border: oklch(0.98 0.005 264.665 / 0.05);
     --navbar-scrolled-shadow: oklch(0 0 0 / 0.2);
 
-    --top-control-bg: oklch(0.16 0.025 264.665 / 0.86);
-    --top-control-bg-hover: oklch(0.22 0.03 264.665 / 0.92);
-    --top-control-border: oklch(1 0 0 / 0.12);
+    --top-control-bg: oklch(0.16 0.025 264.665 / 0.76);
+    --top-control-bg-hover: oklch(0.22 0.03 264.665 / 0.88);
+    --top-control-border: oklch(1 0 0 / 0.1);
     --top-control-text: oklch(0.93 0.006 264.531);
     --top-control-shadow: oklch(0 0 0 / 0.22);
     --top-control-shadow-hover: oklch(0 0 0 / 0.3);
+    --top-control-surface-shadow: 0 12px 34px oklch(0 0 0 / 0.14);
+    --top-control-floating-shadow: 0 22px 64px oklch(0 0 0 / 0.3);
+    --top-control-active-shadow: 0 6px 18px color-mix(in oklch, var(--primary) 28%, transparent);
     --top-control-thumb-bg: oklch(0.28 0.035 264.665);
     --top-control-thumb-text: oklch(0.9 0.01 264.531);
     --top-control-thumb-shadow: oklch(0 0 0 / 0.34);

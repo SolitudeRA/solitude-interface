@@ -36,7 +36,6 @@ function getCurrentLocale(): Locale {
 interface NavItem {
     path: string;
     label: string;
-    noLocale?: boolean;
     isRss?: boolean;
 }
 
@@ -44,7 +43,7 @@ const navItemsConfig: NavItem[] = [
     { path: '', label: 'Home' },
     { path: 'post-view', label: 'Posts' },
     { path: 'about', label: 'About Me' },
-    { path: 'contact', label: 'Contact', noLocale: true },
+    { path: 'contact', label: 'Contact' },
     { path: '', label: 'RSS', isRss: true },
     { path: 'privacy-policy', label: 'Privacy Policy' },
 ];
@@ -107,11 +106,9 @@ export default function DockNavMobile() {
         return navItemsConfig.map((item) => {
             const href = item.isRss
                 ? ''
-                : item.noLocale
-                  ? `/${item.path}`
-                  : item.path === ''
-                    ? `/${currentLocale}`
-                    : buildLocalePath(currentLocale, item.path);
+                : item.path === ''
+                  ? `/${currentLocale}`
+                  : buildLocalePath(currentLocale, item.path);
             const isCurrent =
                 !item.isRss &&
                 currentPath !== '' &&

@@ -72,7 +72,7 @@ const canonicalUrl = `${env.site.url}/${locale}/about`;
         isFixed={true}
     />
 
-    <PageStage variant="about">
+    <PageStage variant="content" transitionKey="about">
         <PageHero
             variant="profile"
             title={t.title}
@@ -95,13 +95,15 @@ const canonicalUrl = `${env.site.url}/${locale}/about`;
                 <circle cx="12" cy="7" r="4"></circle>
             </svg>
         </PageHero>
-    </PageStage>
 
-    <main class="about-page min-h-screen">
-        <div class="about-content-wrapper mx-auto max-w-5xl px-6 sm:px-8 lg:px-12">
-            <AboutContent locale={locale} />
+        <div class="about-page min-h-screen">
+            <div
+                class="about-content-wrapper 3xl:max-w-[88rem] mx-auto max-w-5xl px-5 sm:px-8 lg:px-12"
+            >
+                <AboutContent locale={locale} />
+            </div>
         </div>
-    </main>
+    </PageStage>
     <SiteDock isFixed={true} layout="home" lang={locale} />
 </BaseLayout>
 
@@ -118,6 +120,6 @@ const canonicalUrl = `${env.site.url}/${locale}/about`;
 
     .about-content-wrapper {
         padding-top: clamp(1.5rem, 4svh, 2.75rem);
-        padding-bottom: max(6rem, 12svh);
+        padding-bottom: calc(var(--site-dock-height) + clamp(2rem, 4svh, 4rem));
     }
 </style>

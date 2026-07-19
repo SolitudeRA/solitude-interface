@@ -14,7 +14,7 @@ const { lang = DEFAULT_LOCALE } = Astro.props;
 const homeLink = `/${lang}`;
 const postsLink = buildLocalePath(lang, 'post-view');
 const aboutLink = buildLocalePath(lang, 'about');
-const contactLink = '/contact'; // Contact页面不需要多语言支持
+const contactLink = buildLocalePath(lang, 'contact');
 const privacyLink = buildLocalePath(lang, 'privacy-policy');
 
 const homeLabel = 'Home';

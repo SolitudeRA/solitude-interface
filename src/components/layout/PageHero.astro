@@ -77,15 +77,15 @@ const {
 
 <style>
     .page-hero {
-        --page-hero-nav-offset: calc(max(60px, 12svh) + 0.5rem);
+        --page-hero-nav-offset: calc(var(--site-navbar-height) + 0.5rem);
         --hero-overlay-start: var(--page-hero-overlay-start, oklch(0.985 0.006 250 / 0.22));
         --hero-overlay-mid: var(--page-hero-overlay-mid, oklch(0.96 0.012 250 / 0.5));
         --hero-overlay-end: var(--page-hero-overlay-end, var(--background));
 
         position: relative;
         box-sizing: border-box;
-        height: calc(50vh + var(--page-hero-nav-offset));
-        min-height: calc(350px + var(--page-hero-nav-offset));
+        height: clamp(30rem, 52svh, 42rem);
+        min-height: 30rem;
         width: 100%;
         max-width: 100vw;
         padding-top: var(--page-hero-nav-offset);
@@ -147,7 +147,7 @@ const {
     }
 
     .page-hero-title {
-        font-size: 4rem;
+        font-size: clamp(3.25rem, 3.3vw, 4.75rem);
         font-weight: 700;
         color: var(--foreground);
         margin-bottom: 1.5rem;
@@ -160,7 +160,7 @@ const {
 
     .page-hero--profile .page-hero-title {
         margin-bottom: 1.25rem;
-        font-size: 3.5rem;
+        font-size: clamp(3rem, 3vw, 4.25rem);
     }
 
     .page-hero-subtitle {
@@ -238,30 +238,18 @@ const {
         color: var(--page-hero-meta);
     }
 
-    @media (min-width: 640px) {
-        .page-hero {
-            --page-hero-nav-offset: calc(max(70px, 13svh) + 0.5rem);
-        }
-    }
-
-    @media (min-width: 768px) {
-        .page-hero {
-            --page-hero-nav-offset: calc(max(80px, 14svh) + 0.5rem);
-        }
-    }
-
     @media (max-width: 768px) {
         .page-hero {
-            height: calc(40vh + var(--page-hero-nav-offset));
-            min-height: calc(280px + var(--page-hero-nav-offset));
+            height: clamp(22rem, 48svh, 28rem);
+            min-height: 22rem;
         }
 
         .page-hero-title {
-            font-size: 2.5rem;
+            font-size: clamp(2.1rem, 10vw, 2.5rem);
         }
 
         .page-hero--profile .page-hero-title {
-            font-size: 2.5rem;
+            font-size: clamp(2rem, 9vw, 2.5rem);
         }
 
         .page-hero-subtitle {

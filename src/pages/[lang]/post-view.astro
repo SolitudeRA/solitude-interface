@@ -4,9 +4,17 @@ import DockSocial from '@components/layout/dock/DockSocial.astro';
 import Dock from '@components/layout/dock/Dock.astro';
 import PostViewContainer from '@components/posts/view/PostViewContainer.astro';
 import PostArchiveView from '@components/posts/view/PostArchiveView';
-import { parseArchiveParams, type PostArchiveItem } from '@lib/postArchive';
+import PostArchiveSearch from '@components/posts/view/PostArchiveSearch';
+import PostArchiveNavbar from '@components/posts/view/PostArchiveNavbar';
+import {
+    parseArchiveParams,
+    type ArchiveSeriesMetadataMap,
+    type PostArchiveItem,
+} from '@lib/postArchive';
+import { extractFacets } from '@lib/postBrowse';
 import { listAllPosts } from '@api/ghost/posts';
 import { initializeSiteData } from '@api/ghost/settings';
+import { getTagRegistry } from '@api/ghost/tagRegistry';
 import BaseLayout from '@layouts/base/BaseLayout.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
 import PageStage from '@components/layout/PageStage.astro';
@@ -22,6 +30,7 @@ import {
 import { env } from '@api/config/env';
 import { getImage } from 'astro:assets';
 import { getRemoteImageDimensions } from '@lib/remoteImageDimensions';
+import { getTagDescription, getTagLabel } from '@lib/tagRegistry';
 
 export async function getStaticPaths() {
     return LOCALES.map((lang) => ({
@@ -49,6 +58,24 @@ const allPosts = await listAllPosts();
 const localizedPosts = filterPostsByLocale(allPosts, locale);
 // 提取文章对象（已按发布日期排序）
 const posts = localizedPosts.map((item) => item.post);
+const tagRegistry = await getTagRegistry();
+const seriesMetadata: ArchiveSeriesMetadataMap = {};
+
+posts.forEach((post) => {
+    const slug = post.post_series_slug?.trim();
+    if (!slug || seriesMetadata[slug]) return;
+    const registryEntry = tagRegistry[slug];
+    const seriesTag = post.tags?.find((tag) => tag.slug === slug);
+    const description =
+        getTagDescription(slug, locale, tagRegistry) || seriesTag?.description?.trim() || '';
+
+    seriesMetadata[slug] = {
+        label: getTagLabel(slug, locale, seriesTag?.name, tagRegistry),
+        ...(description ? { description } : {}),
+        ...(registryEntry?.order !== undefined ? { order: registryEntry.order } : {}),
+        ...(registryEntry?.color ? { color: registryEntry.color } : {}),
+    };
+});
 
 // 画廊：精选/最近 N 篇（已按日期排序，slice 即最近）
 const featuredPosts = posts.slice(0, FEATURED_COUNT);
@@ -98,6 +125,9 @@ const listItems: PostArchiveItem[] = await Promise.all(
     })
 );
 const initialArchiveState = parseArchiveParams(Astro.url.searchParams);
+const archiveFacets = extractFacets(listItems);
+const initialPostViewMode = Astro.url.searchParams.get('view') === 'list' ? 'list' : 'gallery';
+const isInitialList = initialPostViewMode === 'list';
 
 const galleryLabel = getUIText('postView', 'galleryView', locale);
 const listLabel = getUIText('postView', 'listView', locale);
@@ -119,6 +149,7 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
     locale={locale}
     canonicalUrl={canonicalUrl}
     alternateLinks={alternateLinks}
+    initialPostViewMode={initialPostViewMode}
 >
     <SiteNavbar
         logoUrl={logoUrl}
@@ -127,65 +158,92 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         homeUrl={`/${locale}`}
         hideTitleOnMobile={true}
     >
-        <div slot="utility-start" class="relative flex shrink-0 items-center">
+        <div slot="utility-secondary" data-post-view-secondary class="w-max max-w-full">
+            <PostArchiveNavbar
+                client:load
+                locale={locale}
+                categories={archiveFacets.categories}
+                initialLayout={initialArchiveState.layout}
+                initialCategory={initialArchiveState.filters.category}
+            />
+        </div>
+        <div slot="utility-start" class="contents">
             <div
-                id="post-archive-header-host"
-                class="absolute top-[calc(100%+0.45rem)] right-0 z-[70] xl:static xl:mr-1"
-            >
-            </div>
-            <div
-                class="post-view-toggle flex shrink-0 rounded-full border border-[var(--border)] bg-[var(--background)]/85 p-0.5 text-[0.62rem] font-medium shadow-lg backdrop-blur-md sm:p-1 sm:text-xs"
+                class="post-view-toggle site-top-control site-top-control-group"
                 role="tablist"
                 aria-label={`${galleryLabel} / ${listLabel}`}
             >
                 <button
                     type="button"
                     role="tab"
-                    data-view-toggle="list"
-                    data-active="false"
-                    aria-selected="false"
-                    class="rounded-full px-1.5 py-1 text-[var(--muted-foreground)] transition-colors data-[active=true]:bg-[var(--primary)] data-[active=true]:text-[var(--primary-foreground)] sm:px-3.5 sm:py-1.5"
+                    id="post-view-tab-gallery"
+                    data-view-toggle="gallery"
+                    data-active={isInitialList ? 'false' : 'true'}
+                    aria-selected={isInitialList ? 'false' : 'true'}
+                    aria-controls="post-view-panel-gallery"
+                    tabindex={isInitialList ? '-1' : '0'}
+                    class="site-top-control-item"
                 >
-                    {listLabel}
+                    {galleryLabel}
                 </button>
                 <button
                     type="button"
                     role="tab"
-                    data-view-toggle="gallery"
-                    data-active="true"
-                    aria-selected="true"
-                    class="rounded-full px-1.5 py-1 text-[var(--muted-foreground)] transition-colors data-[active=true]:bg-[var(--primary)] data-[active=true]:text-[var(--primary-foreground)] sm:px-3.5 sm:py-1.5"
+                    id="post-view-tab-list"
+                    data-view-toggle="list"
+                    data-active={isInitialList ? 'true' : 'false'}
+                    aria-selected={isInitialList ? 'true' : 'false'}
+                    aria-controls="post-view-panel-list"
+                    tabindex={isInitialList ? '0' : '-1'}
+                    class="site-top-control-item"
                 >
-                    {galleryLabel}
+                    {listLabel}
                 </button>
             </div>
         </div>
-        <div slot="utility-end" id="post-archive-search-host" class="relative shrink-0"></div>
+        <div slot="utility-end" class="contents">
+            <PostArchiveSearch
+                client:load
+                locale={locale}
+                initialQuery={initialArchiveState.filters.query}
+            />
+        </div>
     </SiteNavbar>
 
     <PageStage variant="posts">
         {/* 精选视图（默认） */}
-        <div data-view-section="gallery">
+        <div
+            id="post-view-panel-gallery"
+            role="tabpanel"
+            aria-labelledby="post-view-tab-gallery"
+            data-view-section="gallery"
+            hidden={isInitialList}
+        >
             <PostViewContainer posts={featuredPosts} locale={locale} viewAllLabel={viewAllLabel} />
         </div>
 
         {/* 全部视图 —— 首屏 SSR、默认隐藏，由脚本按 ?view= 显隐 */}
-        <div data-view-section="list" hidden>
+        <div
+            id="post-view-panel-list"
+            role="tabpanel"
+            aria-labelledby="post-view-tab-list"
+            data-view-section="list"
+            hidden={!isInitialList}
+        >
             <PostArchiveView
-                client:visible
+                client:idle={{ timeout: 500 }}
                 posts={listItems}
                 locale={locale}
+                seriesMetadata={seriesMetadata}
                 initialFilters={initialArchiveState.filters}
                 initialLayout={initialArchiveState.layout}
+                initialPagination={initialArchiveState.pagination}
             />
         </div>
     </PageStage>
 
     <Dock isFixed={true}>
-        <div
-            id="post-archive-pagination-host"
-            class="hidden items-center justify-self-start md:flex"
-        >
+        <div id="post-archive-pagination-host" class="flex min-w-0 items-center justify-self-start">
         </div>
         <DockNav lang={locale} />
         <DockSocial lang={locale} />
@@ -201,6 +259,10 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
 </BaseLayout>
 
 <style>
+    :global(html:has([data-post-view-secondary])) {
+        --site-navbar-height: clamp(6.5rem, 15svh, 7.1rem);
+    }
+
     /* 画廊视图：锁定页面滚动，让滚轮只作用于横向容器（默认态） */
     :global(html),
     :global(body) {
@@ -217,32 +279,83 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
 
     /* 精选与全部共用同一主内容视口，避免切换时容器高度跳动。 */
     :global(.post-view-main-viewport) {
-        --post-view-content-height: clamp(500px, min(72svh, calc(100svh - 220px)), 780px);
+        --post-view-available-height: calc(
+            100svh - var(--site-navbar-height) - var(--site-dock-height)
+        );
+        --post-view-content-height: clamp(
+            500px,
+            min(72svh, var(--post-view-available-height)),
+            780px
+        );
 
-        height: 75svh;
-        min-height: 520px;
+        height: var(--post-view-available-height);
+        min-height: 0;
     }
 
     @media (pointer: coarse) {
         :global(.post-view-main-viewport) {
-            --post-view-content-height: clamp(430px, min(68svh, 560px), 560px);
+            --post-view-content-height: clamp(
+                430px,
+                min(68svh, var(--post-view-available-height)),
+                560px
+            );
+        }
+    }
+
+    @media (min-width: 96rem) {
+        :global(html:has([data-post-view-secondary])) {
+            --site-navbar-height: clamp(5rem, 11svh, 7rem);
         }
     }
 
     @media (pointer: fine) and (max-height: 780px) {
         :global(.post-view-main-viewport) {
-            --post-view-content-height: clamp(460px, calc(100svh - 220px), 560px);
+            --post-view-content-height: clamp(420px, var(--post-view-available-height), 560px);
         }
     }
 
     @media (pointer: fine) and (min-width: 1920px) {
         :global(.post-view-main-viewport) {
-            --post-view-content-height: clamp(620px, min(72svh, calc(100svh - 220px)), 820px);
+            --post-view-content-height: clamp(
+                620px,
+                min(72svh, var(--post-view-available-height)),
+                820px
+            );
+        }
+    }
+
+    @media (pointer: fine) and (min-width: 2560px) and (min-height: 1600px) {
+        :global(.post-view-main-viewport) {
+            --post-view-content-height: clamp(
+                760px,
+                min(54svh, var(--post-view-available-height)),
+                1000px
+            );
         }
     }
 
     /* 隐藏的视图段彻底移除（防止 flex/grid 类覆盖 [hidden]） */
     :global([data-view-section][hidden]) {
         display: none !important;
+    }
+
+    /* Reserve the pager's final footprint as soon as “全部” starts entering. The idle island
+       can then hydrate during the view transition without nudging the Dock when its portal mounts. */
+    :global(#post-archive-pagination-host) {
+        min-height: 2rem;
+    }
+
+    :global(html[data-post-view-mode='list'] #post-archive-pagination-host) {
+        min-width: 7.5rem;
+    }
+
+    @media (min-width: 640px) {
+        :global(#post-archive-pagination-host) {
+            min-height: 2.5rem;
+        }
+
+        :global(html[data-post-view-mode='list'] #post-archive-pagination-host) {
+            min-width: 9.25rem;
+        }
     }
 </style>

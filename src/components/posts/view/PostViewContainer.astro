@@ -118,6 +118,12 @@ const noPostsText = getUIText('home', 'noPosts', locale);
         }
     }
 
+    @media (pointer: fine) and (min-width: 2560px) and (min-height: 1600px) {
+        .post-card-wrapper {
+            --post-card-width: clamp(360px, calc(var(--post-card-height) / 1.98), 505px);
+        }
+    }
+
     @media (prefers-reduced-motion: reduce) {
         .post-card-wrapper {
             transition: none;

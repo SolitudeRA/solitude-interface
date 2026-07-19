@@ -1,0 +1,202 @@
+/**
+ * 全站媒体卡动效协议。
+ *
+ * 150ms 负责按压等即时反馈，210ms 负责卡面状态，300ms 负责内容换景，
+ * 480ms 只留给图片。结构与内容仍由各组件负责，这里仅统一动效所有权。
+ */
+
+/* 首页：轻量入口卡，键盘焦点与指针悬停保持同态。 */
+html[data-media-card-protocol='v2'] .showcase-card {
+    transition-duration: var(--media-card-motion-state);
+    transition-timing-function: var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2']
+    .showcase-card
+    [data-media-card-media]
+    > :is(.responsive-image-frame, img, div) {
+    will-change: auto;
+    transition-duration: var(--media-card-motion-media);
+    transition-timing-function: var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2'] .showcase-card [data-media-card-glow] {
+    transition-duration: var(--media-card-motion-state);
+    transition-timing-function: var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2']
+    .showcase-card:focus-visible
+    [data-media-card-media]
+    > :is(.responsive-image-frame, img, div) {
+    scale: 1.045;
+}
+
+html[data-media-card-protocol='v2'] .showcase-card:focus-visible [data-media-card-glow] {
+    opacity: 1;
+    scale: 1;
+}
+
+/* 精选：卡面状态快速收束，媒体继续使用更柔和的长节奏。 */
+html[data-media-card-protocol='v2'] .post-card-wrapper,
+html[data-media-card-protocol='v2'] .base-card {
+    transition-duration: var(--media-card-motion-state);
+    transition-timing-function: var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2'] :is(.base-card-media, .base-card-image) {
+    transition-duration: var(--media-card-motion-media);
+    transition-timing-function: var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2'] .base-card-shade::after {
+    transition-duration: var(--media-card-motion-state), var(--media-card-motion-stage);
+    transition-timing-function: ease, var(--media-card-ease);
+}
+
+/* 编辑目录／年代预览：比精选主卡更克制，避免争夺视觉层级。 */
+html[data-media-card-protocol='v2'] [data-media-card='archive-preview'] {
+    box-shadow:
+        0 16px 42px rgb(0 0 0 / 0.24),
+        0 1px 0 rgb(255 255 255 / 0.08) inset;
+    backdrop-filter: blur(10px) saturate(1.05);
+    transition:
+        transform var(--media-card-motion-state) var(--media-card-ease),
+        border-color var(--media-card-motion-state) ease,
+        box-shadow var(--media-card-motion-state) var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2'] [data-media-card='archive-preview']:is(:hover, :focus-visible) {
+    box-shadow:
+        0 20px 48px rgb(0 0 0 / 0.29),
+        0 1px 0 rgb(255 255 255 / 0.11) inset;
+}
+
+html[data-media-card-protocol='v2']
+    [data-media-card='archive-preview']
+    > [data-post-transition-media] {
+    transition-duration: var(--media-card-motion-media);
+    transition-timing-function: var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2']
+    [data-media-card='archive-preview']:focus-visible
+    > [data-post-transition-media] {
+    scale: 1.025;
+}
+
+/* 系列：Motion 负责位移／淡入，CSS 只负责颜色与媒体属性。 */
+html[data-media-card-protocol='v2'] [data-archive-series-entry] {
+    transition-property: color, border-color, background-color, translate;
+    transition-duration: var(--media-card-motion-state);
+    transition-timing-function: var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2'] .archive-series-preview-image {
+    transition-property: opacity, scale;
+    transition-duration: var(--media-card-motion-stage), var(--media-card-motion-media);
+    transition-timing-function: ease, var(--media-card-ease);
+}
+
+html[data-media-card-protocol='v2']
+    [data-archive-series-preview]:focus-visible
+    .archive-series-preview-image {
+    scale: 1.025;
+}
+
+@media (hover: none) {
+    html[data-media-card-protocol='v2']
+        [data-home-showcase]:has(.showcase-card:hover)
+        .showcase-card:not(:hover) {
+        opacity: 1;
+    }
+
+    html[data-media-card-protocol='v2'] .showcase-card:hover,
+    html[data-media-card-protocol='v2'] .post-card-wrapper:hover,
+    html[data-media-card-protocol='v2'] [data-media-card='archive-preview']:hover,
+    html[data-media-card-protocol='v2'] [data-archive-series-entry]:hover {
+        transform: none;
+        translate: none;
+        scale: 1;
+    }
+
+    html[data-media-card-protocol='v2']
+        .showcase-card:hover
+        [data-media-card-media]
+        > :is(.responsive-image-frame, img, div) {
+        transform: none;
+        scale: 1.02;
+    }
+
+    html[data-media-card-protocol='v2']
+        [data-media-card='archive-preview']:hover
+        > [data-post-transition-media],
+    html[data-media-card-protocol='v2']
+        [data-archive-series-preview]:hover
+        .archive-series-preview-image {
+        transform: none;
+        scale: 1;
+    }
+
+    html[data-media-card-protocol='v2']
+        .post-card-wrapper:hover
+        :is(.base-card-media, .base-card-image) {
+        transform: scale(1.025) translate3d(0, 0, 0);
+    }
+
+    html[data-media-card-protocol='v2'] .showcase-card:active,
+    html[data-media-card-protocol='v2'] .post-card-wrapper:active,
+    html[data-media-card-protocol='v2'] [data-media-card='archive-preview']:active,
+    html[data-media-card-protocol='v2'] [data-archive-series-preview]:active {
+        scale: 0.99;
+        transition-duration: var(--media-card-motion-micro);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-media-card-protocol='v2'] .showcase-card,
+    html[data-media-card-protocol='v2'] .showcase-card [data-media-card-media] > *,
+    html[data-media-card-protocol='v2'] .showcase-card [data-media-card-glow],
+    html[data-media-card-protocol='v2'] .post-card-wrapper,
+    html[data-media-card-protocol='v2'] .base-card,
+    html[data-media-card-protocol='v2'] :is(.base-card-media, .base-card-image),
+    html[data-media-card-protocol='v2'] .base-card-shade::after,
+    html[data-media-card-protocol='v2'] [data-media-card='archive-preview'],
+    html[data-media-card-protocol='v2']
+        [data-media-card='archive-preview']
+        > [data-post-transition-media],
+    html[data-media-card-protocol='v2'] [data-archive-series-preview],
+    html[data-media-card-protocol='v2'] [data-archive-series-entry],
+    html[data-media-card-protocol='v2'] .archive-series-preview-image {
+        transition: none;
+    }
+
+    html[data-media-card-protocol='v2'] .showcase-card,
+    html[data-media-card-protocol='v2'] .post-card-wrapper,
+    html[data-media-card-protocol='v2'] [data-media-card='archive-preview'],
+    html[data-media-card-protocol='v2'] [data-archive-series-entry] {
+        transform: none;
+        translate: none;
+        scale: 1;
+    }
+
+    html[data-media-card-protocol='v2']
+        .showcase-card
+        [data-media-card-media]
+        > :is(.responsive-image-frame, img, div) {
+        transform: none;
+        scale: 1.02;
+    }
+
+    html[data-media-card-protocol='v2']
+        [data-media-card='archive-preview']
+        > [data-post-transition-media],
+    html[data-media-card-protocol='v2'] .archive-series-preview-image {
+        transform: none;
+        scale: 1;
+    }
+
+    html[data-media-card-protocol='v2'] :is(.base-card-media, .base-card-image) {
+        transform: scale(1.025) translate3d(0, 0, 0);
+    }
+}

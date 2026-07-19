@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    getTagDescription,
     getTagLabel,
     mergeTagRegistryPages,
     parseTagRegistryPage,
@@ -20,6 +21,10 @@ describe('tagRegistry', () => {
         &quot;ja&quot;: &quot;ホームサーバー完全構築ガイド&quot;,
         &quot;en&quot;: &quot;Homeserver Complete Build Guide&quot;
       },
+      &quot;description&quot;: {
+        &quot;zh&quot;: &quot;从硬件选型到长期维护。&quot;,
+        &quot;en&quot;: &quot;From hardware choices to long-term maintenance.&quot;
+      },
       &quot;order&quot;: 10
     }
   }
@@ -28,6 +33,7 @@ describe('tagRegistry', () => {
 
         expect(page.kind).toBe('series');
         expect(page.tags['series-homeserver']?.label.zh).toBe('家用服务器完整构建指南');
+        expect(page.tags['series-homeserver']?.description?.zh).toBe('从硬件选型到长期维护。');
         expect(page.tags['series-homeserver']?.order).toBe(10);
     });
 
@@ -46,6 +52,28 @@ describe('tagRegistry', () => {
         expect(getTagLabel('topic-home-automation', 'ja', undefined, registry)).toBe(
             'Home Automation'
         );
+    });
+
+    it('should localize a series description with the default locale as fallback', () => {
+        const registry = {
+            'series-homeserver': {
+                kind: 'series' as const,
+                label: { zh: '家庭服务器' },
+                description: {
+                    zh: '从硬件选型到长期维护。',
+                    en: 'From hardware choices to long-term maintenance.',
+                },
+                order: 10,
+            },
+        };
+
+        expect(getTagDescription('series-homeserver', 'en', registry)).toBe(
+            'From hardware choices to long-term maintenance.'
+        );
+        expect(getTagDescription('series-homeserver', 'ja', registry)).toBe(
+            '从硬件选型到长期维护。'
+        );
+        expect(getTagDescription('series-missing', 'zh', registry)).toBe('');
     });
 
     it('should reject kind mismatches', () => {

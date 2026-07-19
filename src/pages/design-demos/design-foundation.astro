@@ -1,0 +1,1837 @@
+---
+import '@styles/index.css';
+import SiteDock from '@components/layout/dock/SiteDock.astro';
+---
+
+<!doctype html>
+<html lang="zh-CN" class="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="dark light" />
+        <title>Protogalaxy · Design Foundation Demo</title>
+    </head>
+    <body>
+        <div class="demo-ambient" aria-hidden="true">
+            <span class="demo-orbit demo-orbit-a"></span>
+            <span class="demo-orbit demo-orbit-b"></span>
+            <span class="demo-grain"></span>
+        </div>
+
+        <main
+            class="demo-root"
+            data-demo-root
+            data-demo-size="auto"
+            data-demo-view="archive"
+            data-demo-layout="editorial"
+            data-demo-material="quiet"
+        >
+            <header class="demo-toolbar">
+                <div class="demo-heading">
+                    <p>DESIGN FOUNDATION · INTERACTIVE PREVIEW</p>
+                    <h1>让导航先稳定，内容自然安静下来。</h1>
+                </div>
+
+                <div class="demo-toolbar-controls">
+                    <div class="demo-toolbar-group" role="group" aria-label="预览宽度">
+                        <button type="button" data-size-option="auto" aria-pressed="true"
+                            >自动</button
+                        >
+                        <button type="button" data-size-option="wide" aria-pressed="false"
+                            >宽屏</button
+                        >
+                        <button type="button" data-size-option="compact" aria-pressed="false"
+                            >紧凑</button
+                        >
+                        <button type="button" data-size-option="mobile" aria-pressed="false"
+                            >移动</button
+                        >
+                    </div>
+
+                    <div class="demo-toolbar-group" role="group" aria-label="材质密度">
+                        <button type="button" data-material-option="quiet" aria-pressed="true"
+                            >克制材质</button
+                        >
+                        <button type="button" data-material-option="layered" aria-pressed="false"
+                            >高玻璃密度</button
+                        >
+                    </div>
+                </div>
+            </header>
+
+            <section class="demo-frame" aria-label="网站导航设计预览">
+                <div class="demo-viewport" data-demo-viewport>
+                    <div class="site-preview">
+                        <header class="preview-navbar" data-preview-navbar>
+                            <a
+                                class="preview-brand"
+                                href="#preview-content"
+                                aria-label="Protogalaxy 首页"
+                            >
+                                <span class="preview-logo" aria-hidden="true">
+                                    <span></span>
+                                </span>
+                                <span class="preview-brand-copy">
+                                    <strong>Protogalaxy</strong>
+                                    <small>In solitude, Where we are least alone</small>
+                                </span>
+                            </a>
+
+                            <div
+                                class="preview-secondary"
+                                data-preview-secondary
+                                aria-hidden="false"
+                                aria-label="全部文章视图选项"
+                            >
+                                <div
+                                    class="preview-control preview-layout-tabs"
+                                    role="group"
+                                    aria-label="归档布局"
+                                >
+                                    <button
+                                        id="layout-option-editorial"
+                                        type="button"
+                                        data-layout-option="editorial"
+                                        aria-pressed="true"
+                                        aria-label="编辑目录"
+                                    >
+                                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                                            <path d="M5 5h14M5 12h14M5 19h14"></path>
+                                        </svg>
+                                        <span>编辑目录</span>
+                                    </button>
+                                    <button
+                                        id="layout-option-series"
+                                        type="button"
+                                        data-layout-option="series"
+                                        aria-pressed="false"
+                                        aria-label="系列书库"
+                                    >
+                                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                                            <path
+                                                d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5ZM20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5Z"
+                                            ></path>
+                                        </svg>
+                                        <span>系列书库</span>
+                                    </button>
+                                    <button
+                                        id="layout-option-years"
+                                        type="button"
+                                        data-layout-option="years"
+                                        aria-pressed="false"
+                                        aria-label="年代分栏"
+                                    >
+                                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                                            <path
+                                                d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"
+                                            ></path>
+                                        </svg>
+                                        <span>年代分栏</span>
+                                    </button>
+                                </div>
+
+                                <div
+                                    class="preview-control preview-category-tabs"
+                                    aria-label="文章分类"
+                                >
+                                    <button type="button" data-category-option aria-pressed="true"
+                                        >全部</button
+                                    >
+                                    <button type="button" data-category-option aria-pressed="false"
+                                        >技术</button
+                                    >
+                                    <button type="button" data-category-option aria-pressed="false"
+                                        >随笔</button
+                                    >
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="preview-control preview-category-menu"
+                                    aria-label="选择文章分类"
+                                >
+                                    全部分类
+                                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                                        <path d="m7 10 5 5 5-5"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="preview-primary">
+                                <div
+                                    class="preview-control preview-view-tabs"
+                                    role="tablist"
+                                    aria-label="文章视图"
+                                >
+                                    <button
+                                        id="view-option-featured"
+                                        type="button"
+                                        role="tab"
+                                        data-view-option="featured"
+                                        aria-controls="featured-preview-panel"
+                                        aria-selected="false"
+                                        tabindex="-1">精选</button
+                                    >
+                                    <button
+                                        id="view-option-archive"
+                                        type="button"
+                                        role="tab"
+                                        data-view-option="archive"
+                                        aria-controls="archive-preview-panel"
+                                        aria-selected="true"
+                                        tabindex="0">全部</button
+                                    >
+                                </div>
+
+                                <button
+                                    class="preview-control preview-language"
+                                    type="button"
+                                    aria-label="切换语言"
+                                >
+                                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="9"></circle>
+                                        <path
+                                            d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"
+                                        ></path>
+                                    </svg>
+                                    <span>中文</span>
+                                    <svg
+                                        class="preview-chevron"
+                                        aria-hidden="true"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path d="m7 10 5 5 5-5"></path>
+                                    </svg>
+                                </button>
+
+                                <button
+                                    class="preview-control preview-icon-control"
+                                    type="button"
+                                    data-theme-toggle
+                                    aria-label="切换明暗主题"
+                                >
+                                    <svg
+                                        class="preview-theme-moon"
+                                        aria-hidden="true"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path d="M20.4 15.3A9 9 0 0 1 8.7 3.6 9 9 0 1 0 20.4 15.3Z"
+                                        ></path>
+                                    </svg>
+                                    <svg
+                                        class="preview-theme-sun"
+                                        aria-hidden="true"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle cx="12" cy="12" r="4"></circle>
+                                        <path
+                                            d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"
+                                        ></path>
+                                    </svg>
+                                </button>
+
+                                <button
+                                    class="preview-control preview-icon-control"
+                                    type="button"
+                                    data-search-toggle
+                                    aria-label="展开搜索"
+                                    aria-expanded="false"
+                                    aria-controls="preview-search"
+                                >
+                                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                                        <circle cx="11" cy="11" r="7"></circle>
+                                        <path d="m20 20-4-4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <form
+                                class="preview-search"
+                                id="preview-search"
+                                data-preview-search
+                                hidden
+                            >
+                                <svg aria-hidden="true" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="7"></circle>
+                                    <path d="m20 20-4-4"></path>
+                                </svg>
+                                <input
+                                    type="search"
+                                    name="preview-search"
+                                    placeholder="搜索标题、摘要或系列…"
+                                    autocomplete="off"
+                                />
+                                <kbd>Esc</kbd>
+                            </form>
+                        </header>
+
+                        <div class="preview-content" id="preview-content">
+                            <section class="preview-intro">
+                                <div>
+                                    <p class="preview-kicker" data-preview-kicker>
+                                        ALL POSTS · EDITORIAL INDEX
+                                    </p>
+                                    <h2 data-preview-title>
+                                        内容控件属于导航，阅读空间只保留内容。
+                                    </h2>
+                                </div>
+                                <p data-preview-description>
+                                    宽度充足时所有控件自然同行；空间不足时，归档控件整组换到第二行并保持右对齐。
+                                </p>
+                            </section>
+
+                            <section
+                                class="archive-preview"
+                                id="archive-preview-panel"
+                                data-archive-preview
+                                role="tabpanel"
+                                aria-labelledby="view-option-archive"
+                            >
+                                <article
+                                    class="archive-panel archive-panel-index"
+                                    data-layout-panel="editorial"
+                                >
+                                    <header>
+                                        <span>EDITORIAL INDEX</span>
+                                        <strong>编辑目录</strong>
+                                        <small>24 stories</small>
+                                    </header>
+                                    <div class="archive-list">
+                                        <a href="#demo-story-1" class="is-active">
+                                            <span>01</span>
+                                            <strong>从服务选型到稳定运行</strong>
+                                            <time>07.16</time>
+                                        </a>
+                                        <a href="#demo-story-2">
+                                            <span>02</span>
+                                            <strong>让空间记住阅读位置</strong>
+                                            <time>07.12</time>
+                                        </a>
+                                        <a href="#demo-story-3">
+                                            <span>03</span>
+                                            <strong>Reboot：一次安静的重构</strong>
+                                            <time>07.08</time>
+                                        </a>
+                                    </div>
+                                </article>
+
+                                <div class="archive-panel archive-panel-preview">
+                                    <div class="archive-cover" aria-hidden="true">
+                                        <span class="archive-cover-orbit"></span>
+                                    </div>
+                                    <div class="archive-copy">
+                                        <div class="archive-chips">
+                                            <span>文章</span>
+                                            <span>技术</span>
+                                        </div>
+                                        <h3 data-archive-title>从服务选型到稳定运行</h3>
+                                        <p data-archive-copy>
+                                            更少的玻璃叠层，让图片、标题和导航重新拥有清晰的前后关系。
+                                        </p>
+                                        <time>2026-07-16</time>
+                                    </div>
+                                </div>
+
+                                <article class="archive-panel archive-panel-rail">
+                                    <header>
+                                        <span data-rail-label>READING PATH</span>
+                                        <strong data-rail-title>最近更新</strong>
+                                    </header>
+                                    <ol data-rail-list>
+                                        <li><span>01</span><strong>稳定的外壳</strong></li>
+                                        <li><span>02</span><strong>安静的内容层</strong></li>
+                                        <li><span>03</span><strong>明确的焦点</strong></li>
+                                    </ol>
+                                </article>
+                            </section>
+
+                            <section
+                                class="featured-preview"
+                                id="featured-preview-panel"
+                                data-featured-preview
+                                role="tabpanel"
+                                aria-labelledby="view-option-featured"
+                                hidden
+                            >
+                                <a class="featured-card featured-card-main" href="#featured-main">
+                                    <div class="featured-art featured-art-a" aria-hidden="true">
+                                    </div>
+                                    <span class="featured-chip">精选 · 技术</span>
+                                    <div>
+                                        <h3>构建一个稳定、连续的阅读空间</h3>
+                                        <p>保留沉浸感，但让控件退出内容舞台。</p>
+                                    </div>
+                                </a>
+                                <a class="featured-card featured-card-side" href="#featured-side">
+                                    <div class="featured-art featured-art-b" aria-hidden="true">
+                                    </div>
+                                    <span class="featured-chip">系列 · Notes</span>
+                                    <div>
+                                        <h3>设计不是增加，而是排序</h3>
+                                        <p>用规则驱动非对称，而不是随机变化。</p>
+                                    </div>
+                                </a>
+                                <a class="featured-card featured-card-small" href="#featured-small">
+                                    <div class="featured-art featured-art-c" aria-hidden="true">
+                                    </div>
+                                    <span class="featured-chip">随笔</span>
+                                    <div>
+                                        <h3>在背景与文字之间留出呼吸</h3>
+                                    </div>
+                                </a>
+                            </section>
+                        </div>
+
+                        <footer class="preview-material-key" aria-label="材质层级说明">
+                            <span><i class="key-environment"></i>环境层</span>
+                            <span><i class="key-content"></i>内容层</span>
+                            <span><i class="key-floating"></i>浮动玻璃层</span>
+                        </footer>
+                    </div>
+                </div>
+            </section>
+
+            <p class="demo-caption" role="status" aria-live="polite" data-demo-caption>
+                自动宽度 · 全部文章 · 编辑目录 · 克制材质
+            </p>
+        </main>
+
+        <SiteDock isFixed={true} layout="home" lang="zh" />
+
+        <script is:inline>
+            (() => {
+                const root = document.querySelector('[data-demo-root]');
+                if (!root) return;
+
+                const caption = root.querySelector('[data-demo-caption]');
+                const search = root.querySelector('[data-preview-search]');
+                const searchToggle = root.querySelector('[data-search-toggle]');
+                const featuredPreview = root.querySelector('[data-featured-preview]');
+                const archivePreview = root.querySelector('[data-archive-preview]');
+                const secondary = root.querySelector('[data-preview-secondary]');
+                const kicker = root.querySelector('[data-preview-kicker]');
+                const title = root.querySelector('[data-preview-title]');
+                const description = root.querySelector('[data-preview-description]');
+
+                const labels = {
+                    size: {
+                        auto: '自动宽度',
+                        wide: '宽屏单行',
+                        compact: '紧凑双行',
+                        mobile: '移动布局',
+                    },
+                    view: { featured: '精选文章', archive: '全部文章' },
+                    layout: {
+                        editorial: '编辑目录',
+                        series: '系列书库',
+                        years: '年代分栏',
+                    },
+                    material: { quiet: '克制材质', layered: '高玻璃密度' },
+                };
+
+                const updateCaption = () => {
+                    caption.textContent = [
+                        labels.size[root.dataset.demoSize],
+                        labels.view[root.dataset.demoView],
+                        root.dataset.demoView === 'archive'
+                            ? labels.layout[root.dataset.demoLayout]
+                            : null,
+                        labels.material[root.dataset.demoMaterial],
+                    ]
+                        .filter(Boolean)
+                        .join(' · ');
+                };
+
+                const selectOption = (selector, attribute, value) => {
+                    root.querySelectorAll(selector).forEach((button) => {
+                        const active = button.dataset[attribute] === value;
+                        if (button.getAttribute('role') === 'tab') {
+                            button.setAttribute('aria-selected', String(active));
+                            button.removeAttribute('aria-pressed');
+                            button.tabIndex = active ? 0 : -1;
+                        } else {
+                            button.setAttribute('aria-pressed', String(active));
+                        }
+                    });
+                };
+
+                root.addEventListener('click', (event) => {
+                    const sizeButton = event.target.closest('[data-size-option]');
+                    if (sizeButton) {
+                        root.dataset.demoSize = sizeButton.dataset.sizeOption;
+                        selectOption(
+                            '[data-size-option]',
+                            'sizeOption',
+                            sizeButton.dataset.sizeOption
+                        );
+                        updateCaption();
+                        return;
+                    }
+
+                    const materialButton = event.target.closest('[data-material-option]');
+                    if (materialButton) {
+                        root.dataset.demoMaterial = materialButton.dataset.materialOption;
+                        selectOption(
+                            '[data-material-option]',
+                            'materialOption',
+                            materialButton.dataset.materialOption
+                        );
+                        updateCaption();
+                        return;
+                    }
+
+                    const viewButton = event.target.closest('[data-view-option]');
+                    if (viewButton) {
+                        const view = viewButton.dataset.viewOption;
+                        root.dataset.demoView = view;
+                        selectOption('[data-view-option]', 'viewOption', view);
+                        const featured = view === 'featured';
+                        featuredPreview.hidden = !featured;
+                        archivePreview.hidden = featured;
+                        secondary.setAttribute('aria-hidden', String(featured));
+                        kicker.textContent = featured
+                            ? 'FEATURED STORIES · IMMERSIVE GALLERY'
+                            : `ALL POSTS · ${labels.layout[root.dataset.demoLayout].toUpperCase()}`;
+                        title.textContent = featured
+                            ? '精选保留沉浸感，导航保持稳定。'
+                            : '内容控件属于导航，阅读空间只保留内容。';
+                        description.textContent = featured
+                            ? '切换视图时只替换内容舞台，品牌、主题、搜索和底部 Dock 都保持连续。'
+                            : '宽度充足时所有控件自然同行；空间不足时，归档控件整组换到第二行并保持右对齐。';
+                        updateCaption();
+                        return;
+                    }
+
+                    const layoutButton = event.target.closest('[data-layout-option]');
+                    if (layoutButton) {
+                        const layout = layoutButton.dataset.layoutOption;
+                        root.dataset.demoLayout = layout;
+                        selectOption('[data-layout-option]', 'layoutOption', layout);
+                        const layoutCopy = {
+                            editorial: {
+                                kicker: 'ALL POSTS · EDITORIAL INDEX',
+                                rail: 'READING PATH',
+                                title: '最近更新',
+                                article: '从服务选型到稳定运行',
+                                copy: '更少的玻璃叠层，让图片、标题和导航重新拥有清晰的前后关系。',
+                            },
+                            series: {
+                                kicker: 'ALL POSTS · SERIES LIBRARY',
+                                rail: 'COLLECTION 03',
+                                title: 'Home Server',
+                                article: '把连续文章整理成一座书架',
+                                copy: '系列通过封面与编号形成路径，悬停预览留在内容区，不再遮挡相邻书目。',
+                            },
+                            years: {
+                                kicker: 'ALL POSTS · YEAR COLUMNS',
+                                rail: 'ARCHIVE 2026',
+                                title: '今年的轨迹',
+                                article: '用年份建立时间上的阅读坐标',
+                                copy: '分栏强调时间关系，同时共用同一套卡片遮罩、标签和标题层级。',
+                            },
+                        }[layout];
+                        kicker.textContent = layoutCopy.kicker;
+                        root.querySelector('[data-rail-label]').textContent = layoutCopy.rail;
+                        root.querySelector('[data-rail-title]').textContent = layoutCopy.title;
+                        root.querySelector('[data-archive-title]').textContent = layoutCopy.article;
+                        root.querySelector('[data-archive-copy]').textContent = layoutCopy.copy;
+                        updateCaption();
+                        return;
+                    }
+
+                    if (event.target.closest('[data-category-option]')) {
+                        const button = event.target.closest('[data-category-option]');
+                        root.querySelectorAll('[data-category-option]').forEach((option) => {
+                            option.setAttribute('aria-pressed', String(option === button));
+                        });
+                        return;
+                    }
+
+                    if (event.target.closest('[data-search-toggle]')) {
+                        const willOpen = search.hidden;
+                        search.hidden = !willOpen;
+                        searchToggle.setAttribute('aria-expanded', String(willOpen));
+                        if (willOpen) {
+                            requestAnimationFrame(() => search.querySelector('input')?.focus());
+                        }
+                        return;
+                    }
+
+                    if (event.target.closest('[data-theme-toggle]')) {
+                        const html = document.documentElement;
+                        const dark = html.classList.toggle('dark');
+                        html.classList.toggle('light', !dark);
+                    }
+                });
+
+                search.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    const value = search.querySelector('input')?.value.trim();
+                    caption.textContent = value
+                        ? `搜索预览 · ${value}`
+                        : '请输入标题、摘要或系列名称。';
+                });
+
+                root.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && !search.hidden) {
+                        search.hidden = true;
+                        searchToggle.setAttribute('aria-expanded', 'false');
+                        searchToggle.focus();
+                        return;
+                    }
+
+                    const current = event.target.closest('[role="tab"]');
+                    if (
+                        !current ||
+                        !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)
+                    ) {
+                        return;
+                    }
+
+                    const tabs = Array.from(current.parentElement.querySelectorAll('[role="tab"]'));
+                    let nextIndex = tabs.indexOf(current);
+                    if (event.key === 'Home') nextIndex = 0;
+                    if (event.key === 'End') nextIndex = tabs.length - 1;
+                    if (event.key === 'ArrowLeft')
+                        nextIndex = (nextIndex - 1 + tabs.length) % tabs.length;
+                    if (event.key === 'ArrowRight') nextIndex = (nextIndex + 1) % tabs.length;
+                    event.preventDefault();
+                    tabs[nextIndex].focus();
+                    tabs[nextIndex].click();
+                });
+
+                document.addEventListener(
+                    'click',
+                    (event) => {
+                        const dockLink = event.target.closest('[data-dock-root] a[href]');
+                        if (!dockLink) return;
+                        event.preventDefault();
+                        caption.textContent =
+                            'Demo 中保留现有 Dock；正式落地时继续使用原导航目标。';
+                    },
+                    true
+                );
+
+                document.addEventListener('click', (event) => {
+                    if (
+                        search.hidden ||
+                        search.contains(event.target) ||
+                        searchToggle.contains(event.target)
+                    ) {
+                        return;
+                    }
+
+                    search.hidden = true;
+                    searchToggle.setAttribute('aria-expanded', 'false');
+                });
+
+                updateCaption();
+            })();
+        </script>
+    </body>
+</html>
+
+<style is:global>
+    :root {
+        color-scheme: dark;
+        --demo-control-height: 2.5rem;
+        --demo-control-radius: 999px;
+        --demo-control-gap: 0.38rem;
+        --demo-control-bg: color-mix(in oklch, var(--background) 76%, transparent);
+        --demo-control-bg-hover: color-mix(in oklch, var(--foreground) 9%, var(--demo-control-bg));
+        --demo-control-border: color-mix(in oklch, var(--border) 76%, transparent);
+        --demo-surface-content: color-mix(in oklch, var(--background) 78%, transparent);
+        --demo-surface-content-strong: color-mix(in oklch, var(--background) 90%, transparent);
+        --demo-surface-glass: color-mix(in oklch, var(--background) 64%, transparent);
+        --demo-shadow-low: 0 12px 34px oklch(0 0 0 / 0.12);
+        --demo-shadow-float: 0 22px 64px oklch(0 0 0 / 0.26);
+        --demo-motion-micro: 150ms;
+        --demo-motion-state: 210ms;
+        --demo-motion-stage: 300ms;
+        --demo-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        font-family:
+            'Noto Sans SC Variable',
+            'Noto Sans Variable',
+            system-ui,
+            -apple-system,
+            sans-serif;
+    }
+
+    html.light {
+        color-scheme: light;
+    }
+
+    html,
+    body {
+        min-height: 100%;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100svh;
+        color: var(--foreground);
+        background: var(--background);
+        overflow-x: hidden;
+    }
+
+    .demo-root button,
+    .demo-root input {
+        font: inherit;
+    }
+
+    .demo-root button,
+    .demo-root a {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .demo-root [hidden] {
+        display: none !important;
+    }
+
+    .demo-ambient {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 16% 12%, oklch(0.67 0.16 236 / 0.28), transparent 30%),
+            radial-gradient(circle at 82% 72%, oklch(0.62 0.16 307 / 0.22), transparent 32%),
+            linear-gradient(
+                145deg,
+                oklch(0.17 0.028 258),
+                oklch(0.085 0.015 265) 58%,
+                oklch(0.055 0.01 270)
+            );
+    }
+
+    html.light .demo-ambient {
+        background:
+            radial-gradient(circle at 16% 12%, oklch(0.82 0.1 225 / 0.55), transparent 32%),
+            radial-gradient(circle at 82% 72%, oklch(0.83 0.1 305 / 0.42), transparent 34%),
+            linear-gradient(
+                145deg,
+                oklch(0.965 0.012 245),
+                oklch(0.91 0.025 254) 60%,
+                oklch(0.965 0.012 270)
+            );
+    }
+
+    .demo-ambient::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(ellipse at center, transparent 35%, oklch(0 0 0 / 0.38)),
+            linear-gradient(to bottom, transparent 10%, oklch(0 0 0 / 0.28));
+        pointer-events: none;
+    }
+
+    html.light .demo-ambient::after {
+        background:
+            radial-gradient(ellipse at center, transparent 35%, oklch(0.4 0.03 250 / 0.14)),
+            linear-gradient(to bottom, transparent 10%, oklch(0.45 0.03 250 / 0.12));
+    }
+
+    .demo-orbit {
+        position: absolute;
+        width: 32rem;
+        aspect-ratio: 1;
+        border: 1px solid oklch(0.88 0.08 235 / 0.12);
+        border-radius: 50%;
+        box-shadow: 0 0 120px oklch(0.62 0.15 260 / 0.08) inset;
+    }
+
+    .demo-orbit::before,
+    .demo-orbit::after {
+        content: '';
+        position: absolute;
+        inset: 14%;
+        border: 1px solid oklch(0.88 0.08 300 / 0.1);
+        border-radius: inherit;
+        transform: rotate(24deg) scaleY(0.36);
+    }
+
+    .demo-orbit::after {
+        inset: 27%;
+        transform: rotate(-42deg) scaleY(0.5);
+    }
+
+    .demo-orbit-a {
+        top: -13rem;
+        right: -8rem;
+    }
+
+    .demo-orbit-b {
+        bottom: -18rem;
+        left: -10rem;
+        width: 38rem;
+    }
+
+    .demo-grain {
+        position: absolute;
+        inset: 0;
+        opacity: 0.12;
+        background-image:
+            linear-gradient(oklch(1 0 0 / 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, oklch(1 0 0 / 0.05) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+
+    .demo-root {
+        box-sizing: border-box;
+        min-height: 100svh;
+        padding: clamp(1.1rem, 2.4vw, 2.4rem) clamp(1rem, 3vw, 3.5rem)
+            calc(var(--site-dock-height) + 2.1rem);
+    }
+
+    .demo-toolbar {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        width: min(100%, 112rem);
+        margin: 0 auto 1.1rem;
+        gap: 1.5rem;
+    }
+
+    .demo-heading p {
+        margin: 0 0 0.38rem;
+        color: color-mix(in oklch, var(--foreground) 56%, transparent);
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+    }
+
+    .demo-heading h1 {
+        max-width: 24ch;
+        margin: 0;
+        font-size: clamp(1.35rem, 2.2vw, 2.45rem);
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+        text-wrap: balance;
+    }
+
+    .demo-toolbar-controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.55rem;
+    }
+
+    .demo-toolbar-group {
+        display: inline-flex;
+        min-height: 2.15rem;
+        padding: 0.2rem;
+        border: 1px solid color-mix(in oklch, var(--border) 68%, transparent);
+        border-radius: 999px;
+        background: color-mix(in oklch, var(--background) 66%, transparent);
+        box-shadow: var(--demo-shadow-low);
+        backdrop-filter: blur(16px);
+    }
+
+    .demo-toolbar-group button {
+        min-height: 1.75rem;
+        padding: 0.25rem 0.72rem;
+        color: var(--muted-foreground);
+        font-size: 0.72rem;
+        font-weight: 700;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        cursor: pointer;
+        transition:
+            color var(--demo-motion-micro) ease,
+            background-color var(--demo-motion-micro) ease,
+            box-shadow var(--demo-motion-micro) ease;
+    }
+
+    .demo-toolbar-group button[aria-pressed='true'] {
+        color: var(--primary-foreground);
+        background: var(--primary);
+        box-shadow: 0 6px 18px color-mix(in oklch, var(--primary) 34%, transparent);
+    }
+
+    .demo-frame {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        width: min(100%, 112rem);
+        margin: 0 auto;
+    }
+
+    .demo-viewport {
+        width: 100%;
+        min-width: 0;
+        transition: width var(--demo-motion-stage) var(--demo-ease);
+    }
+
+    .demo-root[data-demo-size='wide'] .demo-viewport {
+        width: min(100%, 100rem);
+    }
+
+    .demo-root[data-demo-size='compact'] .demo-viewport {
+        width: min(100%, 68rem);
+    }
+
+    .demo-root[data-demo-size='mobile'] .demo-viewport {
+        width: min(100%, 27rem);
+    }
+
+    .site-preview {
+        position: relative;
+        container: site-preview / inline-size;
+        min-height: clamp(35rem, 69svh, 48rem);
+        overflow: hidden;
+        border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
+        border-radius: clamp(1.4rem, 2vw, 2rem);
+        background: color-mix(in oklch, var(--background) 42%, transparent);
+        box-shadow:
+            0 34px 90px oklch(0 0 0 / 0.3),
+            0 1px 0 oklch(1 0 0 / 0.12) inset;
+        isolation: isolate;
+    }
+
+    .site-preview::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        background:
+            radial-gradient(circle at 72% 18%, oklch(0.6 0.2 280 / 0.18), transparent 30%),
+            radial-gradient(circle at 18% 78%, oklch(0.65 0.18 220 / 0.13), transparent 32%),
+            linear-gradient(145deg, oklch(0.15 0.02 260 / 0.7), oklch(0.08 0.012 270 / 0.88));
+    }
+
+    html.light .site-preview::before {
+        background:
+            radial-gradient(circle at 72% 18%, oklch(0.76 0.12 285 / 0.34), transparent 30%),
+            radial-gradient(circle at 18% 78%, oklch(0.8 0.12 220 / 0.32), transparent 32%),
+            linear-gradient(145deg, oklch(0.97 0.012 250 / 0.82), oklch(0.88 0.025 260 / 0.82));
+    }
+
+    .site-preview::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(to bottom, transparent 12%, var(--site-bg-overlay-bottom));
+        pointer-events: none;
+    }
+
+    .preview-navbar {
+        position: relative;
+        z-index: 30;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'brand primary'
+            'secondary secondary';
+        align-items: center;
+        gap: 0.55rem 0.75rem;
+        min-height: 6.1rem;
+        padding: 0.75rem clamp(0.8rem, 2.2cqw, 2rem);
+        border-bottom: 1px solid color-mix(in oklch, var(--border) 48%, transparent);
+        background: linear-gradient(
+            to bottom,
+            color-mix(in oklch, var(--background) 42%, transparent),
+            transparent
+        );
+    }
+
+    .preview-brand {
+        grid-area: brand;
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: clamp(0.65rem, 1.4cqw, 1.1rem);
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .preview-logo {
+        position: relative;
+        display: grid;
+        width: clamp(2.8rem, 4.4cqw, 4.15rem);
+        aspect-ratio: 1;
+        flex: none;
+        place-items: center;
+        overflow: hidden;
+        border: 1px solid oklch(0.78 0.12 255 / 0.28);
+        border-radius: 28%;
+        background:
+            radial-gradient(circle at 38% 34%, oklch(0.92 0.05 230), transparent 8%),
+            radial-gradient(
+                circle at 50% 50%,
+                oklch(0.58 0.24 285),
+                oklch(0.1 0.05 265) 52%,
+                oklch(0.04 0.02 270)
+            );
+        box-shadow:
+            0 14px 34px oklch(0 0 0 / 0.24),
+            0 1px 0 oklch(1 0 0 / 0.24) inset;
+    }
+
+    .preview-logo::before,
+    .preview-logo::after,
+    .preview-logo span {
+        content: '';
+        position: absolute;
+        width: 68%;
+        height: 34%;
+        border: 2px solid oklch(0.92 0.05 240 / 0.9);
+        border-radius: 50%;
+        transform: rotate(-52deg);
+    }
+
+    .preview-logo::after {
+        width: 45%;
+        height: 19%;
+        border-color: oklch(0.86 0.13 300 / 0.92);
+        transform: rotate(-52deg) translateX(8%);
+    }
+
+    .preview-logo span {
+        width: 12%;
+        height: 12%;
+        border: 0;
+        background: white;
+        box-shadow: 0 0 12px white;
+    }
+
+    .preview-brand-copy {
+        display: grid;
+        min-width: 0;
+        gap: 0.22rem;
+    }
+
+    .preview-brand-copy strong {
+        overflow: hidden;
+        font-size: clamp(1.15rem, 2.15cqw, 1.85rem);
+        line-height: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .preview-brand-copy small {
+        overflow: hidden;
+        color: var(--muted-foreground);
+        font-size: clamp(0.66rem, 1.12cqw, 0.9rem);
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .preview-primary,
+    .preview-secondary {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--demo-control-gap);
+    }
+
+    .preview-primary {
+        grid-area: primary;
+    }
+
+    .preview-secondary {
+        grid-area: secondary;
+        justify-self: end;
+        transition:
+            opacity var(--demo-motion-state) ease,
+            transform var(--demo-motion-state) var(--demo-ease),
+            visibility 0s linear;
+    }
+
+    .preview-secondary[aria-hidden='true'] {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-0.25rem);
+        transition:
+            opacity var(--demo-motion-state) ease,
+            transform var(--demo-motion-state) var(--demo-ease),
+            visibility 0s linear var(--demo-motion-state);
+    }
+
+    .preview-control {
+        min-height: var(--demo-control-height);
+        color: var(--foreground);
+        border: 1px solid var(--demo-control-border);
+        border-radius: var(--demo-control-radius);
+        background: var(--demo-control-bg);
+        box-shadow: var(--demo-shadow-low);
+        backdrop-filter: blur(16px);
+    }
+
+    .preview-control button,
+    button.preview-control {
+        cursor: pointer;
+    }
+
+    .preview-view-tabs,
+    .preview-layout-tabs,
+    .preview-category-tabs {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.12rem;
+        padding: 0.2rem;
+    }
+
+    .preview-view-tabs button,
+    .preview-layout-tabs button,
+    .preview-category-tabs button {
+        min-height: calc(var(--demo-control-height) - 0.52rem);
+        padding: 0.3rem 0.76rem;
+        color: var(--muted-foreground);
+        font-size: 0.72rem;
+        font-weight: 750;
+        white-space: nowrap;
+        border: 0;
+        border-radius: inherit;
+        background: transparent;
+        transition:
+            color var(--demo-motion-state) ease,
+            background-color var(--demo-motion-state) ease,
+            transform var(--demo-motion-micro) ease,
+            box-shadow var(--demo-motion-state) ease;
+    }
+
+    .preview-view-tabs button[aria-selected='true'],
+    .preview-layout-tabs button[aria-pressed='true'],
+    .preview-category-tabs button[aria-pressed='true'] {
+        color: var(--primary-foreground);
+        background: var(--primary);
+        box-shadow: 0 6px 18px color-mix(in oklch, var(--primary) 28%, transparent);
+    }
+
+    .preview-language,
+    .preview-icon-control,
+    .preview-category-menu {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.42rem;
+        padding: 0 0.78rem;
+        transition:
+            color var(--demo-motion-state) ease,
+            background-color var(--demo-motion-state) ease,
+            border-color var(--demo-motion-state) ease,
+            transform var(--demo-motion-micro) ease;
+    }
+
+    .preview-icon-control {
+        width: var(--demo-control-height);
+        padding: 0;
+    }
+
+    .preview-language svg,
+    .preview-layout-tabs svg,
+    .preview-icon-control svg,
+    .preview-category-menu svg,
+    .preview-search svg {
+        width: 1rem;
+        height: 1rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .preview-layout-tabs button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+    }
+
+    .preview-language span,
+    .preview-category-menu {
+        font-size: 0.72rem;
+        font-weight: 750;
+        white-space: nowrap;
+    }
+
+    .preview-chevron {
+        width: 0.75rem !important;
+        height: 0.75rem !important;
+    }
+
+    .preview-category-menu {
+        display: none;
+    }
+
+    .preview-theme-sun {
+        display: none;
+    }
+
+    html.light .preview-theme-moon {
+        display: none;
+    }
+
+    html.light .preview-theme-sun {
+        display: block;
+    }
+
+    .preview-search {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        right: clamp(0.8rem, 2.2cqw, 2rem);
+        z-index: 60;
+        display: flex;
+        width: min(24rem, calc(100% - 1.6rem));
+        min-height: 2.8rem;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0 0.9rem;
+        border: 1px solid var(--demo-control-border);
+        border-radius: 999px;
+        background: color-mix(in oklch, var(--background) 92%, transparent);
+        box-shadow: var(--demo-shadow-float);
+        backdrop-filter: blur(22px);
+        transform-origin: top right;
+        animation: preview-search-in var(--demo-motion-state) var(--demo-ease);
+    }
+
+    .preview-search input {
+        min-width: 0;
+        flex: 1;
+        color: var(--foreground);
+        border: 0;
+        outline: 0;
+        background: transparent;
+    }
+
+    .preview-search input::placeholder {
+        color: var(--muted-foreground);
+    }
+
+    .preview-search kbd {
+        padding: 0.14rem 0.38rem;
+        color: var(--muted-foreground);
+        font-size: 0.62rem;
+        border: 1px solid var(--border);
+        border-radius: 0.35rem;
+        background: color-mix(in oklch, var(--background) 78%, transparent);
+    }
+
+    @keyframes preview-search-in {
+        from {
+            opacity: 0;
+            transform: translateY(-0.35rem) scale(0.97);
+        }
+    }
+
+    .preview-content {
+        display: grid;
+        gap: 1.1rem;
+        padding: clamp(1rem, 2.4cqw, 2.35rem) clamp(0.85rem, 2.4cqw, 2.35rem) 4.4rem;
+    }
+
+    .preview-intro {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.65fr);
+        align-items: end;
+        gap: 1.2rem;
+    }
+
+    .preview-kicker {
+        margin: 0 0 0.45rem;
+        color: color-mix(in oklch, var(--foreground) 58%, transparent);
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+    }
+
+    .preview-intro h2 {
+        max-width: 24ch;
+        margin: 0;
+        font-size: clamp(1.45rem, 2.8cqw, 2.75rem);
+        line-height: 1.06;
+        letter-spacing: -0.045em;
+        text-wrap: balance;
+    }
+
+    .preview-intro > p {
+        margin: 0;
+        color: var(--muted-foreground);
+        font-size: clamp(0.72rem, 1.05cqw, 0.9rem);
+        line-height: 1.65;
+    }
+
+    .archive-preview {
+        display: grid;
+        grid-template-columns: minmax(15rem, 0.92fr) minmax(21rem, 1.45fr) minmax(12rem, 0.72fr);
+        gap: clamp(0.65rem, 1.2cqw, 1rem);
+        min-height: clamp(20rem, 38svh, 27rem);
+    }
+
+    .archive-panel {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid color-mix(in oklch, var(--border) 62%, transparent);
+        border-radius: 1.35rem;
+        background: var(--demo-surface-content);
+        box-shadow: var(--demo-shadow-low);
+        transition:
+            background-color var(--demo-motion-state) ease,
+            border-color var(--demo-motion-state) ease,
+            box-shadow var(--demo-motion-state) ease,
+            transform var(--demo-motion-state) var(--demo-ease);
+    }
+
+    .demo-root[data-demo-material='layered'] .archive-panel,
+    .demo-root[data-demo-material='layered'] .featured-card {
+        background: color-mix(in oklch, var(--background) 44%, transparent);
+        box-shadow: var(--demo-shadow-float);
+        backdrop-filter: blur(20px);
+    }
+
+    .archive-panel header {
+        display: grid;
+        gap: 0.22rem;
+        padding: 1.1rem 1.15rem;
+        border-bottom: 1px solid color-mix(in oklch, var(--border) 52%, transparent);
+        background: var(--demo-surface-content-strong);
+    }
+
+    .archive-panel header span {
+        color: var(--muted-foreground);
+        font-size: 0.58rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+    }
+
+    .archive-panel header strong {
+        font-size: 1rem;
+    }
+
+    .archive-panel header small {
+        color: var(--muted-foreground);
+        font-size: 0.68rem;
+    }
+
+    .archive-list {
+        display: grid;
+        padding: 0.55rem;
+    }
+
+    .archive-list a {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.72rem;
+        min-height: 3.25rem;
+        padding: 0.55rem 0.65rem;
+        color: var(--muted-foreground);
+        text-decoration: none;
+        border-radius: 0.85rem;
+        transition:
+            color var(--demo-motion-state) ease,
+            background-color var(--demo-motion-state) ease,
+            transform var(--demo-motion-micro) ease;
+    }
+
+    .archive-list a:hover,
+    .archive-list a:focus-visible,
+    .archive-list a.is-active {
+        color: var(--foreground);
+        background: color-mix(in oklch, var(--foreground) 8%, transparent);
+    }
+
+    .archive-list a span,
+    .archive-list a time {
+        font-size: 0.64rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .archive-list a strong {
+        overflow: hidden;
+        font-size: 0.75rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .archive-panel-preview {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        isolation: isolate;
+        background: oklch(0.1 0.025 265);
+    }
+
+    .archive-cover {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 72% 22%, oklch(0.8 0.16 210 / 0.82), transparent 15%),
+            radial-gradient(circle at 28% 68%, oklch(0.62 0.24 302 / 0.68), transparent 24%),
+            linear-gradient(150deg, oklch(0.24 0.08 255), oklch(0.08 0.025 270));
+    }
+
+    .archive-cover::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            transparent 6%,
+            oklch(0.035 0.012 270 / 0.26) 42%,
+            oklch(0.025 0.01 270 / 0.95)
+        );
+    }
+
+    .archive-cover-orbit,
+    .archive-cover-orbit::before,
+    .archive-cover-orbit::after {
+        position: absolute;
+        top: 42%;
+        left: 52%;
+        width: 62%;
+        height: 24%;
+        content: '';
+        border: 2px solid oklch(0.94 0.04 240 / 0.46);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) rotate(-24deg);
+    }
+
+    .archive-cover-orbit::before {
+        top: 50%;
+        left: 50%;
+        width: 62%;
+        height: 190%;
+        transform: translate(-50%, -50%) rotate(72deg);
+    }
+
+    .archive-cover-orbit::after {
+        top: 50%;
+        left: 50%;
+        width: 28%;
+        height: 95%;
+        border: 0;
+        background: oklch(0.94 0.04 240 / 0.88);
+        box-shadow: 0 0 34px oklch(0.72 0.2 265 / 0.65);
+        transform: translate(-50%, -50%);
+    }
+
+    .archive-copy {
+        display: grid;
+        gap: 0.65rem;
+        padding: clamp(1rem, 2cqw, 1.6rem);
+        color: white;
+    }
+
+    .archive-chips {
+        display: flex;
+        gap: 0.35rem;
+    }
+
+    .archive-chips span,
+    .featured-chip {
+        width: fit-content;
+        padding: 0.25rem 0.52rem;
+        color: oklch(0.96 0.015 250);
+        font-size: 0.6rem;
+        font-weight: 800;
+        border: 1px solid oklch(1 0 0 / 0.2);
+        border-radius: 999px;
+        background: oklch(0.14 0.02 265 / 0.44);
+    }
+
+    .archive-copy h3 {
+        max-width: 18ch;
+        margin: 0;
+        font-size: clamp(1.25rem, 2.3cqw, 2.1rem);
+        line-height: 1.08;
+        text-wrap: balance;
+    }
+
+    .archive-copy p {
+        max-width: 34rem;
+        margin: 0;
+        color: oklch(0.9 0.018 250 / 0.84);
+        font-size: 0.75rem;
+        line-height: 1.6;
+    }
+
+    .archive-copy time {
+        color: oklch(0.86 0.02 250 / 0.66);
+        font-size: 0.65rem;
+    }
+
+    .archive-panel-rail ol {
+        display: grid;
+        gap: 0.35rem;
+        margin: 0;
+        padding: 0.65rem;
+        list-style: none;
+    }
+
+    .archive-panel-rail li {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 0.62rem;
+        min-height: 3rem;
+        padding: 0.45rem 0.55rem;
+        border-radius: 0.78rem;
+        background: color-mix(in oklch, var(--foreground) 4%, transparent);
+    }
+
+    .archive-panel-rail li span {
+        color: var(--muted-foreground);
+        font-size: 0.62rem;
+    }
+
+    .archive-panel-rail li strong {
+        font-size: 0.72rem;
+    }
+
+    .featured-preview {
+        display: grid;
+        grid-template-columns: 1.22fr 0.88fr 0.72fr;
+        gap: clamp(0.65rem, 1.2cqw, 1rem);
+        min-height: clamp(20rem, 38svh, 27rem);
+    }
+
+    .archive-preview:not([hidden]),
+    .featured-preview:not([hidden]) {
+        animation: preview-stage-in var(--demo-motion-stage) var(--demo-ease);
+    }
+
+    @keyframes preview-stage-in {
+        from {
+            opacity: 0;
+            transform: translateY(0.38rem);
+        }
+    }
+
+    .featured-card {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        padding: 1rem;
+        color: white;
+        text-decoration: none;
+        border: 1px solid oklch(1 0 0 / 0.18);
+        border-radius: 1.5rem;
+        background: oklch(0.1 0.025 265);
+        box-shadow: var(--demo-shadow-low);
+        isolation: isolate;
+        transition:
+            transform var(--demo-motion-state) var(--demo-ease),
+            border-color var(--demo-motion-state) ease,
+            box-shadow var(--demo-motion-state) ease;
+    }
+
+    .featured-card:hover,
+    .featured-card:focus-visible {
+        z-index: 2;
+        border-color: oklch(0.82 0.12 230 / 0.5);
+        box-shadow: var(--demo-shadow-float);
+        transform: translateY(-0.2rem);
+    }
+
+    .featured-art {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        transition: transform 480ms var(--demo-ease);
+    }
+
+    .featured-card:hover .featured-art,
+    .featured-card:focus-visible .featured-art {
+        transform: scale(1.025);
+    }
+
+    .featured-art::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            oklch(0.02 0.01 270 / 0.08),
+            oklch(0.02 0.01 270 / 0.2) 34%,
+            oklch(0.02 0.01 270 / 0.94)
+        );
+    }
+
+    .featured-art-a {
+        background:
+            radial-gradient(circle at 68% 22%, oklch(0.78 0.14 202), transparent 12%),
+            radial-gradient(circle at 38% 60%, oklch(0.48 0.23 294), transparent 26%),
+            linear-gradient(148deg, oklch(0.26 0.1 242), oklch(0.075 0.025 270));
+    }
+
+    .featured-art-b {
+        background:
+            radial-gradient(circle at 30% 20%, oklch(0.8 0.12 318), transparent 14%),
+            radial-gradient(circle at 75% 58%, oklch(0.5 0.22 252), transparent 26%),
+            linear-gradient(154deg, oklch(0.22 0.08 305), oklch(0.065 0.02 265));
+    }
+
+    .featured-art-c {
+        background:
+            radial-gradient(circle at 58% 30%, oklch(0.82 0.13 112), transparent 13%),
+            radial-gradient(circle at 36% 66%, oklch(0.55 0.18 198), transparent 25%),
+            linear-gradient(142deg, oklch(0.2 0.075 190), oklch(0.06 0.018 265));
+    }
+
+    .featured-card > div:last-child {
+        display: grid;
+        gap: 0.4rem;
+    }
+
+    .featured-card h3 {
+        max-width: 17ch;
+        margin: 0;
+        font-size: clamp(1rem, 2.1cqw, 2rem);
+        line-height: 1.08;
+        text-wrap: balance;
+    }
+
+    .featured-card p {
+        margin: 0;
+        color: oklch(0.9 0.018 250 / 0.78);
+        font-size: 0.72rem;
+        line-height: 1.55;
+    }
+
+    .preview-material-key {
+        position: absolute;
+        right: 1rem;
+        bottom: 0.8rem;
+        left: 1rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.85rem;
+        color: color-mix(in oklch, var(--foreground) 54%, transparent);
+        font-size: 0.58rem;
+        font-weight: 700;
+        pointer-events: none;
+    }
+
+    .preview-material-key span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .preview-material-key i {
+        width: 0.48rem;
+        height: 0.48rem;
+        border-radius: 50%;
+    }
+
+    .key-environment {
+        background: oklch(0.64 0.16 274);
+    }
+
+    .key-content {
+        background: color-mix(in oklch, var(--foreground) 34%, transparent);
+    }
+
+    .key-floating {
+        background: oklch(0.72 0.13 218);
+        box-shadow: 0 0 0.45rem oklch(0.72 0.13 218 / 0.55);
+    }
+
+    .demo-caption {
+        width: min(100%, 112rem);
+        margin: 0.75rem auto 0;
+        color: color-mix(in oklch, var(--foreground) 58%, transparent);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-align: center;
+        letter-spacing: 0.04em;
+    }
+
+    .preview-control:hover,
+    .preview-control:focus-visible {
+        border-color: color-mix(in oklch, var(--ring) 58%, var(--demo-control-border));
+        background: var(--demo-control-bg-hover);
+    }
+
+    .demo-root button:focus-visible,
+    .demo-root a:focus-visible,
+    .demo-root input:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+
+    .demo-root button:active {
+        transform: scale(0.97);
+    }
+
+    @container site-preview (min-width: 96rem) {
+        .preview-navbar {
+            grid-template-columns: minmax(16rem, 1fr) auto auto;
+            grid-template-areas: 'brand secondary primary';
+            min-height: 6.7rem;
+        }
+
+        .preview-secondary {
+            justify-self: auto;
+        }
+    }
+
+    @container site-preview (max-width: 58rem) {
+        .preview-navbar {
+            --demo-control-height: 2.35rem;
+            min-height: 5.5rem;
+        }
+
+        .preview-brand-copy small {
+            display: none;
+        }
+
+        .preview-language span,
+        .preview-language .preview-chevron {
+            display: none;
+        }
+
+        .preview-language {
+            width: var(--demo-control-height);
+            padding: 0;
+        }
+
+        .preview-intro {
+            grid-template-columns: 1fr;
+            gap: 0.65rem;
+        }
+
+        .preview-intro > p {
+            max-width: 38rem;
+        }
+
+        .archive-preview {
+            grid-template-columns: minmax(12rem, 0.92fr) minmax(17rem, 1.25fr);
+        }
+
+        .archive-panel-rail {
+            display: none;
+        }
+
+        .featured-preview {
+            grid-template-columns: 1.15fr 0.85fr;
+        }
+
+        .featured-card-small {
+            display: none;
+        }
+    }
+
+    @container site-preview (max-width: 40rem) {
+        .preview-navbar {
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.45rem;
+            padding: 0.65rem 0.7rem 0.72rem;
+        }
+
+        .preview-logo {
+            width: 2.65rem;
+        }
+
+        .preview-brand-copy {
+            display: none;
+        }
+
+        .preview-view-tabs button {
+            padding-inline: 0.58rem;
+        }
+
+        .preview-category-tabs {
+            display: none;
+        }
+
+        .preview-category-menu {
+            display: inline-flex;
+        }
+
+        .preview-secondary {
+            width: min(100%, 24rem);
+        }
+
+        .preview-layout-tabs {
+            min-width: max-content;
+        }
+
+        .preview-layout-tabs button {
+            width: calc(var(--demo-control-height) - 0.42rem);
+            padding-inline: 0;
+        }
+
+        .preview-layout-tabs button span {
+            display: none;
+        }
+
+        .preview-content {
+            padding: 1rem 0.72rem 4rem;
+        }
+
+        .preview-intro h2 {
+            font-size: clamp(1.35rem, 6.4cqw, 1.75rem);
+        }
+
+        .archive-preview,
+        .featured-preview {
+            grid-template-columns: 1fr;
+            min-height: auto;
+        }
+
+        .archive-panel-index,
+        .featured-card-side {
+            display: none;
+        }
+
+        .archive-panel-preview,
+        .featured-card-main {
+            min-height: 20rem;
+        }
+
+        .preview-material-key {
+            justify-content: center;
+            gap: 0.55rem;
+        }
+    }
+
+    @media (max-width: 820px) {
+        .demo-root {
+            padding: 1rem 0.72rem calc(var(--site-dock-height) + 1.8rem);
+        }
+
+        .demo-toolbar {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .demo-toolbar-controls {
+            justify-content: flex-start;
+        }
+
+        .demo-toolbar-group button {
+            padding-inline: 0.58rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .demo-viewport,
+        .preview-control,
+        .archive-panel,
+        .featured-card,
+        .featured-art {
+            transition: none !important;
+        }
+
+        .preview-search {
+            animation: none;
+        }
+    }
+</style>

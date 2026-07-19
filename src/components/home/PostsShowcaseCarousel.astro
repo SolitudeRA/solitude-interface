@@ -76,16 +76,20 @@ const exploreMoreText = getUIText('home', 'exploreMore', locale);
             showMoreButton && (
                 <a
                     href={postsPageUrl}
+                    data-media-card="home"
                     data-astro-prefetch="hover"
-                    class="showcase-card group relative isolate aspect-[4/3] w-[15rem] flex-shrink-0 cursor-pointer overflow-hidden rounded-[1.45rem] border border-[var(--home-showcase-card-border)] bg-[var(--home-showcase-card-bg)] shadow-[0_18px_34px_var(--home-showcase-card-shadow)] ring-1 ring-[var(--home-showcase-card-ring)] transition-[opacity,transform,border-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ring-inset hover:-translate-y-0.5 hover:scale-[1.016] hover:border-[var(--home-showcase-card-border-hover)] hover:opacity-100 hover:shadow-[0_24px_44px_var(--home-showcase-card-shadow-hover)] focus-visible:-translate-y-0.5 focus-visible:scale-[1.016] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transform-none motion-reduce:transition-none sm:w-[17rem] sm:rounded-[1.65rem] md:w-[19rem] lg:w-[21rem]"
+                    class="showcase-card group 3xl:w-[26rem] relative isolate aspect-[4/3] w-[15rem] flex-shrink-0 cursor-pointer overflow-hidden rounded-[1.45rem] border border-[var(--home-showcase-card-border)] bg-[var(--home-showcase-card-bg)] shadow-[0_18px_34px_var(--home-showcase-card-shadow)] ring-1 ring-[var(--home-showcase-card-ring)] transition-[opacity,transform,border-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ring-inset hover:-translate-y-0.5 hover:scale-[1.016] hover:border-[var(--home-showcase-card-border-hover)] hover:opacity-100 hover:shadow-[0_24px_44px_var(--home-showcase-card-shadow-hover)] focus-visible:-translate-y-0.5 focus-visible:scale-[1.016] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transform-none motion-reduce:transition-none sm:w-[17rem] sm:rounded-[1.65rem] md:w-[19rem] lg:w-[21rem] 2xl:w-[23rem]"
                     aria-label={viewAllText}
                 >
-                    <div class="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_28%_18%,var(--card-image-fallback-highlight),transparent_34%),linear-gradient(135deg,var(--card-image-fallback-start),var(--card-image-fallback-end))]" />
+                    <div data-media-card-media class="absolute inset-0 -z-30 overflow-hidden">
+                        <div class="absolute inset-0 scale-[1.02] bg-[radial-gradient(circle_at_28%_18%,var(--card-image-fallback-highlight),transparent_34%),linear-gradient(135deg,var(--card-image-fallback-start),var(--card-image-fallback-end))]" />
+                    </div>
                     <div
                         class="pointer-events-none absolute inset-0 -z-20"
                         style="background: var(--home-showcase-more-overlay);"
                     />
                     <div
+                        data-media-card-glow
                         class="pointer-events-none absolute inset-0 -z-10 opacity-80"
                         style="background: var(--home-showcase-more-glow);"
                     />
