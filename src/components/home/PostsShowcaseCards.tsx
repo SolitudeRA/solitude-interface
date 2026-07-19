@@ -74,11 +74,12 @@ export function ShowcaseCard({ post, index, isOtherHovered, onHover }: ShowcaseC
     return (
         <a
             href={post.url?.toString() || '#'}
+            data-media-card="home"
             data-title-density={titleDensity}
             className={cn(
                 // layout / stacking
                 'showcase-card group relative isolate flex-shrink-0 overflow-hidden rounded-[1.45rem] sm:rounded-[1.65rem]',
-                'aspect-[4/3] w-[15rem] cursor-pointer sm:w-[17rem] md:w-[19rem] lg:w-[21rem]',
+                '3xl:w-[26rem] aspect-[4/3] w-[15rem] cursor-pointer sm:w-[17rem] md:w-[19rem] lg:w-[21rem] 2xl:w-[23rem]',
 
                 // media-card material
                 'border border-[var(--home-showcase-card-border)]',
@@ -104,7 +105,7 @@ export function ShowcaseCard({ post, index, isOtherHovered, onHover }: ShowcaseC
             aria-label={`阅读文章: ${post.title}`}
         >
             {/* 背景层 */}
-            <div className="absolute inset-0 -z-30 overflow-hidden">
+            <div data-media-card-media className="absolute inset-0 -z-30 overflow-hidden">
                 {hasImage ? (
                     <img
                         src={post.feature_image?.toString() ?? ''}
@@ -131,6 +132,7 @@ export function ShowcaseCard({ post, index, isOtherHovered, onHover }: ShowcaseC
             />
 
             <div
+                data-media-card-glow
                 className={cn(
                     'pointer-events-none absolute inset-0 -z-10 opacity-0',
                     CARD_GLOW_TRANSITION_CLASS
@@ -189,7 +191,7 @@ export function SkeletonCard({ index }: { index: number }) {
         <div
             className={cn(
                 'flex-shrink-0 overflow-hidden rounded-[1.45rem] sm:rounded-[1.65rem]',
-                'w-[15rem] sm:w-[17rem] md:w-[19rem] lg:w-[21rem]',
+                '3xl:w-[26rem] w-[15rem] sm:w-[17rem] md:w-[19rem] lg:w-[21rem] 2xl:w-[23rem]',
                 'aspect-[4/3]',
                 'bg-muted/80 animate-pulse border border-white/15 ring-1 ring-white/10 ring-inset'
             )}
@@ -228,9 +230,10 @@ export function ViewMoreCard({ href, index, isOtherHovered, onHover, locale }: V
     return (
         <a
             href={href}
+            data-media-card="home"
             className={cn(
                 'showcase-card group relative isolate flex-shrink-0 overflow-hidden rounded-[1.45rem] sm:rounded-[1.65rem]',
-                'w-[15rem] sm:w-[17rem] md:w-[19rem] lg:w-[21rem]',
+                '3xl:w-[26rem] w-[15rem] sm:w-[17rem] md:w-[19rem] lg:w-[21rem] 2xl:w-[23rem]',
                 'aspect-[4/3] cursor-pointer',
                 'focus-visible:ring-ring focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                 'border border-[var(--home-showcase-card-border)] bg-[var(--home-showcase-card-bg)]',
@@ -247,7 +250,7 @@ export function ViewMoreCard({ href, index, isOtherHovered, onHover, locale }: V
             onPointerLeave={() => onHover(null)}
             aria-label={viewAllText}
         >
-            <div className="absolute inset-0 -z-30 overflow-hidden">
+            <div data-media-card-media className="absolute inset-0 -z-30 overflow-hidden">
                 <div
                     className={cn(
                         'h-full w-full bg-[radial-gradient(circle_at_28%_18%,var(--card-image-fallback-highlight),transparent_34%),linear-gradient(135deg,var(--card-image-fallback-start),var(--card-image-fallback-end))]',
@@ -264,6 +267,7 @@ export function ViewMoreCard({ href, index, isOtherHovered, onHover, locale }: V
             />
 
             <div
+                data-media-card-glow
                 className={cn(
                     'pointer-events-none absolute inset-0 -z-10 opacity-80',
                     CARD_GLOW_TRANSITION_CLASS

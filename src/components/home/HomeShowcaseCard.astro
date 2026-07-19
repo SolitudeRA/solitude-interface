@@ -37,19 +37,20 @@ const categoryLabel = isVisibleTag(post.post_category_label)
 
 <a
     href={post.url.pathname}
+    data-media-card="home"
     data-title-density={titleDensity}
     data-astro-prefetch="tap"
-    class="showcase-card group relative isolate aspect-[4/3] w-[15rem] flex-shrink-0 cursor-pointer overflow-hidden rounded-[1.45rem] border border-[var(--home-showcase-card-border)] bg-[var(--home-showcase-card-bg)] shadow-[0_18px_34px_var(--home-showcase-card-shadow)] ring-1 ring-[var(--home-showcase-card-ring)] transition-[opacity,transform,border-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ring-inset hover:-translate-y-0.5 hover:scale-[1.016] hover:border-[var(--home-showcase-card-border-hover)] hover:opacity-100 hover:shadow-[0_24px_44px_var(--home-showcase-card-shadow-hover)] focus-visible:-translate-y-0.5 focus-visible:scale-[1.016] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transform-none motion-reduce:transition-none sm:w-[17rem] sm:rounded-[1.65rem] md:w-[19rem] lg:w-[21rem]"
+    class="showcase-card group 3xl:w-[26rem] relative isolate aspect-[4/3] w-[15rem] flex-shrink-0 cursor-pointer overflow-hidden rounded-[1.45rem] border border-[var(--home-showcase-card-border)] bg-[var(--home-showcase-card-bg)] shadow-[0_18px_34px_var(--home-showcase-card-shadow)] ring-1 ring-[var(--home-showcase-card-ring)] transition-[opacity,transform,border-color,box-shadow] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ring-inset hover:-translate-y-0.5 hover:scale-[1.016] hover:border-[var(--home-showcase-card-border-hover)] hover:opacity-100 hover:shadow-[0_24px_44px_var(--home-showcase-card-shadow-hover)] focus-visible:-translate-y-0.5 focus-visible:scale-[1.016] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transform-none motion-reduce:transition-none sm:w-[17rem] sm:rounded-[1.65rem] md:w-[19rem] lg:w-[21rem] 2xl:w-[23rem]"
     aria-label={`阅读文章: ${post.title}`}
 >
-    <div class="absolute inset-0 -z-30 overflow-hidden">
+    <div data-media-card-media class="absolute inset-0 -z-30 overflow-hidden">
         {
             featureImageUrl ? (
                 <ResponsiveImage
                     src={featureImageUrl}
                     alt=""
                     widths={[320, 480, 640, 960, 1280]}
-                    sizes="(max-width: 639px) 240px, (max-width: 767px) 272px, (max-width: 1023px) 304px, 336px"
+                    sizes="(max-width: 639px) 240px, (max-width: 767px) 272px, (max-width: 1023px) 304px, (max-width: 1535px) 336px, (max-width: 2047px) 368px, 416px"
                     quality={100}
                     priority={index < 2}
                     progressive
@@ -68,6 +69,7 @@ const categoryLabel = isVisibleTag(post.post_category_label)
     >
     </div>
     <div
+        data-media-card-glow
         class="pointer-events-none absolute inset-0 -z-10 scale-[0.985] opacity-0 transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-100 group-hover:opacity-100"
         aria-hidden="true"
     >
