@@ -5,7 +5,7 @@ import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
 import SiteDock from '@components/layout/dock/SiteDock.astro';
 import PageHero from '@components/layout/PageHero.astro';
 import PageStage from '@components/layout/PageStage.astro';
-import AboutContent from '@components/pages/about/AboutContent.astro';
+import ContactContent from '@components/pages/contact/ContactContent.astro';
 import {
     LOCALES,
     type Locale,
@@ -16,50 +16,28 @@ import {
 import { env } from '@api/config/env';
 
 export async function getStaticPaths() {
-    return LOCALES.map((lang) => ({
-        params: { lang },
-    }));
+    return LOCALES.map((lang) => ({ params: { lang } }));
 }
 
 const { lang } = Astro.params;
-
-if (!isLocale(lang)) {
-    return Astro.redirect('/zh/about');
-}
+if (!isLocale(lang)) return Astro.redirect('/zh/contact');
 
 const locale = lang as Locale;
-const htmlLang = LOCALE_HTML_LANG[locale];
-
+const copy = {
+    zh: { title: 'Contact', badge: '联系我' },
+    ja: { title: 'Contact', badge: 'お問い合わせ' },
+    en: { title: 'Contact', badge: 'Get in Touch' },
+}[locale];
 const { siteTitle, siteDescription, logoUrl, coverImageUrl } = await initializeSiteData();
-
-// 多语言文本
-const i18n = {
-    zh: {
-        title: 'About Me',
-        heroFacts: ['开发者', '玩家', '内容创作者'],
-    },
-    ja: {
-        title: 'プロフィール',
-        heroFacts: ['開発者', 'ゲーマー', 'コンテンツクリエイター'],
-    },
-    en: {
-        title: 'About Me',
-        heroFacts: ['Developer', 'Gamer', 'Content Creator'],
-    },
-};
-
-const t = i18n[locale];
-
-// 生成 hreflang 链接
-const alternateLinks = generateAlternateLinks(env.site.url, '/about', LOCALES);
-const canonicalUrl = `${env.site.url}/${locale}/about`;
+const alternateLinks = generateAlternateLinks(env.site.url, '/contact', LOCALES);
+const canonicalUrl = `${env.site.url}/${locale}/contact`;
 ---
 
 <BaseLayout
     siteTitle={siteTitle}
-    pageTitle={t.title}
+    pageTitle={copy.title}
     coverImageUrl={coverImageUrl}
-    lang={htmlLang}
+    lang={LOCALE_HTML_LANG[locale]}
     locale={locale}
     canonicalUrl={canonicalUrl}
     alternateLinks={alternateLinks}
@@ -72,14 +50,12 @@ const canonicalUrl = `${env.site.url}/${locale}/about`;
         isFixed={true}
     />
 
-    <PageStage variant="content" transitionKey="about">
+    <PageStage variant="content" transitionKey="contact">
         <PageHero
-            variant="profile"
-            title={t.title}
+            title={copy.title}
             backgroundImage={coverImageUrl?.toString()}
-            badgeText="SolitudeRA"
+            badgeText={copy.badge}
             badgeIcon={true}
-            facts={t.heroFacts}
         >
             <svg
                 slot="badge-icon"
@@ -91,16 +67,18 @@ const canonicalUrl = `${env.site.url}/${locale}/about`;
                 stroke-linecap="round"
                 stroke-linejoin="round"
             >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+                <path
+                    d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                ></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
             </svg>
         </PageHero>
 
-        <div class="about-page min-h-screen">
+        <div class="contact-page min-h-screen">
             <div
-                class="about-content-wrapper 3xl:max-w-[88rem] mx-auto max-w-5xl px-5 sm:px-8 lg:px-12"
+                class="contact-content-wrapper 3xl:max-w-[72rem] mx-auto max-w-4xl px-5 sm:px-8 lg:px-12"
             >
-                <AboutContent locale={locale} />
+                <ContactContent />
             </div>
         </div>
     </PageStage>
@@ -108,18 +86,13 @@ const canonicalUrl = `${env.site.url}/${locale}/about`;
 </BaseLayout>
 
 <style>
-    .about-page {
+    .contact-page {
         position: relative;
-        background: linear-gradient(
-            180deg,
-            var(--page-hero-floor, var(--article-body-bg)) 0,
-            var(--article-body-bg) 16rem,
-            var(--article-body-bg) 100%
-        );
+        background-color: var(--page-hero-floor, var(--article-body-bg));
     }
 
-    .about-content-wrapper {
-        padding-top: clamp(1.5rem, 4svh, 2.75rem);
+    .contact-content-wrapper {
+        padding-top: clamp(2rem, 4svh, 3rem);
         padding-bottom: calc(var(--site-dock-height) + clamp(2rem, 4svh, 4rem));
     }
 </style>

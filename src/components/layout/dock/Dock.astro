@@ -16,7 +16,7 @@ const { isFixed = false, readerMode = false } = Astro.props;
     data-reader-dock={readerMode ? 'true' : undefined}
     transition:name="site-dock"
     class:list={[
-        'min-h-[8vh] w-full items-center md:min-h-[9vh] lg:min-h-[10vh]',
+        'site-dock-shell min-h-[var(--site-dock-height)] w-full items-center',
         'pb-3 md:pb-4',
         'flex justify-between md:grid md:grid-cols-3',
         '3xl:px-16 px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12',
@@ -27,6 +27,18 @@ const { isFixed = false, readerMode = false } = Astro.props;
 >
     <slot />
 </div>
+
+<style>
+    .site-dock-shell {
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+
+    @media (min-width: 768px) {
+        .site-dock-shell {
+            padding-bottom: 1rem;
+        }
+    }
+</style>
 
 <script>
     const dockWindow = window as Window & {

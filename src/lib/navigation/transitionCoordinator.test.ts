@@ -2,13 +2,16 @@
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    readPostArchiveScroll,
     readPostDestination,
+    readPostInputModality,
     readPostReturnUrl,
     readPostViewScroll,
     rememberPostDestination,
     rememberPostReturnUrl,
     rememberPostViewScroll,
 } from './navigationState';
+import { POST_ARCHIVE_RENDER_EVENT } from './postArchiveStateController';
 import { initSiteNavigationMotion } from './transitionCoordinator';
 import { SITE_TRANSITION_ATTRIBUTE, SITE_TRANSITIONS } from './transitionRegistry';
 
@@ -67,6 +70,7 @@ beforeEach(() => {
     document.body.innerHTML = '';
     window.sessionStorage.clear();
     frameCallbacks.length = 0;
+    document.dispatchEvent(new Event('pointerdown', { bubbles: true }));
 });
 
 describe('site navigation motion lifecycle', () => {
@@ -101,12 +105,12 @@ describe('site navigation motion lifecycle', () => {
         ).toBe('post-focus-media');
     });
 
-    it('adds the active archive page to the remembered return URL', () => {
-        setPath('/zh/post-view?view=list&archive=years');
+    it('preserves the outer page and records the clicked archive group page', () => {
+        setPath('/zh/post-view?view=list&archive=years&archivePage=2');
         document.body.innerHTML = `
             <main data-page-stage="posts">
-                <div data-post-list-root data-archive-active-page="3">
-                    <a href="/zh/p/homeserver-6" data-post-transition-source>
+                <div data-post-list-root data-archive-page="2">
+                    <a href="/zh/p/homeserver-6" data-post-transition-source data-archive-group-key="2024" data-archive-group-page="3">
                         <img data-post-transition-media alt="" />
                     </a>
                 </div>
@@ -117,7 +121,105 @@ describe('site navigation motion lifecycle', () => {
 
         link.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
 
-        expect(readPostReturnUrl()).toBe('/zh/post-view?view=list&archive=years&page=3');
+        expect(readPostReturnUrl()).toBe(
+            '/zh/post-view?view=list&archive=years&archivePage=2&archiveGroup=2024&archiveGroupPage=3'
+        );
+    });
+
+    it('returns from an article to the selected series without adding its first group page', () => {
+        setPath('/zh/post-view?view=list&archive=series&archivePage=2');
+        document.body.innerHTML = `
+            <main data-page-stage="posts">
+                <div data-post-list-root data-archive-layout="series" data-archive-page="2">
+                    <a href="/zh/p/homeserver-1" data-post-transition-source data-archive-group-key="home-server" data-archive-group-page="1">
+                        <img data-post-transition-media alt="" />
+                    </a>
+                </div>
+            </main>
+        `;
+        const link = document.querySelector<HTMLAnchorElement>('a[data-post-transition-source]')!;
+        link.addEventListener('click', (event) => event.preventDefault());
+
+        link.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+
+        expect(readPostReturnUrl()).toBe(
+            '/zh/post-view?view=list&archive=series&archivePage=2&archiveGroup=home-server'
+        );
+
+        setPath('/zh/p/homeserver-1');
+        document.body.innerHTML = '<div class="solitude-article-meta-motion-media"></div>';
+        const event = dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/post-view', window.location.origin),
+            signal: new AbortController().signal,
+        }) as Event & { to: URL };
+
+        expect(event.to.pathname).toBe('/zh/post-view');
+        expect(event.to.search).toBe(
+            '?view=list&archive=series&archivePage=2&archiveGroup=home-server'
+        );
+        expect(event.to.searchParams.has('archiveGroupPage')).toBe(false);
+    });
+
+    it('restores archive outer and group scroll after the hydrated page matches', () => {
+        setPath('/zh/post-view?view=list&archive=series&archivePage=2');
+        document.body.innerHTML = `
+            <main data-page-stage="posts">
+                <div data-post-list-root data-archive-layout="series" data-archive-page="2">
+                    <div data-archive-scroll-root>
+                        <section>
+                            <div data-archive-group-list="guide">
+                                <a href="/zh/p/guide-8" data-post-transition-source data-archive-group-key="guide" data-archive-group-page="2">Guide 8</a>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </main>
+        `;
+        const outer = document.querySelector<HTMLElement>('[data-archive-scroll-root]')!;
+        const group = document.querySelector<HTMLElement>('[data-archive-group-list]')!;
+        const link = document.querySelector<HTMLAnchorElement>('a[data-post-transition-source]')!;
+        outer.scrollTop = 418;
+        group.scrollTop = 92;
+        link.addEventListener('click', (event) => event.preventDefault());
+        link.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+
+        expect(readPostArchiveScroll()).toEqual({
+            layout: 'series',
+            page: 2,
+            outerTop: 418,
+            group: 'guide',
+            groupTop: 92,
+        });
+
+        setPath('/zh/p/guide-8');
+        document.body.innerHTML = '<div class="solitude-article-meta-motion-media"></div>';
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/post-view', window.location.origin),
+            signal: new AbortController().signal,
+        });
+        document.body.innerHTML = `
+            <div data-post-list-root data-archive-layout="ledger" data-archive-page="1">
+                <div data-archive-scroll-root></div>
+            </div>
+        `;
+        dispatchLifecycleEvent('astro:after-swap');
+
+        document.body.innerHTML = `
+            <div data-post-list-root data-archive-layout="series" data-archive-page="2">
+                <div data-archive-scroll-root>
+                    <div data-archive-group-list="guide"></div>
+                </div>
+            </div>
+        `;
+        window.dispatchEvent(new CustomEvent(POST_ARCHIVE_RENDER_EVENT));
+
+        expect(document.querySelector<HTMLElement>('[data-archive-scroll-root]')?.scrollTop).toBe(
+            418
+        );
+        expect(document.querySelector<HTMLElement>('[data-archive-group-list]')?.scrollTop).toBe(
+            92
+        );
+        expect(readPostArchiveScroll()).toBeNull();
     });
 
     it('redirects article return navigation to the remembered archive state', () => {
@@ -202,6 +304,91 @@ describe('site navigation motion lifecycle', () => {
         finishTransition?.();
     });
 
+    it('restores keyboard focus to the originating article after restoring the list position', () => {
+        document.body.innerHTML = `
+            <main data-page-stage="posts">
+                <div data-post-view-scroll>
+                    <a href="/zh/p/homeserver-1" data-post-transition-source>Home server</a>
+                </div>
+            </main>
+        `;
+        const sourceLink = document.querySelector<HTMLAnchorElement>(
+            'a[data-post-transition-source]'
+        )!;
+        sourceLink.addEventListener('click', (event) => event.preventDefault());
+        sourceLink.focus();
+        sourceLink.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        sourceLink.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+
+        expect(readPostInputModality()).toBe('keyboard');
+
+        setPath('/zh/p/homeserver-1');
+        document.body.innerHTML = '<div class="solitude-article-meta-motion-media"></div>';
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/post-view', window.location.origin),
+            signal: new AbortController().signal,
+        });
+
+        setPath('/zh/post-view');
+        document.body.innerHTML = `
+            <section data-view-section="gallery">
+                <div data-post-view-scroll></div>
+                <a href="/zh/p/homeserver-1" data-post-transition-source>Home server</a>
+            </section>
+        `;
+        const returnTarget = document.querySelector<HTMLAnchorElement>(
+            'a[data-post-transition-source]'
+        )!;
+        const focus = vi.spyOn(returnTarget, 'focus');
+
+        dispatchLifecycleEvent('astro:after-swap');
+        expect(focus).not.toHaveBeenCalled();
+        flushAnimationFrames();
+
+        expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+        expect(readPostInputModality()).toBeNull();
+    });
+
+    it('does not force focus back to an article opened with a pointer', () => {
+        document.body.innerHTML = `
+            <main data-page-stage="posts">
+                <a href="/zh/p/homeserver-1" data-post-transition-source>Home server</a>
+            </main>
+        `;
+        const sourceLink = document.querySelector<HTMLAnchorElement>(
+            'a[data-post-transition-source]'
+        )!;
+        sourceLink.addEventListener('click', (event) => event.preventDefault());
+        sourceLink.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+        sourceLink.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+
+        expect(readPostInputModality()).toBe('pointer');
+
+        setPath('/zh/p/homeserver-1');
+        document.body.innerHTML = '<div class="solitude-article-meta-motion-media"></div>';
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/post-view', window.location.origin),
+            signal: new AbortController().signal,
+        });
+
+        setPath('/zh/post-view');
+        document.body.innerHTML = `
+            <section data-view-section="gallery">
+                <a href="/zh/p/homeserver-1" data-post-transition-source>Home server</a>
+            </section>
+        `;
+        const returnTarget = document.querySelector<HTMLAnchorElement>(
+            'a[data-post-transition-source]'
+        )!;
+        const focus = vi.spyOn(returnTarget, 'focus');
+
+        dispatchLifecycleEvent('astro:after-swap');
+        flushAnimationFrames();
+
+        expect(focus).not.toHaveBeenCalled();
+        expect(readPostInputModality()).toBeNull();
+    });
+
     it('applies only same-origin post-view return URLs to the article back link', () => {
         setPath('/zh/p/homeserver-1');
         document.body.innerHTML = '<a class="article-back-link" href="/zh/post-view">Back</a>';
@@ -216,5 +403,95 @@ describe('site navigation motion lifecycle', () => {
         expect(backLink.getAttribute('href')).toBe(
             '/zh/post-view?view=list&archive=years#selected'
         );
+    });
+
+    it('moves focus to the new main stage after an ordinary SPA navigation', () => {
+        setPath('/zh/');
+        const controller = new AbortController();
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/about', window.location.origin),
+            signal: controller.signal,
+        });
+
+        setPath('/zh/about');
+        document.body.innerHTML =
+            '<main id="site-main-content" data-site-main-content tabindex="-1"></main>';
+        const mainContent = document.querySelector<HTMLElement>('[data-site-main-content]')!;
+        const focus = vi.spyOn(mainContent, 'focus');
+
+        dispatchLifecycleEvent('astro:page-load');
+
+        expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    });
+
+    it('focuses only the destination that owns the latest navigation request', () => {
+        setPath('/zh/');
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/about', window.location.origin),
+            signal: new AbortController().signal,
+        });
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/contact', window.location.origin),
+            signal: new AbortController().signal,
+        });
+
+        setPath('/zh/about');
+        document.body.innerHTML =
+            '<main id="site-main-content" data-site-main-content tabindex="-1"></main>';
+        const staleMain = document.querySelector<HTMLElement>('[data-site-main-content]')!;
+        const staleFocus = vi.spyOn(staleMain, 'focus');
+        dispatchLifecycleEvent('astro:page-load');
+
+        setPath('/zh/contact');
+        document.body.innerHTML =
+            '<main id="site-main-content" data-site-main-content tabindex="-1"></main>';
+        const currentMain = document.querySelector<HTMLElement>('[data-site-main-content]')!;
+        const currentFocus = vi.spyOn(currentMain, 'focus');
+        dispatchLifecycleEvent('astro:page-load');
+
+        expect(staleFocus).not.toHaveBeenCalled();
+        expect(currentFocus).toHaveBeenCalledWith({ preventScroll: true });
+    });
+
+    it('does not move focus on the initial page load or a hash-only navigation', () => {
+        document.body.innerHTML =
+            '<main id="site-main-content" data-site-main-content tabindex="-1"></main>';
+        const mainContent = document.querySelector<HTMLElement>('[data-site-main-content]')!;
+        const focus = vi.spyOn(mainContent, 'focus');
+
+        dispatchLifecycleEvent('astro:page-load');
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/post-view#selected', window.location.origin),
+            signal: new AbortController().signal,
+        });
+        dispatchLifecycleEvent('astro:page-load');
+
+        expect(focus).not.toHaveBeenCalled();
+    });
+
+    it('does not steal focus from post return restoration or an aborted navigation', () => {
+        setPath('/zh/p/homeserver-1');
+        document.body.innerHTML = '<div class="solitude-article-meta-motion-media"></div>';
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/post-view', window.location.origin),
+            signal: new AbortController().signal,
+        });
+
+        document.body.innerHTML =
+            '<main id="site-main-content" data-site-main-content tabindex="-1"></main>';
+        const mainContent = document.querySelector<HTMLElement>('[data-site-main-content]')!;
+        const focus = vi.spyOn(mainContent, 'focus');
+        dispatchLifecycleEvent('astro:page-load');
+
+        setPath('/zh/');
+        const controller = new AbortController();
+        dispatchLifecycleEvent('astro:before-preparation', {
+            to: new URL('/zh/contact', window.location.origin),
+            signal: controller.signal,
+        });
+        controller.abort();
+        dispatchLifecycleEvent('astro:page-load');
+
+        expect(focus).not.toHaveBeenCalled();
     });
 });

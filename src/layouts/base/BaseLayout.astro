@@ -17,6 +17,8 @@ interface Props {
     alternateLinks?: AlternateLink[];
     /** 当前页面的语言代码 (用于 RSS 发现) */
     locale?: 'zh' | 'ja' | 'en';
+    /** SSR 阶段写入文章浏览模式，避免 Navbar 次级控件在水合前闪现。 */
+    initialPostViewMode?: 'gallery' | 'list';
 }
 
 const {
@@ -27,6 +29,7 @@ const {
     canonicalUrl,
     alternateLinks = [],
     locale = 'zh',
+    initialPostViewMode,
 } = Astro.props;
 
 const documentTitle = pageTitle ? `${pageTitle} · ${siteTitle}` : siteTitle;
@@ -34,6 +37,11 @@ const fontStylesheet = {
     zh: notoSansScStylesheet,
     ja: notoSansJpStylesheet,
     en: notoSansStylesheet,
+}[locale];
+const skipToContentLabel = {
+    zh: '跳到主要内容',
+    ja: '本文へスキップ',
+    en: 'Skip to main content',
 }[locale];
 
 // RSS Feed URLs
@@ -52,7 +60,7 @@ const imageOrigin = (() => {
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} data-post-view-mode={initialPostViewMode} data-media-card-protocol="v2">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -221,6 +229,7 @@ const imageOrigin = (() => {
         <ClientRouter fallback="animate" />
     </head>
     <body>
+        <a class="site-skip-link" href="#site-main-content">{skipToContentLabel}</a>
         <div class="solitude-body" transition:persist="site-background">
             {
                 coverImageSrc && (
@@ -243,6 +252,38 @@ const imageOrigin = (() => {
 </html>
 
 <style>
+    .site-skip-link {
+        position: fixed;
+        top: 0.75rem;
+        left: var(--site-page-gutter);
+        z-index: 10000;
+        display: inline-flex;
+        min-height: 2.5rem;
+        align-items: center;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--background);
+        color: var(--foreground);
+        font-size: 0.875rem;
+        font-weight: 700;
+        box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.24);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(calc(-100% - 1rem));
+        transition:
+            opacity var(--top-control-motion-fast) var(--top-control-ease),
+            transform var(--top-control-motion-state) var(--top-control-ease);
+    }
+
+    .site-skip-link:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
     .solitude-body {
         top: 0;
         left: 0;

@@ -6,23 +6,11 @@
     data-theme-switch
     data-state="unchecked"
     class:list={[
-        'peer inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full',
-        'border transition-all duration-300',
-        'border-[var(--top-control-border)] bg-[var(--top-control-bg)] text-[var(--top-control-text)]',
-        'shadow-[0_8px_24px_var(--top-control-shadow)] hover:bg-[var(--top-control-bg-hover)] hover:shadow-[0_10px_28px_var(--top-control-shadow-hover)]',
+        'site-top-control site-top-icon-control peer',
         'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
     ]}
 >
-    <span
-        data-theme-switch-thumb
-        data-state="unchecked"
-        class:list={[
-            'pointer-events-none flex h-6 w-6 items-center justify-center rounded-full',
-            'transition-all duration-300',
-            'bg-[var(--top-control-thumb-bg)] text-[var(--top-control-thumb-text)]',
-            'shadow-[0_6px_18px_var(--top-control-thumb-shadow)]',
-        ]}
-    >
+    <span data-theme-switch-thumb data-state="unchecked" class="pointer-events-none contents">
         <svg
             data-theme-switch-icon="sun"
             class="h-4 w-4 text-current transition-transform duration-300"
@@ -69,14 +57,6 @@
 </button>
 
 <style>
-    [data-theme-switch-thumb] {
-        transform: translateX(0.25rem);
-    }
-
-    :global(html[data-theme='light']) [data-theme-switch-thumb] {
-        transform: translateX(1.75rem);
-    }
-
     [data-theme-switch-icon='sun'] {
         display: none;
     }

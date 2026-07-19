@@ -13,9 +13,9 @@ const { posts, locale } = Astro.props;
 const featuredPosts = posts || [];
 ---
 
-<div class="flex min-h-[75svh] w-full flex-col md:min-h-[75svh]">
+<div class="index-layout flex w-full flex-col">
     <Welcome />
-    <div class="flex flex-1 items-end justify-start px-4 pb-4 md:pb-7 md:pl-7">
+    <div class="index-showcase-row flex items-end justify-start px-4 pb-4 md:pb-7 md:pl-7">
         <!-- 桌面端（大屏+鼠标）限制宽度，触摸设备满宽 -->
         <div class="posts-showcase-wrapper w-full">
             <PostsShowcase featuredPosts={featuredPosts} locale={locale} />
@@ -28,10 +28,20 @@ const featuredPosts = posts || [];
         max-width: 100%;
     }
 
+    .index-layout {
+        min-height: calc(100svh - var(--site-navbar-height));
+        padding-bottom: var(--site-dock-height);
+    }
+
+    .index-showcase-row {
+        flex: 0 0 auto;
+    }
+
     /* 桌面端：大屏 + 支持悬停（非触摸设备） */
     @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
         .posts-showcase-wrapper {
-            max-width: 56%;
+            /* 1024px 时保持 56%，随后连续增长，在 1920px 达到原先的 72%。 */
+            max-width: min(120rem, clamp(56%, calc(56% + 33.5vw - 21.44rem), 72%));
         }
     }
 </style>

@@ -57,9 +57,9 @@ const canonicalUrl = `${env.site.url}/${locale}`;
     />
 
     <PageStage variant="home">
-        <main class="mx-auto">
+        <div class="mx-auto">
             <IndexLayout posts={posts} locale={locale} />
-        </main>
+        </div>
     </PageStage>
 
     <SiteDock isFixed={true} layout="home" lang={locale} />

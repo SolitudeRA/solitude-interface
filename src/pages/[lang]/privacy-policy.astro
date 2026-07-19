@@ -4,6 +4,7 @@ import BaseLayout from '@layouts/base/BaseLayout.astro';
 import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
 import SiteDock from '@components/layout/dock/SiteDock.astro';
 import PageHero from '@components/layout/PageHero.astro';
+import PageStage from '@components/layout/PageStage.astro';
 import PolicyContent from '@components/pages/privacy-policy/PolicyContent.astro';
 import {
     LOCALES,
@@ -74,18 +75,22 @@ const canonicalUrl = `${env.site.url}/${locale}/privacy-policy`;
         isFixed={true}
     />
 
-    <PageHero
-        title={t.title}
-        backgroundImage={coverImageUrl?.toString()}
-        badgeText={t.badge}
-        date={t.date}
-    />
+    <PageStage variant="content" transitionKey="privacy">
+        <PageHero
+            title={t.title}
+            backgroundImage={coverImageUrl?.toString()}
+            badgeText={t.badge}
+            date={t.date}
+        />
 
-    <main class="privacy-policy-page min-h-screen">
-        <div class="policy-content-wrapper mx-auto max-w-4xl px-6 sm:px-8 lg:px-12">
-            <PolicyContent locale={locale} />
+        <div class="privacy-policy-page min-h-screen">
+            <div
+                class="policy-content-wrapper 3xl:max-w-[64rem] mx-auto max-w-4xl px-5 sm:px-8 lg:px-12"
+            >
+                <PolicyContent locale={locale} />
+            </div>
         </div>
-    </main>
+    </PageStage>
     <SiteDock isFixed={true} layout="home" lang={locale} />
 </BaseLayout>
 
@@ -96,7 +101,7 @@ const canonicalUrl = `${env.site.url}/${locale}/privacy-policy`;
     }
 
     .policy-content-wrapper {
-        padding-top: 3rem;
-        padding-bottom: 3rem;
+        padding-top: clamp(2rem, 4svh, 3rem);
+        padding-bottom: calc(var(--site-dock-height) + clamp(2rem, 4svh, 4rem));
     }
 </style>

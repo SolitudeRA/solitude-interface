@@ -13,6 +13,9 @@
     --top-control-text: oklch(0.25 0.04 250);
     --top-control-shadow: oklch(0.34 0.04 250 / 0.14);
     --top-control-shadow-hover: oklch(0.34 0.04 250 / 0.2);
+    --top-control-surface-shadow: 0 12px 34px oklch(0.34 0.04 250 / 0.1);
+    --top-control-floating-shadow: 0 22px 64px oklch(0.3 0.035 250 / 0.2);
+    --top-control-active-shadow: 0 6px 18px color-mix(in oklch, var(--primary) 24%, transparent);
     --top-control-thumb-bg: oklch(0.92 0.09 92);
     --top-control-thumb-text: oklch(0.38 0.13 68);
     --top-control-thumb-shadow: oklch(0.42 0.06 85 / 0.22);

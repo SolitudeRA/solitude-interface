@@ -1,61 +1,20 @@
 ---
-import { initializeSiteData } from '@api/ghost/settings';
-import BaseLayout from '@layouts/base/BaseLayout.astro';
-import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
-import SiteDock from '@components/layout/dock/SiteDock.astro';
-import PageHero from '@components/layout/PageHero.astro';
-import ContactContent from '@components/pages/contact/ContactContent.astro';
-
-const { siteTitle, siteDescription, logoUrl, coverImageUrl } = await initializeSiteData();
+const redirectTo = '/zh/contact';
 ---
 
-<BaseLayout siteTitle={siteTitle} pageTitle="Contact" coverImageUrl={coverImageUrl} lang="en">
-    <SiteNavbar
-        logoUrl={logoUrl}
-        siteTitle={siteTitle}
-        siteSubTitle={siteDescription}
-        homeUrl="/zh"
-        isFixed={true}
-    />
-
-    <PageHero
-        title="Contact"
-        backgroundImage={coverImageUrl?.toString()}
-        badgeText="Get in Touch"
-        badgeIcon={true}
-    >
-        <svg
-            slot="badge-icon"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-        >
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-            ></path>
-            <polyline points="22,6 12,13 2,6"></polyline>
-        </svg>
-    </PageHero>
-
-    <main class="contact-page min-h-screen">
-        <div class="contact-content-wrapper mx-auto max-w-4xl px-6 sm:px-8 lg:px-12">
-            <ContactContent />
-        </div>
-    </main>
-    <SiteDock isFixed={true} layout="home" />
-</BaseLayout>
-
-<style>
-    .contact-page {
-        background-color: var(--page-hero-floor, var(--article-body-bg));
-        position: relative;
-    }
-
-    .contact-content-wrapper {
-        padding-top: 3rem;
-        padding-bottom: 3rem;
-    }
-</style>
+<!doctype html>
+<html lang="zh">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <meta http-equiv="refresh" content={`0; url=${redirectTo}`} />
+        <link rel="canonical" href={new URL(redirectTo, Astro.site)} />
+        <title>正在前往联系页面</title>
+        <script is:inline>
+            window.location.replace('/zh/contact');
+        </script>
+    </head>
+    <body>
+        <p>正在前往<a href={redirectTo}>联系页面</a>…</p>
+    </body>
+</html>

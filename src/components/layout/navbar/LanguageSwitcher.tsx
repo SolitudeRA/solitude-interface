@@ -109,7 +109,7 @@ export default function LanguageSwitcher({
                 onClick={() => setIsOpen((open) => (canSwitchLocale ? !open : false))}
                 onKeyDown={handleKeyDown}
                 className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5',
+                    'flex shrink-0 items-center gap-1.5 px-3 py-1.5 whitespace-nowrap',
                     'rounded-full',
                     'border transition-all duration-300',
                     'border-[var(--top-control-border)] bg-[var(--top-control-bg)] text-[var(--top-control-text)]',

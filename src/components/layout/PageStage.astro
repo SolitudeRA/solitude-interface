@@ -1,25 +1,34 @@
 ---
 interface Props {
-    variant: 'home' | 'posts' | 'about' | 'article';
+    variant: 'home' | 'posts' | 'content' | 'article';
+    transitionKey?: 'home' | 'posts' | 'about' | 'contact' | 'privacy' | 'article';
     class?: string;
 }
 
-const { variant, class: className } = Astro.props;
-const transitionName = `site-page-stage-${variant}`;
+const { variant, transitionKey = variant, class: className } = Astro.props;
+const transitionName = `site-page-stage-${transitionKey}`;
 ---
 
-<div
+<main
+    id="site-main-content"
+    tabindex="-1"
+    data-site-main-content
     data-page-stage={variant}
     class:list={['site-page-stage', className]}
     transition:name={transitionName}
 >
     <slot />
-</div>
+</main>
 
 <style>
     .site-page-stage {
         position: relative;
         width: 100%;
         min-width: 0;
+        outline: none;
+    }
+
+    .site-page-stage[data-page-stage='article'] {
+        padding-bottom: calc(var(--site-dock-height) + 1rem);
     }
 </style>

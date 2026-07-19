@@ -147,15 +147,15 @@ const fallbackMessage = isFallback ? getFallbackMessage(locale, displayedLocale)
         displayLocale={displayedLocale}
     />
 
-    {
-        isFallback && fallbackMessage && (
-            <div class="post-detail-controls">
-                <FallbackNotice message={fallbackMessage} />
-            </div>
-        )
-    }
-
     <PageStage variant="article">
+        {
+            isFallback && fallbackMessage && (
+                <div class="post-detail-controls">
+                    <FallbackNotice message={fallbackMessage} />
+                </div>
+            )
+        }
+
         <PostContent
             title={post.title}
             feature_image={post.feature_image}
@@ -183,22 +183,21 @@ const fallbackMessage = isFallback ? getFallbackMessage(locale, displayedLocale)
 <style>
     .post-detail-controls {
         display: grid;
-        width: min(96rem, calc(100% - 2rem));
+        width: min(var(--site-wide-content), calc(100% - 2rem));
         margin: 0 auto;
-        padding-top: calc(12svh + 0.75rem);
+        padding-top: calc(var(--site-navbar-height) + 0.75rem);
         gap: 1rem;
     }
 
     @media (min-width: 640px) {
         .post-detail-controls {
-            padding-top: calc(13svh + 1rem);
+            padding-top: calc(var(--site-navbar-height) + 1rem);
         }
     }
 
     @media (min-width: 768px) {
         .post-detail-controls {
-            width: min(96rem, calc(100% - 3rem));
-            padding-top: calc(14svh + 1rem);
+            width: min(var(--site-wide-content), calc(100% - 3rem));
         }
     }
 </style>

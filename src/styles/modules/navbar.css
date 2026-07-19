@@ -5,13 +5,15 @@
 
 @layer components {
     .smart-navbar {
+        --site-navbar-inline-gutter: var(--site-page-gutter);
+
         background: transparent;
         border-bottom: 1px solid transparent;
         box-shadow: none;
         transition:
-            background 0.3s ease,
-            border-color 0.3s ease,
-            box-shadow 0.3s ease;
+            background var(--top-control-motion-state) ease,
+            border-color var(--top-control-motion-state) ease,
+            box-shadow var(--top-control-motion-state) ease;
     }
 
     .smart-navbar-scrolled {
@@ -20,5 +22,317 @@
         -webkit-backdrop-filter: blur(16px);
         border-bottom: 1px solid var(--navbar-scrolled-border);
         box-shadow: 0 4px 20px var(--navbar-scrolled-shadow);
+    }
+
+    .site-navbar-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: 'brand primary';
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        padding-inline: var(--site-navbar-inline-gutter);
+    }
+
+    .site-navbar-shell[data-navbar-has-secondary='true'] {
+        grid-template-areas:
+            'brand primary'
+            'brand secondary';
+        grid-template-rows: auto auto;
+        align-content: center;
+        gap: 0.45rem 0.75rem;
+        padding-block: 0.6rem;
+    }
+
+    .site-navbar-brand {
+        grid-area: brand;
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: clamp(0.7rem, 1.35vw, 1.1rem);
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .site-navbar-logo {
+        width: clamp(2.8rem, 4.4vw, 4.2rem);
+        height: clamp(2.8rem, 4.4vw, 4.2rem);
+        flex: none;
+        overflow: hidden;
+        border: 1px solid color-mix(in oklch, var(--top-control-border) 80%, transparent);
+        border-radius: 28%;
+        object-fit: cover;
+        box-shadow:
+            0 14px 34px color-mix(in oklch, var(--top-control-shadow) 72%, transparent),
+            0 1px 0 color-mix(in oklch, white 20%, transparent) inset;
+    }
+
+    .site-navbar-brand-copy {
+        display: grid;
+        min-width: 0;
+        gap: 0.22rem;
+    }
+
+    .site-navbar-title,
+    .site-navbar-subtitle {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .site-navbar-title {
+        font-size: clamp(1.2rem, 2vw, 2rem);
+        line-height: 1.05;
+        letter-spacing: -0.025em;
+    }
+
+    .site-navbar-subtitle {
+        font-size: clamp(0.7rem, 1vw, 1rem);
+        line-height: 1.25;
+    }
+
+    .site-navbar-primary,
+    .site-navbar-secondary {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--top-control-gap);
+    }
+
+    .site-navbar-primary {
+        grid-area: primary;
+        justify-self: end;
+    }
+
+    .site-navbar-secondary {
+        grid-area: secondary;
+        min-height: var(--top-control-height);
+        justify-self: end;
+    }
+
+    [data-post-view-secondary] {
+        display: flex;
+        min-height: var(--top-control-height);
+        align-items: center;
+        justify-content: flex-end;
+        transition:
+            opacity var(--top-control-motion-state) ease,
+            transform var(--top-control-motion-state) var(--top-control-ease),
+            visibility 0s linear;
+    }
+
+    html:not([data-post-view-mode='list']) [data-post-view-secondary] {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-0.25rem);
+        transition:
+            opacity var(--top-control-motion-state) ease,
+            transform var(--top-control-motion-state) var(--top-control-ease),
+            visibility 0s linear var(--top-control-motion-state);
+    }
+
+    .site-top-control {
+        height: var(--top-control-height);
+        min-height: var(--top-control-height);
+        flex: none;
+        color: var(--top-control-text);
+        border: 1px solid var(--top-control-border);
+        border-radius: var(--top-control-radius);
+        background: var(--top-control-bg);
+        box-shadow: var(--top-control-surface-shadow);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        transition:
+            color var(--top-control-motion-state) ease,
+            background-color var(--top-control-motion-state) ease,
+            border-color var(--top-control-motion-state) ease,
+            box-shadow var(--top-control-motion-state) ease,
+            transform var(--top-control-motion-fast) ease;
+    }
+
+    button.site-top-control,
+    .site-top-control button {
+        cursor: pointer;
+    }
+
+    .site-top-control:hover,
+    .site-top-control:focus-visible,
+    .site-top-control:focus-within {
+        border-color: color-mix(in oklch, var(--top-control-accent) 58%, var(--top-control-border));
+        background: var(--top-control-bg-hover);
+    }
+
+    button.site-top-control:active,
+    .site-top-control button:active {
+        transform: scale(0.97);
+    }
+
+    .site-top-control-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.12rem;
+        padding: 0.2rem;
+    }
+
+    .site-top-control-item {
+        display: inline-flex;
+        height: calc(var(--top-control-height) - 0.5rem);
+        min-height: calc(var(--top-control-height) - 0.5rem);
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        padding-inline: 0.76rem;
+        color: var(--muted-foreground);
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+        border: 1px solid transparent;
+        border-radius: inherit;
+        background: transparent;
+        transition:
+            color var(--top-control-motion-state) ease,
+            background-color var(--top-control-motion-state) ease,
+            border-color var(--top-control-motion-state) ease,
+            box-shadow var(--top-control-motion-state) ease,
+            transform var(--top-control-motion-fast) ease;
+    }
+
+    .site-top-control-item[data-active='true'],
+    .site-top-control-item[aria-selected='true'],
+    .site-top-control-item[aria-pressed='true'] {
+        color: var(--primary-foreground);
+        border-color: color-mix(in oklch, var(--primary) 72%, transparent);
+        background: var(--primary);
+        box-shadow: var(--top-control-active-shadow);
+    }
+
+    .site-top-control-item:not([data-active='true']):not([aria-selected='true']):not(
+            [aria-pressed='true']
+        ):hover {
+        color: var(--foreground);
+        background: color-mix(in oklch, var(--foreground) 7%, transparent);
+    }
+
+    .site-top-icon-control {
+        display: inline-flex;
+        width: var(--top-control-height);
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .site-top-language-control {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.42rem;
+        padding-inline: 0.78rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .site-top-select {
+        max-width: 8.5rem;
+        padding-inline: 0.78rem 2rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        outline: none;
+    }
+
+    .site-top-popover {
+        color: var(--top-control-menu-item-text);
+        border: 1px solid var(--top-control-menu-border);
+        background: var(--top-control-menu-bg);
+        box-shadow: var(--top-control-floating-shadow);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+    }
+
+    /* Keep the search surface mounted so its close transition stays smooth without a JS
+       animation runtime in the eagerly hydrated navbar islands. */
+    .archive-search-panel {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-0.375rem) scale(0.985);
+        transition:
+            opacity var(--top-control-motion-state) ease,
+            transform var(--top-control-motion-state) var(--top-control-ease),
+            visibility 0s linear var(--top-control-motion-state);
+    }
+
+    .archive-search-panel[data-open='true'] {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+        transition-delay: 0s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .archive-search-panel {
+            transition: none;
+        }
+    }
+
+    @media (max-width: 58rem) {
+        .site-navbar-subtitle,
+        [data-language-label],
+        [data-language-chevron] {
+            display: none;
+        }
+
+        .site-top-language-control {
+            width: var(--top-control-height);
+            padding: 0;
+        }
+    }
+
+    @media (max-width: 40rem) {
+        .site-navbar-shell {
+            gap: 0.42rem;
+            padding-inline: 0.7rem;
+        }
+
+        .site-navbar-shell[data-navbar-has-secondary='true'] {
+            padding-block: 0.58rem;
+        }
+
+        .site-navbar-brand[data-navbar-brand-hide-mobile='true'] .site-navbar-brand-copy {
+            display: none;
+        }
+
+        .site-navbar-logo {
+            width: 2.65rem;
+            height: 2.65rem;
+        }
+
+        [data-archive-layout-button] {
+            width: calc(var(--top-control-height) - 0.42rem);
+            padding-inline: 0;
+        }
+
+        [data-archive-layout-label] {
+            display: none;
+        }
+    }
+
+    @media (min-width: 96rem) {
+        .site-navbar-shell[data-navbar-has-secondary='true'] {
+            grid-template-columns: minmax(16rem, 1fr) auto auto;
+            grid-template-areas: 'brand secondary primary';
+            grid-template-rows: 1fr;
+            gap: 0.75rem;
+            padding-block: 0;
+        }
+
+        .site-navbar-secondary {
+            justify-self: auto;
+        }
     }
 }

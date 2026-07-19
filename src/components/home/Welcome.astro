@@ -3,14 +3,31 @@
 ---
 
 <div
-    class="welcome-title flex h-auto min-h-[35svh] w-full justify-center pt-[15svh] text-center text-[2em] font-bold opacity-90 md:h-[45svh] md:min-h-0 md:pt-[28.5svh] md:text-[3.5em]"
+    class="welcome-title flex min-h-0 w-full flex-1 items-center justify-center px-5 py-6 text-center font-bold opacity-90"
 >
-    Hi there, I'm SolitudeRA
+    <span>Hi there, I'm SolitudeRA</span>
 </div>
 
 <style>
     .welcome-title {
         color: var(--text-site-title);
+        font-size: clamp(1.8rem, 4.2vw, 3.5rem);
+        line-height: 1.12;
+        text-wrap: balance;
+    }
+
+    .welcome-title span {
+        max-width: 20ch;
+    }
+
+    @media (max-width: 420px) {
+        .welcome-title {
+            font-size: clamp(1.7rem, 8.5vw, 2.1rem);
+        }
+
+        .welcome-title span {
+            max-width: 17ch;
+        }
     }
 
     /* 暗色主题 - 增强标题对比度，防止亮背景区域发灰 */

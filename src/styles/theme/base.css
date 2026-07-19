@@ -7,10 +7,50 @@
     /* ===== 圆角设置 ===== */
     --radius: 0.625rem;
 
+    /* ===== 全站响应式几何 ===== */
+    --site-navbar-height: clamp(4.75rem, 12svh, 6.25rem);
+    --site-dock-height: clamp(4.75rem, 9svh, 7rem);
+    --site-page-gutter: clamp(1rem, 2.5vw, 4rem);
+    /* 1536px 前保持 96rem，随后平滑增长，在 2048px 达到 120rem。 */
+    --site-wide-content: clamp(96rem, calc(75vw + 24rem), 120rem);
+
+    /* ===== 顶部导航设计基线 ===== */
+    --top-control-height: 2.5rem;
+    --top-control-radius: 999px;
+    --top-control-gap: 0.375rem;
+    --top-control-motion-fast: 150ms;
+    --top-control-motion-state: 210ms;
+    --top-control-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* ===== 媒体卡动效协议 ===== */
+    --media-card-motion-micro: 150ms;
+    --media-card-motion-state: 210ms;
+    --media-card-motion-stage: 300ms;
+    --media-card-motion-media: 480ms;
+    --media-card-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
     /* ===== 默认字体栈 ===== */
     font-family:
         'Noto Sans Variable', 'Noto Sans SC Variable', 'Noto Sans JP Variable', system-ui,
         sans-serif;
+}
+
+@media (max-width: 58rem) {
+    :root {
+        --top-control-height: 2.35rem;
+    }
+}
+
+@media (min-width: 640px) {
+    :root {
+        --site-navbar-height: clamp(5rem, 11svh, 7rem);
+    }
+}
+
+@media (min-width: 2048px) {
+    :root {
+        font-size: clamp(16px, 0.52vw, 20px);
+    }
 }
 
 /* ===== 多语言字体优先级 ===== */
