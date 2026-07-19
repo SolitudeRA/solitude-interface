@@ -1,0 +1,161 @@
+---
+import Dock from '@components/layout/dock/Dock.astro';
+import DockNav from '@components/layout/dock/DockNav.astro';
+import DockSocial from '@components/layout/dock/DockSocial.astro';
+import SiteNavbar from '@components/layout/navbar/SiteNavbar.astro';
+import PageStage from '@components/layout/PageStage.astro';
+import PostArchiveNavbar from '@components/posts/view/PostArchiveNavbar';
+import PostArchiveSearch from '@components/posts/view/PostArchiveSearch';
+import PostArchiveView from '@components/posts/view/PostArchiveView';
+import BaseLayout from '@layouts/base/BaseLayout.astro';
+import { parseArchiveParams, type PostArchiveItem } from '@lib/postArchive';
+import { extractFacets } from '@lib/postBrowse';
+
+const SERIES_COUNT = 12;
+const YEAR_COUNT = 8;
+const POST_COUNT = 144;
+
+const posts: PostArchiveItem[] = Array.from({ length: POST_COUNT }, (_, index) => {
+    const seriesIndex = index % SERIES_COUNT;
+    const year = 2026 - (index % YEAR_COUNT);
+    const part = Math.floor(index / SERIES_COUNT) + 1;
+    const isStandalone = index % 17 === 0;
+    const category = ['tech', 'design', 'life'][index % 3] ?? 'tech';
+    const categoryLabel = { tech: '技术', design: '设计', life: '生活' }[category] ?? category;
+
+    return {
+        id: `scale-post-${index + 1}`,
+        title: isStandalone
+            ? `独立观察笔记 ${String(index + 1).padStart(3, '0')}`
+            : `系列 ${String(seriesIndex + 1).padStart(2, '0')} · 第 ${part} 篇`,
+        excerpt: '用于验证大量文章、系列和年份下的分页、溢出与详情返回状态。',
+        url: `#scale-post-${index + 1}`,
+        feature_image: null,
+        published_at: `${year}-${String((index % 12) + 1).padStart(2, '0')}-${String(
+            (index % 27) + 1
+        ).padStart(2, '0')}T08:00:00.000Z`,
+        post_type: 'article',
+        post_type_label: '文章',
+        post_category: category,
+        post_category_label: categoryLabel,
+        post_series: isStandalone ? '' : `series-${seriesIndex + 1}`,
+        ...(isStandalone
+            ? {}
+            : {
+                  post_series_slug: `series-${seriesIndex + 1}`,
+                  post_series_label: `扩展性验证系列 ${String(seriesIndex + 1).padStart(2, '0')}`,
+                  post_series_number: `#${String(part).padStart(2, '0')}`,
+              }),
+    };
+});
+
+const initialState = parseArchiveParams(Astro.url.searchParams);
+const facets = extractFacets(posts);
+const demoUrl = `${Astro.url.pathname}?view=list`;
+---
+
+<BaseLayout
+    siteTitle="Archive Scale Lab"
+    pageTitle="归档扩展性预览"
+    coverImageUrl={null}
+    locale="zh"
+    lang="zh-CN"
+    initialPostViewMode="list"
+>
+    <SiteNavbar
+        logoUrl="/favicon.svg"
+        siteTitle="Archive Scale Lab"
+        siteSubTitle={`${POST_COUNT} 篇文章 · ${SERIES_COUNT} 个系列 · ${YEAR_COUNT} 个年份`}
+        homeUrl={demoUrl}
+        hideTitleOnMobile={true}
+    >
+        <div slot="utility-secondary" data-post-view-secondary class="w-max max-w-full">
+            <PostArchiveNavbar
+                client:load
+                locale="zh"
+                categories={facets.categories}
+                initialLayout={initialState.layout}
+                initialCategory={initialState.filters.category}
+            />
+        </div>
+        <div slot="utility-end" class="contents">
+            <PostArchiveSearch client:load locale="zh" initialQuery={initialState.filters.query} />
+        </div>
+    </SiteNavbar>
+
+    <PageStage variant="posts">
+        <PostArchiveView
+            client:load
+            posts={posts}
+            locale="zh"
+            initialFilters={initialState.filters}
+            initialLayout={initialState.layout}
+            initialPagination={initialState.pagination}
+        />
+    </PageStage>
+
+    <Dock isFixed={true}>
+        <div id="post-archive-pagination-host" class="flex min-w-0 items-center justify-self-start">
+        </div>
+        <DockNav lang="zh" />
+        <DockSocial lang="zh" />
+    </Dock>
+</BaseLayout>
+
+<style>
+    :global(html:has([data-post-view-secondary])) {
+        --site-navbar-height: clamp(6.5rem, 15svh, 7.1rem);
+    }
+
+    :global(html),
+    :global(body) {
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    :global(.post-view-main-viewport) {
+        --post-view-available-height: calc(
+            100svh - var(--site-navbar-height) - var(--site-dock-height)
+        );
+        --post-view-content-height: clamp(
+            500px,
+            min(72svh, var(--post-view-available-height)),
+            780px
+        );
+
+        height: var(--post-view-available-height);
+        min-height: 0;
+    }
+
+    @media (pointer: coarse) {
+        :global(.post-view-main-viewport) {
+            --post-view-content-height: clamp(
+                430px,
+                min(68svh, var(--post-view-available-height)),
+                560px
+            );
+        }
+    }
+
+    @media (min-width: 96rem) {
+        :global(html:has([data-post-view-secondary])) {
+            --site-navbar-height: clamp(5rem, 11svh, 7rem);
+        }
+    }
+
+    @media (pointer: fine) and (max-height: 780px) {
+        :global(.post-view-main-viewport) {
+            --post-view-content-height: clamp(420px, var(--post-view-available-height), 560px);
+        }
+    }
+
+    @media (pointer: fine) and (min-width: 1920px) {
+        :global(.post-view-main-viewport) {
+            --post-view-content-height: clamp(
+                620px,
+                min(72svh, var(--post-view-available-height)),
+                820px
+            );
+        }
+    }
+</style>

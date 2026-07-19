@@ -103,6 +103,15 @@ export function getTagLabel(
     return label;
 }
 
+export function getTagDescription(
+    slug: string,
+    locale: Locale,
+    registry: TagRegistry = {}
+): string {
+    const description = registry[slug]?.description;
+    return description?.[locale]?.trim() || description?.[DEFAULT_LOCALE]?.trim() || '';
+}
+
 export function localizeTag(
     tag: PostTag | undefined,
     locale: Locale,
