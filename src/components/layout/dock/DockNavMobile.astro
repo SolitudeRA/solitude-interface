@@ -16,9 +16,11 @@ interface Props {
 }
 
 const { lang = DEFAULT_LOCALE } = Astro.props;
+const homeLink = `/${lang}`;
+const postsLink = buildLocalePath(lang, 'post-view');
 const navItems = [
-    { href: `/${lang}`, label: 'Home' },
-    { href: buildLocalePath(lang, 'post-view'), label: 'Posts' },
+    { href: homeLink, label: 'Home' },
+    { href: postsLink, label: 'Posts' },
     { href: buildLocalePath(lang, 'about'), label: 'About Me' },
     { href: buildLocalePath(lang, 'contact'), label: 'Contact' },
     { href: buildLocalePath(lang, 'privacy-policy'), label: 'Privacy Policy' },
@@ -40,6 +42,8 @@ const rssOptions = [
 const currentText = getUIText('rss', 'current', 'en');
 const isCurrentRoute = (href: string) =>
     isCurrentDockDestination(Astro.url, new URL(href, Astro.url));
+const getPrefetchStrategy = (href: string) =>
+    href === homeLink || href === postsLink ? 'viewport' : 'tap';
 ---
 
 <div class="relative md:hidden" data-dock-menu-root data-dock-nav-mobile data-open="false">
@@ -74,7 +78,7 @@ const isCurrentRoute = (href: string) =>
                     <a
                         href={item.href}
                         data-dock-route
-                        data-astro-prefetch="tap"
+                        data-astro-prefetch={getPrefetchStrategy(item.href)}
                         data-dock-nav-close
                         aria-current={isCurrentRoute(item.href) ? 'page' : undefined}
                         class:list={[
@@ -146,7 +150,7 @@ const isCurrentRoute = (href: string) =>
                     <a
                         href={item.href}
                         data-dock-route
-                        data-astro-prefetch="tap"
+                        data-astro-prefetch={getPrefetchStrategy(item.href)}
                         data-dock-nav-close
                         aria-current={isCurrentRoute(item.href) ? 'page' : undefined}
                         class:list={[
