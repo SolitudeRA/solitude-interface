@@ -24,6 +24,8 @@ const contactLabel = 'Contact';
 const privacyLabel = 'Privacy';
 const isCurrentRoute = (href: string) =>
     isCurrentDockDestination(Astro.url, new URL(href, Astro.url));
+const getPrefetchStrategy = (href: string) =>
+    href === homeLink || href === postsLink ? 'viewport' : 'hover';
 ---
 
 <!-- 移动端汉堡菜单 - 小于768px -->
@@ -47,7 +49,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={homeLink}
                 data-dock-route
-                data-astro-prefetch="hover"
+                data-astro-prefetch={getPrefetchStrategy(homeLink)}
                 aria-current={isCurrentRoute(homeLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{homeLabel}</a
@@ -57,7 +59,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={postsLink}
                 data-dock-route
-                data-astro-prefetch="hover"
+                data-astro-prefetch={getPrefetchStrategy(postsLink)}
                 aria-current={isCurrentRoute(postsLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{postsLabel}</a
@@ -67,7 +69,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={aboutLink}
                 data-dock-route
-                data-astro-prefetch="hover"
+                data-astro-prefetch={getPrefetchStrategy(aboutLink)}
                 aria-current={isCurrentRoute(aboutLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{aboutLabel}</a
@@ -78,7 +80,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={contactLink}
                 data-dock-route
-                data-astro-prefetch="hover"
+                data-astro-prefetch={getPrefetchStrategy(contactLink)}
                 aria-current={isCurrentRoute(contactLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{contactLabel}</a
@@ -93,7 +95,7 @@ const isCurrentRoute = (href: string) =>
             <a
                 href={privacyLink}
                 data-dock-route
-                data-astro-prefetch="hover"
+                data-astro-prefetch={getPrefetchStrategy(privacyLink)}
                 aria-current={isCurrentRoute(privacyLink) ? 'page' : undefined}
                 class="dock-nav-link text-xs font-medium whitespace-nowrap md:text-sm lg:text-base"
                 >{privacyLabel}</a

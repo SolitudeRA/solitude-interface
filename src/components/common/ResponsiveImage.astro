@@ -110,9 +110,9 @@ const progressiveSources = await (async () => {
                 height={progressiveSources[1].attributes.height}
                 alt=""
                 class="responsive-image-stage responsive-image-medium"
-                loading="lazy"
+                loading={priority ? 'eager' : 'lazy'}
                 decoding="async"
-                fetchpriority="auto"
+                fetchpriority={priority ? 'high' : 'auto'}
                 data-progressive-medium
                 data-progressive-src={progressiveSources[1].src}
                 aria-hidden="true"
@@ -190,6 +190,17 @@ const progressiveSources = await (async () => {
         --progressive-high-fade-duration: 160ms;
 
         display: block;
+        background:
+            radial-gradient(
+                circle at 30% 20%,
+                var(--card-image-fallback-highlight, rgb(56 189 248 / 0.2)),
+                transparent 34%
+            ),
+            linear-gradient(
+                135deg,
+                var(--card-image-fallback-start, #1e293b),
+                var(--card-image-fallback-end, #0f172a)
+            );
     }
 
     .responsive-image-stage,
@@ -461,17 +472,17 @@ const progressiveSources = await (async () => {
             await waitForInteractionIdle(600);
             await waitForIdle(1500);
             await waitForInteractionIdle(300);
+            if (!frame.isConnected) {
+                batch.markHigh();
+                return;
+            }
             const highReady = await activateDeferredImage(high);
             await waitForInteractionIdle();
             if (frame.isConnected && highReady) finishHighStage(frame);
             batch.markHigh();
         };
 
-        const startStandard = async (
-            frame: HTMLElement,
-            gates: ProgressiveGates,
-            loadVisibleLowImmediately = false
-        ) => {
+        const startStandard = async (frame: HTMLElement, gates: ProgressiveGates) => {
             if (frame.dataset.progressiveStarted === 'true') return;
             frame.dataset.progressiveStarted = 'true';
             observer?.unobserve(frame);
@@ -479,10 +490,13 @@ const progressiveSources = await (async () => {
             const { low, medium, high } = getStages(frame);
             if (!low || !medium || !high) return;
 
+            const isPriority = frame.dataset.progressivePriority === 'true';
             const hasDeferredLow = Boolean(low.dataset.progressiveSrc);
-            if (hasDeferredLow && loadVisibleLowImmediately) {
-                const lowReady = await lowQueue.enqueue(() => activateDeferredImage(low));
-                await waitForInteractionIdle(240);
+            if (hasDeferredLow) {
+                low.loading = 'eager';
+                const lowReady = await lowQueue.enqueue(() =>
+                    frame.isConnected ? activateDeferredImage(low) : Promise.resolve(false)
+                );
                 if (frame.isConnected && lowReady) frame.dataset.progressivePhase = 'low';
             } else if (!hasDeferredLow) {
                 await decodeImage(low);
@@ -490,30 +504,18 @@ const progressiveSources = await (async () => {
             if (!frame.isConnected) return;
 
             await gates.medium;
-            await waitForFirstInteractionOrTimeout(
-                frame.dataset.progressivePriority === 'true' ? 2200 : 3200
-            );
-            await waitForInteractionIdle(420);
-            if (!frame.isConnected) return;
-
-            if (hasDeferredLow && !loadVisibleLowImmediately) {
-                await waitForIdle(800);
-                await waitForInteractionIdle(240);
-                const lowReady = await lowQueue.enqueue(async () => {
-                    await waitForInteractionIdle(240);
-                    return activateDeferredImage(low);
-                });
-                await waitForInteractionIdle(240);
-                if (frame.isConnected && lowReady) frame.dataset.progressivePhase = 'low';
+            if (!isPriority) {
+                await waitForFirstInteractionOrTimeout(3200);
+                await waitForInteractionIdle(420);
             }
             if (!frame.isConnected) return;
 
-            const mediumReady = await mediumQueue.enqueue(async () => {
-                await waitForInteractionIdle();
-                return activateDeferredImage(medium);
-            });
+            if (!isPriority) await waitForInteractionIdle();
+            const mediumReady = await mediumQueue.enqueue(() =>
+                frame.isConnected ? activateDeferredImage(medium) : Promise.resolve(false)
+            );
             if (!frame.isConnected) return;
-            await waitForInteractionIdle();
+            if (!isPriority) await waitForInteractionIdle();
             if (frame.isConnected && mediumReady) frame.dataset.progressivePhase = 'medium';
 
             await gates.high;
@@ -524,9 +526,11 @@ const progressiveSources = await (async () => {
             if (!frame.isConnected) return;
 
             const highReady = await highQueue.enqueue(async () => {
+                if (!frame.isConnected) return false;
                 await waitForInteractionIdle();
-                return activateDeferredImage(high);
+                return frame.isConnected ? activateDeferredImage(high) : false;
             });
+            if (!frame.isConnected) return;
             await waitForInteractionIdle();
             if (frame.isConnected && highReady) {
                 finishHighStage(frame);
@@ -547,17 +551,6 @@ const progressiveSources = await (async () => {
                 (frame) => frame.dataset.progressiveCritical !== 'true'
             );
             const criticalBatch = createCriticalBatch(criticalFrames.length);
-            const isWithinViewport = (element: HTMLElement) => {
-                const rect = element.getBoundingClientRect();
-                return (
-                    rect.width > 0 &&
-                    rect.height > 0 &&
-                    rect.right > 0 &&
-                    rect.bottom > 0 &&
-                    rect.left < window.innerWidth &&
-                    rect.top < window.innerHeight
-                );
-            };
 
             observer =
                 'IntersectionObserver' in window
@@ -573,11 +566,7 @@ const progressiveSources = await (async () => {
                                                 '[data-progressive-image]:not([data-progressive-started="true"])'
                                             );
                                       if (frame) {
-                                          void startStandard(
-                                              frame,
-                                              criticalBatch,
-                                              !hasUserInteracted && isWithinViewport(target)
-                                          );
+                                          void startStandard(frame, criticalBatch);
                                       }
                                   }
                               });
@@ -589,11 +578,7 @@ const progressiveSources = await (async () => {
             criticalFrames.forEach((frame) => void startCritical(frame, criticalBatch));
             standardFrames.forEach((frame) => {
                 if (frame.dataset.progressivePriority === 'true' || !observer) {
-                    void startStandard(
-                        frame,
-                        criticalBatch,
-                        !hasUserInteracted && isWithinViewport(frame)
-                    );
+                    void startStandard(frame, criticalBatch);
                 } else {
                     observer.observe(
                         frame.closest<HTMLElement>('[data-progressive-observer-boundary]') ?? frame

@@ -367,6 +367,14 @@
         text-shadow: 0 1px 10px oklch(0 0 0 / 0.42);
     }
 
+    html[data-dock-navigation-pending='true']
+        [data-dock-route][data-dock-navigation-pending='true'] {
+        cursor: progress;
+        opacity: 0.72;
+        transform: translateY(1px) scale(0.98);
+        transition-duration: 120ms;
+    }
+
     @media (min-width: 1024px) {
         .dock-nav-link {
             padding: 0 1.76rem;

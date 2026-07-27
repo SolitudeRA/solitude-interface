@@ -231,7 +231,7 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
             hidden={!isInitialList}
         >
             <PostArchiveView
-                client:idle={{ timeout: 500 }}
+                client:visible
                 posts={listItems}
                 locale={locale}
                 seriesMetadata={seriesMetadata}
@@ -339,8 +339,8 @@ const canonicalUrl = `${env.site.url}/${locale}/post-view`;
         display: none !important;
     }
 
-    /* Reserve the pager's final footprint as soon as “全部” starts entering. The idle island
-       can then hydrate during the view transition without nudging the Dock when its portal mounts. */
+    /* Reserve the pager's final footprint before “全部” becomes visible, so the deferred island
+       can mount its portal without nudging the Dock. */
     :global(#post-archive-pagination-host) {
         min-height: 2rem;
     }
